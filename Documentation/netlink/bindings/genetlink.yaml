@@ -1,0 +1,65 @@
+name: genlctrl
+
+description: |
+  Generic netlink control protocol. Interface to query information about
+  generic netlink families registered in the kernel - their names, ids,
+  accepted messages and attributes.
+
+header: linux/genetlink.h
+
+attributes:
+  list:
+    main:
+      name-prefix: CTRL_ATTR_
+      list:
+        family_id: &family_id
+          type: u16
+          decription: |
+            Numerical identifier of the family.
+        family_name: &family_name
+          type: nul-string
+          len: GENL_NAMSIZ - 1
+          description: |
+            String identifier of the family. Guaranteed to be unique.
+        version: &version
+          type: u32
+        hdrsize: &hdrsize
+          type: u32
+        maxattr: &maxattr
+          type: u32
+        ops: &ops
+          type: array-nest
+          nested-attributes: operation
+        op: &op
+          type: u32
+
+    operation:
+      name-prefix: CTRL_ATTR_OP_
+      list:
+        op_id: &op_id
+          type: u32
+        op_flags: &op_flags
+          type: u32
+
+operations:
+  name-prefix: CTRL_CMD_
+  list:
+    getfamily:
+      attribute-space: main
+      dont-validate: [ strict, dump ]
+
+      do:
+        request:
+          - family_id
+          - family_name
+        reply: &getfamily-do-reply
+          - family_id
+          - family_name
+          - version
+          - hdrsize
+          - maxattr
+          - ops
+      dump:
+        reply: *getfamily-do-reply
+
+    getpolicy:

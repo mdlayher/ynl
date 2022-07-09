@@ -1,0 +1,28 @@
+name: gtp
+
+description: |
+  bla bla bla
+
+operations:
+  - get_pause:
+      attribute_prefix: "ETHTOOL_A_PAUSE_"
+
+      attributes:
+	- autoneg:	&pause_autoneg
+	    type: u8
+	- rx:		&pause_rx
+	    type: u8
+	- tx:		&pause_tx
+	    type: u8
+
+      description: |
+        Set Pause Frame config.
+
+      request:
+        - header:	*header_opt
+
+      response:
+        - header:	*header
+        - autoneg:	*pause_autoneg
+	- rx:		*pause_rx
+	- tx:		*pause_tx
