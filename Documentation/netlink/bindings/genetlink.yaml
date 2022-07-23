@@ -5,7 +5,9 @@ description: |
   generic netlink families registered in the kernel - their names, ids,
   accepted messages and attributes.
 
-header: linux/genetlink.h
+headers:
+  user: linux/genetlink.h
+  kernel: linux/genetlink.h
 
 attributes:
   list:

@@ -4,6 +4,15 @@ import os
 import yaml
 
 
+class Family:
+    def __init__(self, file_name):
+        with open(file_name, "r") as stream:
+            self.yaml = yaml.safe_load(stream)
+
+    def __getitem__(self, key):
+        return self.yaml[key]
+
+
 scalars = {'u8', 'u16', 'u32'}
 
 
@@ -61,10 +70,10 @@ def print_prototype(family, fam_name, op, mode, op_name, direction):
     prev = None
     for arg in op[mode][direction]:
         if prev:
-            attribute_member(parsed, op["attribute-space"], prev, suffix=',')
+            attribute_member(family, op["attribute-space"], prev, suffix=',')
         prev = arg
     if prev:
-        attribute_member(parsed, op["attribute-space"], prev)
+        attribute_member(family, op["attribute-space"], prev)
     print(");")
 
 
@@ -76,7 +85,7 @@ def print_type(family, fam_name, op, mode, op_name, direction):
     suffix = "_rsp" if direction == "reply" else "_req"
     print(f"struct {fam_name}_{op_name}{suffix} " + '{')
     for arg in op[mode][direction]:
-        attribute_member(parsed, op["attribute-space"], arg, prototype=False, suffix=';')
+        attribute_member(family, op["attribute-space"], arg, prototype=False, suffix=';')
     print("};")
     print(f"void {fam_name}_{op_name}_rsp_free(struct {fam_name}_{op_name}_rsp *{op_name});")
 
@@ -86,7 +95,7 @@ def print_parse_kernel(family, fam_name, op, mode, op_name, direction):
     print(f"int {fam_name}_{op_name}{suffix}_parse(.. req) ")
     print('{')
     for arg in op[mode][direction]:
-        attribute_parse_kernel(parsed, op["attribute-space"], arg, prototype=False, suffix=';')
+        attribute_parse_kernel(family, op["attribute-space"], arg, prototype=False, suffix=';')
     print("}")
 
 
@@ -101,38 +110,43 @@ def print_rsp_type(family, fam_name, op, mode, op_name):
 def print_req_policy(family, fam_name, op, mode, op_name):
     print(f"static const struct nla_policy {fam_name}_{op_name}_policy[] = " + '{')
     for arg in op[mode]["request"]:
-        attribute_policy(parsed, op["attribute-space"], arg)
+        attribute_policy(family, op["attribute-space"], arg)
     print("};")
 
 
-with open("Documentation/netlink/bindings/genetlink.yaml", "r") as stream:
+def main():
     try:
-        parsed = yaml.safe_load(stream)
+        parsed = Family(os.sys.argv[1])
     except yaml.YAMLError as exc:
         print(exc)
-        os.exit(1)
+        os.sys.exit(1)
 
-print(f"#include <linux/types.h>")
-print(f"#include <{parsed['header']}>\n")
+    print(f"#include <{parsed['headers']['user']}>\n")
 
-fam = parsed["name"]
+    fam = parsed["name"]
 
-for op_name in parsed['operations']['list']:
-    op = parsed['operations']['list'][op_name]
+    for op_name in parsed['operations']['list']:
+        op = parsed['operations']['list'][op_name]
 
-    print(f"// Codegen for {parsed['operations']['name-prefix']}{op_name.upper()}")
+        print(f"// Codegen for {parsed['operations']['name-prefix']}{op_name.upper()}")
 
-    if op and "do" in op:
-        print_req_prototype(parsed, fam, op, "do", op_name)
-        print()
-        print_rsp_type(parsed, fam, op, "do", op_name)
-        print()
+        if op and "do" in op:
+            print_req_prototype(parsed, fam, op, "do", op_name)
+            print()
+            print_rsp_type(parsed, fam, op, "do", op_name)
+            print()
 
-        print("#ifdef KERNEL")
-        print_req_type(parsed, fam, op, "do", op_name)
-        print()
-        print_parse_kernel(parsed, fam, op, "do", op_name, "request")
-        print()
-        print_req_policy(parsed, fam, op, "do", op_name)
-        print("#endif")
-        print()
+            print("#ifdef KERNEL")
+            print_req_type(parsed, fam, op, "do", op_name)
+            print()
+            print_parse_kernel(parsed, fam, op, "do", op_name, "request")
+            print()
+            print_req_policy(parsed, fam, op, "do", op_name)
+            print("#endif")
+            print()
+
+
+if __name__ == "__main__" :
+    main()
+
+

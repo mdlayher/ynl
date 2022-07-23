@@ -1,4 +1,3 @@
-#include <linux/types.h>
 #include <linux/genetlink.h>
 
 // Codegen for CTRL_CMD_GETFAMILY
