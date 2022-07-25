@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import os
 import yaml
 
@@ -115,13 +116,18 @@ def print_req_policy(family, fam_name, op, mode, op_name):
 
 
 def main():
+    parser = argparse.ArgumentParser(description='Netlink simple parsing generator')
+    parser.add_argument('--mode', dest='mode', type=str, required=True)
+    parser.add_argument('--spec', dest='spec', type=str, required=True)
+    args = parser.parse_args()
+
     try:
-        parsed = Family(os.sys.argv[1])
+        parsed = Family(args.spec)
     except yaml.YAMLError as exc:
         print(exc)
         os.sys.exit(1)
 
-    print(f"#include <{parsed['headers']['user']}>\n")
+    print(f"#include <{parsed['headers'][args.mode]}>\n")
 
     fam = parsed["name"]
 
@@ -131,18 +137,16 @@ def main():
         print(f"// Codegen for {parsed['operations']['name-prefix']}{op_name.upper()}")
 
         if op and "do" in op:
-            print_req_prototype(parsed, fam, op, "do", op_name)
-            print()
-            print_rsp_type(parsed, fam, op, "do", op_name)
-            print()
-
-            print("#ifdef KERNEL")
-            print_req_type(parsed, fam, op, "do", op_name)
-            print()
-            print_parse_kernel(parsed, fam, op, "do", op_name, "request")
-            print()
-            print_req_policy(parsed, fam, op, "do", op_name)
-            print("#endif")
+            if args.mode == "user":
+                print_req_prototype(parsed, fam, op, "do", op_name)
+                print()
+                print_rsp_type(parsed, fam, op, "do", op_name)
+            elif args.mode == "kernel":
+                print_req_type(parsed, fam, op, "do", op_name)
+                print()
+                print_parse_kernel(parsed, fam, op, "do", op_name, "request")
+                print()
+                print_req_policy(parsed, fam, op, "do", op_name)
             print()
 
 
