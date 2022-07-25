@@ -4,7 +4,9 @@
 
 #include <linux/genetlink.h>
 
-// Codegen for CTRL_CMD_GETFAMILY
+// Header content
+
+// CTRL_CMD_GETFAMILY
 int genlctrl_getfamily(
 	__u16 family_id,
 	const char *family_name
@@ -28,4 +30,9 @@ struct genlctrl_getfamily_rsp {
 };
 void genlctrl_getfamily_rsp_free(struct genlctrl_getfamily_rsp *getfamily);
 
-// Codegen for CTRL_CMD_GETPOLICY
+// CTRL_CMD_GETPOLICY
+// Source content
+
+// CTRL_CMD_GETFAMILY
+
+// CTRL_CMD_GETPOLICY

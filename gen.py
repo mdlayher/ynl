@@ -122,14 +122,19 @@ def print_type(ri, direction):
           f"struct {ri.family['name']}_{ri.op_name}_rsp *{ri.op_name});")
 
 
-def print_parse_kernel(family, fam_name, op, mode, op_name, direction):
+def print_parse_prototype(ri, direction, terminate=True):
     suffix = "_rsp" if direction == "reply" else "_req"
+    term = ';' if terminate else ''
 
-    print(f"void {fam_name}_{op_name}{suffix}_parse(const struct nlattr **tb," +
-          f" struct {fam_name}_{op_name}{suffix} *req)")
+    print(f"void {ri.family['name']}_{ri.op_name}{suffix}_parse(const struct nlattr **tb," +
+          f" struct {ri.family['name']}_{ri.op_name}{suffix} *req){term}")
+
+
+def print_parse_kernel(ri, direction):
+    print_parse_prototype(ri, direction, terminate=False)
     print('{')
-    for arg in op[mode][direction]:
-        attribute_parse_kernel(family, op["attribute-space"], arg, prototype=False, suffix=';')
+    for arg in ri.op[ri.op_mode][direction]:
+        attribute_parse_kernel(ri.family, ri.op["attribute-space"], arg, prototype=False, suffix=';')
     print("}")
 
 
@@ -172,10 +177,13 @@ def main():
 
     fam = parsed["name"]
 
+    print("// Header content")
+    print()
+
     for op_name in parsed['operations']['list']:
         op = parsed['operations']['list'][op_name]
 
-        print(f"// Codegen for {parsed['operations']['name-prefix']}{op_name.upper()}")
+        print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
 
         if op and "do" in op:
             ri = RenderInfo(parsed, args.mode, op, op_name, "do")
@@ -185,8 +193,21 @@ def main():
                 print_rsp_type(ri)
             elif args.mode == "kernel":
                 print_req_type(ri)
-                print()
-                print_parse_kernel(parsed, fam, op, "do", op_name, "request")
+                print_parse_prototype(ri, "request")
+            print()
+
+    print("// Source content")
+    print()
+
+    for op_name in parsed['operations']['list']:
+        op = parsed['operations']['list'][op_name]
+
+        print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
+
+        if op and "do" in op:
+            ri = RenderInfo(parsed, args.mode, op, op_name, "do")
+            if args.mode == "kernel":
+                print_parse_kernel(ri, "request")
                 print()
                 print_req_policy(parsed, fam, op, "do", op_name)
             print()

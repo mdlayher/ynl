@@ -6,7 +6,9 @@
 
 #include <linux/genetlink.h>
 
-// Codegen for CTRL_CMD_GETFAMILY
+// Header content
+
+// CTRL_CMD_GETFAMILY
 struct genlctrl_getfamily_req {
 	u32 family_id_present:1;
 	u32 family_name_present:1;
@@ -15,7 +17,12 @@ struct genlctrl_getfamily_req {
 	char family_name[GENL_NAMSIZ];
 };
 void genlctrl_getfamily_req_free(struct genlctrl_getfamily_rsp *getfamily);
+void genlctrl_getfamily_req_parse(const struct nlattr **tb, struct genlctrl_getfamily_req *req);
 
+// CTRL_CMD_GETPOLICY
+// Source content
+
+// CTRL_CMD_GETFAMILY
 void genlctrl_getfamily_req_parse(const struct nlattr **tb, struct genlctrl_getfamily_req *req)
 {
 	if (tb[CTRL_ATTR_FAMILY_ID]) {
@@ -29,4 +36,4 @@ static const struct nla_policy genlctrl_getfamily_policy[] = {
 	[CTRL_ATTR_FAMILY_NAME] = { .type = NLA_NUL_STRING, .len = GENL_NAMSIZ - 1 },
 };
 
-// Codegen for CTRL_CMD_GETPOLICY
+// CTRL_CMD_GETPOLICY
