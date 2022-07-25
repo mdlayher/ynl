@@ -119,7 +119,7 @@ def print_type(ri, direction):
         attribute_member(ri, ri.op["attribute-space"], arg, prototype=False, suffix=';')
     print("};")
     print(f"void {ri.family['name']}_{ri.op_name}{suffix}_free(" +
-          f"struct {ri.family['name']}_{ri.op_name}_rsp *{ri.op_name});")
+          f"struct {ri.family['name']}_{ri.op_name}{suffix} *{ri.op_name});")
 
 
 def print_parse_prototype(ri, direction, terminate=True):
