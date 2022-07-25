@@ -88,12 +88,12 @@ def print_type(family, fam_name, op, mode, op_name, direction):
     for arg in op[mode][direction]:
         attribute_member(family, op["attribute-space"], arg, prototype=False, suffix=';')
     print("};")
-    print(f"void {fam_name}_{op_name}_rsp_free(struct {fam_name}_{op_name}_rsp *{op_name});")
+    print(f"void {fam_name}_{op_name}{suffix}_free(struct {fam_name}_{op_name}_rsp *{op_name});")
 
 
 def print_parse_kernel(family, fam_name, op, mode, op_name, direction):
     suffix = "_rsp" if direction == "reply" else "_req"
-    print(f"int {fam_name}_{op_name}{suffix}_parse(.. req) ")
+    print(f"void {fam_name}_{op_name}{suffix}_parse(const struct nlattr **tb, struct {fam_name}_{op_name}{suffix} *req)")
     print('{')
     for arg in op[mode][direction]:
         attribute_parse_kernel(family, op["attribute-space"], arg, prototype=False, suffix=';')
