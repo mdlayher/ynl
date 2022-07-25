@@ -161,6 +161,10 @@ def main():
         os.sys.exit(1)
         return
 
+    print(f"// SPDX-License-Identifier: MIT")
+    print("// Do not edit directly, auto-generated from:")
+    print(f"//\t{args.spec}")
+    print()
     if args.mode == 'kernel':
         print(f'#include <net/netlink.h>')
         print()

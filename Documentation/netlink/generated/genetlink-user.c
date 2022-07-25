@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+// Do not edit directly, auto-generated from:
+//	Documentation/netlink/bindings/genetlink.yaml
+
 #include <linux/genetlink.h>
 
 // Codegen for CTRL_CMD_GETFAMILY

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+// Do not edit directly, auto-generated from:
+//	Documentation/netlink/bindings/genetlink.yaml
+
 #include <net/netlink.h>
 
 #include <linux/genetlink.h>
