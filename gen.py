@@ -15,15 +15,29 @@ class Family:
 
 
 class RenderInfo:
-    def __init__(self, family, ku_space, op, op_name, op_mode):
+    def __init__(self, family, ku_space, op, op_name, op_mode, attr_space=None):
         self.family = family
         self.ku_space = ku_space
         self.op = op
         self.op_name = op_name
         self.op_mode = op_mode
+        self.attr_space = attr_space
+        if not self.attr_space:
+            self.attr_space = op['attribute-space']
+
+        if op:
+            self.type_name = op_name
+        else:
+            self.type_name = attr_space
 
 
 scalars = {'u8', 'u16', 'u32'}
+
+direction_to_suffix = {
+    'reply': '_rsp',
+    'request': '_req',
+    '': ''
+}
 
 
 def attribute_policy(family, space, attr, prototype=True, suffix=""):
@@ -103,23 +117,30 @@ def print_req_prototype(ri, fam_name, op, mode, op_name):
     print_prototype(ri, fam_name, op, mode, op_name, "request")
 
 
-def print_type(ri, direction):
-    suffix = "_rsp" if direction == "reply" else "_req"
+def _print_type(ri, direction, type_list):
+    suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
 
-    print(f"struct {ri.family['name']}_{ri.op_name}{suffix} " + '{')
-    type_list = ri.op[ri.op_mode][direction]
+    print(f"struct {ri.family['name']}{suffix} " + '{')
     any_presence = False
     for arg in type_list:
         any_presence |= \
-            attribute_pres_member(ri, ri.op["attribute-space"], arg, suffix=';')
+            attribute_pres_member(ri, ri.attr_space, arg, suffix=';')
     if any_presence:
         print()
 
     for arg in type_list:
-        attribute_member(ri, ri.op["attribute-space"], arg, prototype=False, suffix=';')
+        attribute_member(ri, ri.attr_space, arg, prototype=False, suffix=';')
     print("};")
-    print(f"void {ri.family['name']}_{ri.op_name}{suffix}_free(" +
-          f"struct {ri.family['name']}_{ri.op_name}{suffix} *{ri.op_name});")
+    print(f"void {ri.family['name']}{suffix}_free(" +
+          f"struct {ri.family['name']}{suffix} *{ri.op_name});")
+
+
+def print_type(ri, direction):
+    return _print_type(ri, direction, ri.op[ri.op_mode][direction])
+
+
+def print_type_full(ri, aspace):
+    return _print_type(ri, "", aspace)
 
 
 def print_parse_prototype(ri, direction, terminate=True):
@@ -134,7 +155,7 @@ def print_parse_kernel(ri, direction):
     print_parse_prototype(ri, direction, terminate=False)
     print('{')
     for arg in ri.op[ri.op_mode][direction]:
-        attribute_parse_kernel(ri.family, ri.op["attribute-space"], arg, prototype=False, suffix=';')
+        attribute_parse_kernel(ri.family, ri.attr_space, arg, prototype=False, suffix=';')
     print("}")
 
 
@@ -154,7 +175,7 @@ def print_req_policy_fwd(ri, terminate=True):
 def print_req_policy(ri):
     print_req_policy_fwd(ri, terminate=False)
     for arg in ri.op[ri.op_mode]["request"]:
-        attribute_policy(ri.family, ri.op["attribute-space"], arg)
+        attribute_policy(ri.family, ri.attr_space, arg)
     print("};")
 
 
@@ -183,6 +204,16 @@ def main():
     fam = parsed["name"]
 
     print("// Header content")
+    print()
+
+    print('// Common nested types')
+    for attr_space in parsed['attributes']['list']:
+        aspace = parsed['attributes']['list'][attr_space]['list']
+        for attr in aspace:
+            aspec = aspace[attr]
+            if 'nested-attributes' in aspec:
+                ri = RenderInfo(parsed, args.mode, "", "", "", aspec['nested-attributes'])
+                print_type_full(ri, parsed['attributes']['list'][aspec['nested-attributes']]['list'])
     print()
 
     for op_name in parsed['operations']['list']:

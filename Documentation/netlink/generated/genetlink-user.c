@@ -6,6 +6,16 @@
 
 // Header content
 
+// Common nested types
+struct genlctrl_operation {
+	__u32 op_id_present:1;
+	__u32 op_flags_present:1;
+
+	__u32 op_id;
+	__u32 op_flags;
+};
+void genlctrl_operation_free(struct genlctrl_operation *);
+
 // CTRL_CMD_GETFAMILY
 int genlctrl_getfamily(
 	__u16 family_id,
