@@ -103,20 +103,28 @@ def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
     print('\t}')
 
 
-def print_prototype(ri, fam_name, op, mode, op_name, direction):
-    print(f"int {fam_name}_{op_name}(")
+def print_prototype(ri, direction, terminate=True):
+    suffix = ');' if terminate else ')'
+    print(f"int {ri.family['name']}_{ri.op_name}(")
+
     prev = None
-    for arg in op[mode][direction]:
+    for arg in ri.op[ri.op_mode][direction]:
         if prev:
-            attribute_member(ri, op["attribute-space"], prev, suffix=',')
+            attribute_member(ri, ri.op["attribute-space"], prev, suffix=',')
         prev = arg
     if prev:
-        attribute_member(ri, op["attribute-space"], prev)
-    print(");")
+        attribute_member(ri, ri.op["attribute-space"], prev, suffix=suffix)
 
 
-def print_req_prototype(ri, fam_name, op, mode, op_name):
-    print_prototype(ri, fam_name, op, mode, op_name, "request")
+def print_req_prototype(ri):
+    print_prototype(ri, "request")
+
+
+def print_req(ri):
+    print_prototype(ri, "request", terminate=False)
+    print('{')
+    print('\treturn 0;')
+    print('}')
 
 
 def _print_type(ri, direction, type_list):
@@ -185,7 +193,12 @@ def main():
     parser = argparse.ArgumentParser(description='Netlink simple parsing generator')
     parser.add_argument('--mode', dest='mode', type=str, required=True)
     parser.add_argument('--spec', dest='spec', type=str, required=True)
+    parser.add_argument('--header', dest='header', action='store_true', default=None)
+    parser.add_argument('--source', dest='header', action='store_false')
     args = parser.parse_args()
+
+    if args.header is None:
+        parser.error("--header or --source is required")
 
     try:
         parsed = Family(args.spec)
@@ -203,53 +216,53 @@ def main():
         print()
     print(f"#include <{parsed['headers'][args.mode]}>\n")
 
-    fam = parsed["name"]
+    if args.header:
+        print('// Common nested types')
+        for attr_space in parsed['attributes']['list']:
+            aspace = parsed['attributes']['list'][attr_space]['list']
+            for attr in aspace:
+                aspec = aspace[attr]
+                if 'nested-attributes' in aspec:
+                    ri = RenderInfo(parsed, args.mode, "", "", "", aspec['nested-attributes'])
+                    print_type_full(ri, parsed['attributes']['list'][aspec['nested-attributes']]['list'])
+        print()
 
-    print("// Header content")
-    print()
+        for op_name in parsed['operations']['list']:
+            op = parsed['operations']['list'][op_name]
 
-    print('// Common nested types')
-    for attr_space in parsed['attributes']['list']:
-        aspace = parsed['attributes']['list'][attr_space]['list']
-        for attr in aspace:
-            aspec = aspace[attr]
-            if 'nested-attributes' in aspec:
-                ri = RenderInfo(parsed, args.mode, "", "", "", aspec['nested-attributes'])
-                print_type_full(ri, parsed['attributes']['list'][aspec['nested-attributes']]['list'])
-    print()
+            print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
 
-    for op_name in parsed['operations']['list']:
-        op = parsed['operations']['list'][op_name]
-
-        print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
-
-        if op and "do" in op:
-            ri = RenderInfo(parsed, args.mode, op, op_name, "do")
-            if args.mode == "user":
-                print_req_prototype(ri, fam, op, "do", op_name)
+            if op and "do" in op:
+                ri = RenderInfo(parsed, args.mode, op, op_name, "do")
+                if args.mode == "user":
+                    print_req_prototype(ri)
+                    print()
+                    print_rsp_type(ri)
+                elif args.mode == "kernel":
+                    print_req_type(ri)
+                    print_parse_prototype(ri, "request")
+                    print_req_policy_fwd(ri)
                 print()
-                print_rsp_type(ri)
-            elif args.mode == "kernel":
-                print_req_type(ri)
-                print_parse_prototype(ri, "request")
-                print_req_policy_fwd(ri)
-            print()
 
-    print("// Source content")
-    print()
+    if not args.header:
+        for op_name in parsed['operations']['list']:
+            op = parsed['operations']['list'][op_name]
 
-    for op_name in parsed['operations']['list']:
-        op = parsed['operations']['list'][op_name]
+            print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
 
-        print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
-
-        if op and "do" in op:
-            ri = RenderInfo(parsed, args.mode, op, op_name, "do")
-            if args.mode == "kernel":
-                print_parse_kernel(ri, "request")
+            if op and "do" in op:
+                ri = RenderInfo(parsed, args.mode, op, op_name, "do")
+                if args.mode == "user":
+                    print_req(ri)
+                elif args.mode == "kernel":
+                    print_parse_kernel(ri, "request")
+                    print()
+                    print_req_policy(ri)
                 print()
-                print_req_policy(ri)
-            print()
+
+        if args.mode == 'user':
+            print('// Make it compile standalone')
+            print('int main() { return 0; }')
 
 
 if __name__ == "__main__":

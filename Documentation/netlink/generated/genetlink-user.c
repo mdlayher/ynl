@@ -4,8 +4,6 @@
 
 #include <linux/genetlink.h>
 
-// Header content
-
 // Common nested types
 struct genlctrl_operation {
 	__u32 op_id_present:1;
@@ -19,8 +17,7 @@ void genlctrl_operation_free(struct genlctrl_operation *);
 // CTRL_CMD_GETFAMILY
 int genlctrl_getfamily(
 	__u16 family_id,
-	const char *family_name
-);
+	const char *family_name);
 
 struct genlctrl_getfamily_rsp {
 	__u32 family_id_present:1;
@@ -39,10 +36,5 @@ struct genlctrl_getfamily_rsp {
 	struct genlctrl_operation *ops;
 };
 void genlctrl_getfamily_rsp_free(struct genlctrl_getfamily_rsp *getfamily);
-
-// CTRL_CMD_GETPOLICY
-// Source content
-
-// CTRL_CMD_GETFAMILY
 
 // CTRL_CMD_GETPOLICY
