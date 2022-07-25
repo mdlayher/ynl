@@ -146,10 +146,15 @@ def print_rsp_type(ri):
     print_type(ri, "reply")
 
 
-def print_req_policy(family, fam_name, op, mode, op_name):
-    print(f"static const struct nla_policy {fam_name}_{op_name}_policy[] = " + '{')
-    for arg in op[mode]["request"]:
-        attribute_policy(family, op["attribute-space"], arg)
+def print_req_policy_fwd(ri, terminate=True):
+    suffix = ';' if terminate else ' = {'
+    print(f"const struct nla_policy {ri.family['name']}_{ri.op_name}_policy[]{suffix}")
+
+
+def print_req_policy(ri):
+    print_req_policy_fwd(ri, terminate=False)
+    for arg in ri.op[ri.op_mode]["request"]:
+        attribute_policy(ri.family, ri.op["attribute-space"], arg)
     print("};")
 
 
@@ -194,6 +199,7 @@ def main():
             elif args.mode == "kernel":
                 print_req_type(ri)
                 print_parse_prototype(ri, "request")
+                print_req_policy_fwd(ri)
             print()
 
     print("// Source content")
@@ -209,7 +215,7 @@ def main():
             if args.mode == "kernel":
                 print_parse_kernel(ri, "request")
                 print()
-                print_req_policy(parsed, fam, op, "do", op_name)
+                print_req_policy(ri)
             print()
 
 

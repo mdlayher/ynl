@@ -18,6 +18,7 @@ struct genlctrl_getfamily_req {
 };
 void genlctrl_getfamily_req_free(struct genlctrl_getfamily_rsp *getfamily);
 void genlctrl_getfamily_req_parse(const struct nlattr **tb, struct genlctrl_getfamily_req *req);
+const struct nla_policy genlctrl_getfamily_policy[];
 
 // CTRL_CMD_GETPOLICY
 // Source content
@@ -31,7 +32,7 @@ void genlctrl_getfamily_req_parse(const struct nlattr **tb, struct genlctrl_getf
 	}
 }
 
-static const struct nla_policy genlctrl_getfamily_policy[] = {
+const struct nla_policy genlctrl_getfamily_policy[] = {
 	[CTRL_ATTR_FAMILY_ID] = { .type = NLA_U16 },
 	[CTRL_ATTR_FAMILY_NAME] = { .type = NLA_NUL_STRING, .len = GENL_NAMSIZ - 1 },
 };
