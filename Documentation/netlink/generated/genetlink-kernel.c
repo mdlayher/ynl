@@ -4,7 +4,10 @@
 
 // Codegen for CTRL_CMD_GETFAMILY
 struct genlctrl_getfamily_req {
-	__u16 family_id;
+	u32 family_id_present:1;
+	u32 family_name_present:1;
+
+	u16 family_id;
 	char family_name[GENL_NAMSIZ];
 };
 void genlctrl_getfamily_req_free(struct genlctrl_getfamily_rsp *getfamily);

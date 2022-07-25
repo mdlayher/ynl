@@ -7,6 +7,13 @@ int genlctrl_getfamily(
 );
 
 struct genlctrl_getfamily_rsp {
+	__u32 family_id_present:1;
+	__u32 family_name_present:1;
+	__u32 version_present:1;
+	__u32 hdrsize_present:1;
+	__u32 maxattr_present:1;
+	__u32 ops_present:1;
+
 	__u16 family_id;
 	char family_name[GENL_NAMSIZ];
 	__u32 version;

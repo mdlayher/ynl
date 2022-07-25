@@ -14,6 +14,15 @@ class Family:
         return self.yaml[key]
 
 
+class RenderInfo:
+    def __init__(self, family, ku_space, op, op_name, op_mode):
+        self.family = family
+        self.ku_space = ku_space
+        self.op = op
+        self.op_name = op_name
+        self.op_mode = op_mode
+
+
 scalars = {'u8', 'u16', 'u32'}
 
 
@@ -31,8 +40,8 @@ def attribute_policy(family, space, attr, prototype=True, suffix=""):
     print(f"\t[{aspace['name-prefix']}{attr.upper()}] = {mem},")
 
 
-def attribute_member(family, space, attr, prototype=True, suffix=""):
-    spec = family["attributes"]["list"][space]["list"][attr]
+def attribute_member(ri, space, attr, prototype=True, suffix=""):
+    spec = ri.family["attributes"]["list"][space]["list"][attr]
 
     t = spec['type']
     if t == "nul-string":
@@ -45,13 +54,25 @@ def attribute_member(family, space, attr, prototype=True, suffix=""):
             else:
                 suffix = f"[{spec['len']} + 1]" + suffix
     elif t == 'array-nest':
-        t = f"struct {family['name']}_{spec['nested-attributes']} *"
+        t = f"struct {ri.family['name']}_{spec['nested-attributes']} *"
         if not prototype:
             print(f"\tunsigned int n_{attr};")
     elif t in scalars:
-        t = '__' + t + ' '
+        pfx = '__' if ri.ku_space == 'user' else ''
+        t = pfx + t + ' '
 
     print(f"\t{t}{attr}{suffix}")
+
+
+def attribute_pres_member(ri, space, attr, suffix=""):
+    spec = ri.family["attributes"]["list"][space]["list"][attr]
+    pfx = '__' if ri.ku_space == 'user' else ''
+
+    if 'required' in spec:
+        return False
+
+    print(f"\t{pfx}u32 {attr}_present:1{suffix}")
+    return True
 
 
 def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
@@ -66,46 +87,58 @@ def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
         print('\t}')
 
 
-def print_prototype(family, fam_name, op, mode, op_name, direction):
+def print_prototype(ri, fam_name, op, mode, op_name, direction):
     print(f"int {fam_name}_{op_name}(")
     prev = None
     for arg in op[mode][direction]:
         if prev:
-            attribute_member(family, op["attribute-space"], prev, suffix=',')
+            attribute_member(ri, op["attribute-space"], prev, suffix=',')
         prev = arg
     if prev:
-        attribute_member(family, op["attribute-space"], prev)
+        attribute_member(ri, op["attribute-space"], prev)
     print(");")
 
 
-def print_req_prototype(family, fam_name, op, mode, op_name):
-    print_prototype(family, fam_name, op, mode, op_name, "request")
+def print_req_prototype(ri, fam_name, op, mode, op_name):
+    print_prototype(ri, fam_name, op, mode, op_name, "request")
 
 
-def print_type(family, fam_name, op, mode, op_name, direction):
+def print_type(ri, direction):
     suffix = "_rsp" if direction == "reply" else "_req"
-    print(f"struct {fam_name}_{op_name}{suffix} " + '{')
-    for arg in op[mode][direction]:
-        attribute_member(family, op["attribute-space"], arg, prototype=False, suffix=';')
+
+    print(f"struct {ri.family['name']}_{ri.op_name}{suffix} " + '{')
+    type_list = ri.op[ri.op_mode][direction]
+    any_presence = False
+    for arg in type_list:
+        any_presence |= \
+            attribute_pres_member(ri, ri.op["attribute-space"], arg, suffix=';')
+    if any_presence:
+        print()
+
+    for arg in type_list:
+        attribute_member(ri, ri.op["attribute-space"], arg, prototype=False, suffix=';')
     print("};")
-    print(f"void {fam_name}_{op_name}{suffix}_free(struct {fam_name}_{op_name}_rsp *{op_name});")
+    print(f"void {ri.family['name']}_{ri.op_name}{suffix}_free(" +
+          f"struct {ri.family['name']}_{ri.op_name}_rsp *{ri.op_name});")
 
 
 def print_parse_kernel(family, fam_name, op, mode, op_name, direction):
     suffix = "_rsp" if direction == "reply" else "_req"
-    print(f"void {fam_name}_{op_name}{suffix}_parse(const struct nlattr **tb, struct {fam_name}_{op_name}{suffix} *req)")
+
+    print(f"void {fam_name}_{op_name}{suffix}_parse(const struct nlattr **tb," +
+          f" struct {fam_name}_{op_name}{suffix} *req)")
     print('{')
     for arg in op[mode][direction]:
         attribute_parse_kernel(family, op["attribute-space"], arg, prototype=False, suffix=';')
     print("}")
 
 
-def print_req_type(family, fam_name, op, mode, op_name):
-    print_type(family, fam_name, op, mode, op_name, "request")
+def print_req_type(ri):
+    print_type(ri, "request")
 
 
-def print_rsp_type(family, fam_name, op, mode, op_name):
-    print_type(family, fam_name, op, mode, op_name, "reply")
+def print_rsp_type(ri):
+    print_type(ri, "reply")
 
 
 def print_req_policy(family, fam_name, op, mode, op_name):
@@ -126,6 +159,7 @@ def main():
     except yaml.YAMLError as exc:
         print(exc)
         os.sys.exit(1)
+        return
 
     if args.mode == 'kernel':
         print(f'#include <net/netlink.h>')
@@ -140,12 +174,13 @@ def main():
         print(f"// Codegen for {parsed['operations']['name-prefix']}{op_name.upper()}")
 
         if op and "do" in op:
+            ri = RenderInfo(parsed, args.mode, op, op_name, "do")
             if args.mode == "user":
-                print_req_prototype(parsed, fam, op, "do", op_name)
+                print_req_prototype(ri, fam, op, "do", op_name)
                 print()
-                print_rsp_type(parsed, fam, op, "do", op_name)
+                print_rsp_type(ri)
             elif args.mode == "kernel":
-                print_req_type(parsed, fam, op, "do", op_name)
+                print_req_type(ri)
                 print()
                 print_parse_kernel(parsed, fam, op, "do", op_name, "request")
                 print()
@@ -153,7 +188,5 @@ def main():
             print()
 
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
     main()
-
-
