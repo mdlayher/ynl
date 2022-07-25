@@ -40,6 +40,10 @@ void genlctrl_getfamily_req_parse(const struct nlattr **tb, struct genlctrl_getf
 		req->family_id_present = 1;
 		req->family_id = nla_get_u16(tb[CTRL_ATTR_FAMILY_ID]);
 	}
+	if (tb[CTRL_ATTR_FAMILY_NAME]) {
+		req->family_name_present = 1;
+		strcpy(req->family_name, nla_data(tb[CTRL_ATTR_FAMILY_NAME]));
+	}
 }
 
 const struct nla_policy genlctrl_getfamily_policy[] = {

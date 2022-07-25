@@ -94,11 +94,13 @@ def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
     spec = aspace["list"][attr]
 
     t = spec['type']
+    print(f"\tif (tb[{aspace['name-prefix']}{attr.upper()}]) " + '{')
+    print(f"\t\treq->{attr}_present = 1;")
     if t in scalars:
-        print(f"\tif (tb[{aspace['name-prefix']}{attr.upper()}]) " + '{')
-        print(f"\t\treq->{attr}_present = 1;")
         print(f"\t\treq->{attr} = nla_get_{t}(tb[{aspace['name-prefix']}{attr.upper()}]);")
-        print('\t}')
+    elif t == 'nul-string':
+        print(f"\t\tstrcpy(req->{attr}, nla_data(tb[{aspace['name-prefix']}{attr.upper()}]));")
+    print('\t}')
 
 
 def print_prototype(ri, fam_name, op, mode, op_name, direction):
