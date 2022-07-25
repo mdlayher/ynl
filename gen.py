@@ -127,6 +127,9 @@ def main():
         print(exc)
         os.sys.exit(1)
 
+    if args.mode == 'kernel':
+        print(f'#include <net/netlink.h>')
+        print()
     print(f"#include <{parsed['headers'][args.mode]}>\n")
 
     fam = parsed["name"]
