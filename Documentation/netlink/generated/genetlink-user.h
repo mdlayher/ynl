@@ -43,6 +43,7 @@ struct genlctrl_getfamily_rsp {
 	struct genlctrl_operation *ops;
 };
 void genlctrl_getfamily_rsp_free(struct genlctrl_getfamily_rsp *req);
-int genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req);
+struct genlctrl_getfamily_rsp *
+genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req);
 
 // CTRL_CMD_GETPOLICY

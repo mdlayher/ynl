@@ -40,6 +40,14 @@ direction_to_suffix = {
 }
 
 
+def rdir(direction):
+    if direction == 'reply':
+        return 'request'
+    if direction == 'request':
+        return 'reply'
+    return direction
+
+
 def attribute_policy(family, space, attr, prototype=True, suffix=""):
     aspace = family["attributes"]["list"][space]
     spec = aspace["list"][attr]
@@ -110,7 +118,9 @@ def type_name(ri, direction):
 
 def print_prototype(ri, direction, terminate=True):
     suffix = ');' if terminate else ')'
-    print(f"int {ri.family['name']}_{ri.op_name}(struct ynl_sock *ys, {type_name(ri, direction)} *" +
+
+    print(f"{type_name(ri, rdir(direction))} *")
+    print(f"{ri.family['name']}_{ri.op_name}(struct ynl_sock *ys, {type_name(ri, direction)} *" +
           f"{direction_to_suffix[direction][1:]}{suffix}")
 
 
@@ -119,9 +129,14 @@ def print_req_prototype(ri):
 
 
 def print_req(ri):
-    print_prototype(ri, "request", terminate=False)
+    direction = "request"
+    print_prototype(ri, direction, terminate=False)
     print('{')
-    print('\treturn 0;')
+    print(f"\t{type_name(ri, rdir(direction))} *rsp;")
+    print()
+    print("\trsp = calloc(1, sizeof(*rsp));")
+    print()
+    print('\treturn rsp;')
     print('}')
 
 
@@ -215,14 +230,14 @@ def main():
         print()
     print(f"#include <{parsed['headers'][args.mode]}>\n")
 
-    if len(args.user_header) and args.mode == "user":
+    if args.mode == "user":
         if not args.header:
+            print("#include <stdlib.h>")
             for h in args.user_header:
                 print(f'#include "{h}"')
-            print()
         else:
             print('struct ynl_sock;')
-            print()
+        print()
 
     if args.header:
         print('// Common nested types')
