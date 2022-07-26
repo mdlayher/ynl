@@ -13,5 +13,3 @@ int genlctrl_getfamily(
 }
 
 // CTRL_CMD_GETPOLICY
-// Make it compile standalone
-int main() { return 0; }

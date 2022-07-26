@@ -260,10 +260,6 @@ def main():
                     print_req_policy(ri)
                 print()
 
-        if args.mode == 'user':
-            print('// Make it compile standalone')
-            print('int main() { return 0; }')
-
 
 if __name__ == "__main__":
     main()
