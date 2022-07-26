@@ -4,6 +4,9 @@
 
 #include <linux/genetlink.h>
 
+#include "genetlink-user.h"
+#include "user.h"
+
 // CTRL_CMD_GETFAMILY
 int genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req)
 {

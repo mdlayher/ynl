@@ -193,6 +193,7 @@ def main():
     parser.add_argument('--spec', dest='spec', type=str, required=True)
     parser.add_argument('--header', dest='header', action='store_true', default=None)
     parser.add_argument('--source', dest='header', action='store_false')
+    parser.add_argument('--user-header', nargs='+', default=[])
     args = parser.parse_args()
 
     if args.header is None:
@@ -213,6 +214,15 @@ def main():
         print(f'#include <net/netlink.h>')
         print()
     print(f"#include <{parsed['headers'][args.mode]}>\n")
+
+    if len(args.user_header) and args.mode == "user":
+        if not args.header:
+            for h in args.user_header:
+                print(f'#include "{h}"')
+            print()
+        else:
+            print('struct ynl_sock;')
+            print()
 
     if args.header:
         print('// Common nested types')

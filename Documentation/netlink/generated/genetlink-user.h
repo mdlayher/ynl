@@ -4,6 +4,8 @@
 
 #include <linux/genetlink.h>
 
+struct ynl_sock;
+
 // Common nested types
 struct genlctrl_operation {
 	__u32 op_id_present:1;
