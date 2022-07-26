@@ -103,17 +103,15 @@ def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
     print('\t}')
 
 
+def type_name(ri, direction):
+    suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
+    return f"struct {ri.family['name']}{suffix}"
+
+
 def print_prototype(ri, direction, terminate=True):
     suffix = ');' if terminate else ')'
-    print(f"int {ri.family['name']}_{ri.op_name}(")
-
-    prev = None
-    for arg in ri.op[ri.op_mode][direction]:
-        if prev:
-            attribute_member(ri, ri.op["attribute-space"], prev, suffix=',')
-        prev = arg
-    if prev:
-        attribute_member(ri, ri.op["attribute-space"], prev, suffix=suffix)
+    print(f"int {ri.family['name']}_{ri.op_name}({type_name(ri, direction)} *" +
+          f"{direction_to_suffix[direction][1:]}{suffix}")
 
 
 def print_req_prototype(ri):
@@ -234,12 +232,14 @@ def main():
 
             if op and "do" in op:
                 ri = RenderInfo(parsed, args.mode, op, op_name, "do")
+
+                print_req_type(ri)
+                print()
+                print_rsp_type(ri)
+
                 if args.mode == "user":
                     print_req_prototype(ri)
-                    print()
-                    print_rsp_type(ri)
                 elif args.mode == "kernel":
-                    print_req_type(ri)
                     print_parse_prototype(ri, "request")
                     print_req_policy_fwd(ri)
                 print()

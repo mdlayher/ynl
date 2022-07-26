@@ -5,9 +5,7 @@
 #include <linux/genetlink.h>
 
 // CTRL_CMD_GETFAMILY
-int genlctrl_getfamily(
-	__u16 family_id,
-	const char *family_name)
+int genlctrl_getfamily(struct genlctrl_getfamily_req *req)
 {
 	return 0;
 }
