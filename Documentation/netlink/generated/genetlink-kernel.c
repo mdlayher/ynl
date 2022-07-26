@@ -14,7 +14,7 @@ struct genlctrl_operation {
 	u32 op_id;
 	u32 op_flags;
 };
-void genlctrl_operation_free(struct genlctrl_operation *);
+void genlctrl_operation_free(struct genlctrl_operation *req);
 
 // CTRL_CMD_GETFAMILY
 struct genlctrl_getfamily_req {
@@ -24,7 +24,7 @@ struct genlctrl_getfamily_req {
 	u16 family_id;
 	char family_name[GENL_NAMSIZ];
 };
-void genlctrl_getfamily_req_free(struct genlctrl_getfamily_req *getfamily);
+void genlctrl_getfamily_req_free(struct genlctrl_getfamily_req *req);
 
 struct genlctrl_getfamily_rsp {
 	u32 family_id_present:1;
@@ -42,7 +42,7 @@ struct genlctrl_getfamily_rsp {
 	unsigned int n_ops;
 	struct genlctrl_operation *ops;
 };
-void genlctrl_getfamily_rsp_free(struct genlctrl_getfamily_rsp *getfamily);
+void genlctrl_getfamily_rsp_free(struct genlctrl_getfamily_rsp *req);
 void genlctrl_getfamily_req_parse(const struct nlattr **tb, struct genlctrl_getfamily_req *req);
 const struct nla_policy genlctrl_getfamily_policy[];
 

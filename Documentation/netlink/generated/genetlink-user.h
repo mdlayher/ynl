@@ -5,7 +5,7 @@
 #include <linux/genetlink.h>
 
 // CTRL_CMD_GETFAMILY
-int genlctrl_getfamily(struct genlctrl_getfamily_req *req)
+int genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req)
 {
 	return 0;
 }

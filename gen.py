@@ -110,7 +110,7 @@ def type_name(ri, direction):
 
 def print_prototype(ri, direction, terminate=True):
     suffix = ');' if terminate else ')'
-    print(f"int {ri.family['name']}_{ri.op_name}({type_name(ri, direction)} *" +
+    print(f"int {ri.family['name']}_{ri.op_name}(struct ynl_sock *ys, {type_name(ri, direction)} *" +
           f"{direction_to_suffix[direction][1:]}{suffix}")
 
 
@@ -140,7 +140,7 @@ def _print_type(ri, direction, type_list):
         attribute_member(ri, ri.attr_space, arg, prototype=False, suffix=';')
     print("};")
     print(f"void {ri.family['name']}{suffix}_free(" +
-          f"struct {ri.family['name']}{suffix} *{ri.op_name});")
+          f"struct {ri.family['name']}{suffix} *req);")
 
 
 def print_type(ri, direction):
