@@ -5,6 +5,7 @@
 #include <linux/genetlink.h>
 
 #include <stdlib.h>
+#include <string.h>
 #include "genetlink-user.h"
 #include "user.h"
 

@@ -219,6 +219,8 @@ void ynl_sock_destroy(struct ynl_sock *ys)
 
 int main(int argc, char **argv)
 {
+	struct genlctrl_getfamily_rsp *rsp;
+	struct genlctrl_getfamily_req req;
 	struct ynl_sock *ys;
 
 	if (argc < 2)
@@ -229,6 +231,15 @@ int main(int argc, char **argv)
 		return 1;
 
 	printf("Loaded family id is %u\n", ys->family_id);
+
+	memset(&req, 0, sizeof(req));
+	genlctrl_getfamily_req_set_family_name(&req, argv[1]);
+
+	rsp = genlctrl_getfamily(ys, &req);
+	if (rsp) {
+		printf("YS response family id %u\n", rsp->family_id);
+		free(rsp);
+	}
 
 	ynl_sock_destroy(ys);
 	return 0;

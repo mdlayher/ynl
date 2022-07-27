@@ -64,7 +64,14 @@ def attribute_policy(family, space, attr, prototype=True, suffix=""):
     print(f"\t[{aspace['name-prefix']}{attr.upper()}] = {mem},")
 
 
-def attribute_member(ri, space, attr, prototype=True, suffix=""):
+def _attribute_member_len(spec):
+    if spec['len'][-4:] == " - 1":
+        return f"{spec['len'][:-4]}"
+    else:
+        return f"{spec['len']} + 1"
+
+
+def _attribute_member(ri, space, attr, prototype=True, suffix=""):
     spec = ri.family["attributes"]["list"][space]["list"][attr]
 
     t = spec['type']
@@ -73,10 +80,7 @@ def attribute_member(ri, space, attr, prototype=True, suffix=""):
             t = 'const char *'
         else:
             t = 'char '
-            if spec['len'][-4:] == " - 1":
-                suffix = f"[{spec['len'][:-4]}]" + suffix
-            else:
-                suffix = f"[{spec['len']} + 1]" + suffix
+            suffix = f'[{_attribute_member_len(spec)}]{suffix}'
     elif t == 'array-nest':
         t = f"struct {ri.family['name']}_{spec['nested-attributes']} *"
         if not prototype:
@@ -85,7 +89,11 @@ def attribute_member(ri, space, attr, prototype=True, suffix=""):
         pfx = '__' if ri.ku_space == 'user' else ''
         t = pfx + t + ' '
 
-    print(f"\t{t}{attr}{suffix}")
+    return f"{t}{attr}{suffix}"
+
+
+def attribute_member(ri, space, attr, prototype=True, suffix=""):
+    print(f"\t{_attribute_member(ri, space, attr, prototype, suffix)}")
 
 
 def attribute_pres_member(ri, space, attr, suffix=""):
@@ -97,6 +105,29 @@ def attribute_pres_member(ri, space, attr, suffix=""):
 
     print(f"\t{pfx}u32 {attr}_present:1{suffix}")
     return True
+
+
+def attribute_setter(ri, space, attr, direction):
+    spec = ri.family["attributes"]["list"][space]["list"][attr]
+
+    if spec['type'] in scalars:
+        pass
+    elif spec['type'] == 'nul-string':
+        pass
+    else:
+        return
+
+    print('static inline void')
+    print(f'{op_prefix(ri, direction)}_set_{attr}({type_name(ri, direction)} *req, ' +
+          f'{_attribute_member(ri, space, attr, prototype=True)})')
+    print('{')
+    print(f'\treq->{attr}_present = 1;')
+    if spec['type'] in scalars:
+        print(f'\treq->{attr} = {attr};')
+    elif spec['type'] == 'nul-string':
+        print(f'\tstrncpy(req->{attr}, {attr}, sizeof(req->{attr}));')
+        print(f'\treq->{attr}[{spec["len"]}] = 0;')
+    print('}')
 
 
 def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
@@ -113,9 +144,13 @@ def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
     print('\t}')
 
 
-def type_name(ri, direction):
+def op_prefix(ri, direction):
     suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
-    return f"struct {ri.family['name']}{suffix}"
+    return f"{ri.family['name']}{suffix}"
+
+
+def type_name(ri, direction):
+    return f"struct {op_prefix(ri, direction)}"
 
 
 def print_prototype(ri, direction, terminate=True):
@@ -167,7 +202,17 @@ def print_type_full(ri, aspace):
 
 
 def print_type_helpers(ri, direction):
+    type_list = ri.op[ri.op_mode][direction]['attributes']
     suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
+
+    if ri.ku_space == 'user' and direction == 'request':
+        if type_list:
+            print()
+        for arg in type_list:
+            attribute_setter(ri, ri.attr_space, arg, direction)
+        if type_list:
+            print()
+
     print(f"void {ri.family['name']}{suffix}_free(" +
           f"struct {ri.family['name']}{suffix} *req);")
 
@@ -247,6 +292,7 @@ def main():
     if args.mode == "user":
         if not args.header:
             print("#include <stdlib.h>")
+            print("#include <string.h>")
             for h in args.user_header:
                 print(f'#include "{h}"')
         else:

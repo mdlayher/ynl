@@ -23,6 +23,21 @@ struct genlctrl_getfamily_req {
 	__u16 family_id;
 	char family_name[GENL_NAMSIZ];
 };
+
+static inline void
+genlctrl_getfamily_req_set_family_id(struct genlctrl_getfamily_req *req, __u16 family_id)
+{
+	req->family_id_present = 1;
+	req->family_id = family_id;
+}
+static inline void
+genlctrl_getfamily_req_set_family_name(struct genlctrl_getfamily_req *req, const char *family_name)
+{
+	req->family_name_present = 1;
+	strncpy(req->family_name, family_name, sizeof(req->family_name));
+	req->family_name[GENL_NAMSIZ - 1] = 0;
+}
+
 void genlctrl_getfamily_req_free(struct genlctrl_getfamily_req *req);
 
 struct genlctrl_getfamily_rsp {
