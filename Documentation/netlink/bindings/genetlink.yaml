@@ -52,6 +52,11 @@ operations:
 
       do:
         request:
+          interfaces:
+            by_id:
+              - family_id
+            by_name:
+              - family_name
           attributes:
             - family_id
             - family_name

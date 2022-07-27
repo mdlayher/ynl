@@ -39,6 +39,8 @@ direction_to_suffix = {
     '': ''
 }
 
+# TODO: render interfaces
+
 
 def rdir(direction):
     if direction == 'reply':
