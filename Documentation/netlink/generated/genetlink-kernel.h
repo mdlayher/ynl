@@ -14,7 +14,6 @@ struct genlctrl_operation {
 	u32 op_id;
 	u32 op_flags;
 };
-void genlctrl_operation_free(struct genlctrl_operation *req);
 
 // CTRL_CMD_GETFAMILY
 struct genlctrl_getfamily_req {
@@ -43,6 +42,7 @@ struct genlctrl_getfamily_rsp {
 	struct genlctrl_operation *ops;
 };
 void genlctrl_getfamily_rsp_free(struct genlctrl_getfamily_rsp *req);
+
 void genlctrl_getfamily_req_parse(const struct nlattr **tb, struct genlctrl_getfamily_req *req);
 const struct nla_policy genlctrl_getfamily_policy[];
 

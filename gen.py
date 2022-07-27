@@ -156,8 +156,6 @@ def _print_type(ri, direction, type_list):
     for arg in type_list:
         attribute_member(ri, ri.attr_space, arg, prototype=False, suffix=';')
     print("};")
-    print(f"void {ri.family['name']}{suffix}_free(" +
-          f"struct {ri.family['name']}{suffix} *req);")
 
 
 def print_type(ri, direction):
@@ -166,6 +164,20 @@ def print_type(ri, direction):
 
 def print_type_full(ri, aspace):
     return _print_type(ri, "", aspace)
+
+
+def print_type_helpers(ri, direction):
+    suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
+    print(f"void {ri.family['name']}{suffix}_free(" +
+          f"struct {ri.family['name']}{suffix} *req);")
+
+
+def print_req_type_helpers(ri):
+    print_type_helpers(ri, "request")
+
+
+def print_rsp_type_helpers(ri):
+    print_type_helpers(ri, "reply")
 
 
 def print_parse_prototype(ri, direction, terminate=True):
@@ -261,8 +273,11 @@ def main():
                 ri = RenderInfo(parsed, args.mode, op, op_name, "do")
 
                 print_req_type(ri)
+                print_req_type_helpers(ri)
                 print()
                 print_rsp_type(ri)
+                print_rsp_type_helpers(ri)
+                print()
 
                 if args.mode == "user":
                     print_req_prototype(ri)
