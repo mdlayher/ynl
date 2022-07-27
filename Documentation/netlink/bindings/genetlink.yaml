@@ -52,15 +52,17 @@ operations:
 
       do:
         request:
-          - family_id
-          - family_name
+          attributes:
+            - family_id
+            - family_name
         reply: &getfamily-do-reply
-          - family_id
-          - family_name
-          - version
-          - hdrsize
-          - maxattr
-          - ops
+          attributes:
+            - family_id
+            - family_name
+            - version
+            - hdrsize
+            - maxattr
+            - ops
       dump:
         reply: *getfamily-do-reply
 

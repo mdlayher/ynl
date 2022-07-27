@@ -159,7 +159,7 @@ def _print_type(ri, direction, type_list):
 
 
 def print_type(ri, direction):
-    return _print_type(ri, direction, ri.op[ri.op_mode][direction])
+    return _print_type(ri, direction, ri.op[ri.op_mode][direction]['attributes'])
 
 
 def print_type_full(ri, aspace):
@@ -177,7 +177,7 @@ def print_parse_prototype(ri, direction, terminate=True):
 def print_parse_kernel(ri, direction):
     print_parse_prototype(ri, direction, terminate=False)
     print('{')
-    for arg in ri.op[ri.op_mode][direction]:
+    for arg in ri.op[ri.op_mode][direction]['attributes']:
         attribute_parse_kernel(ri.family, ri.attr_space, arg, prototype=False, suffix=';')
     print("}")
 
@@ -197,7 +197,7 @@ def print_req_policy_fwd(ri, terminate=True):
 
 def print_req_policy(ri):
     print_req_policy_fwd(ri, terminate=False)
-    for arg in ri.op[ri.op_mode]["request"]:
+    for arg in ri.op[ri.op_mode]["request"]['attributes']:
         attribute_policy(ri.family, ri.attr_space, arg)
     print("};")
 
