@@ -20,4 +20,7 @@ struct ynl_sock {
 	unsigned char buf[];
 };
 
+struct nlmsghdr *
+ynl_gemsg_start_req(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version);
+
 #endif

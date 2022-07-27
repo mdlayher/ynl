@@ -50,6 +50,14 @@ def rdir(direction):
     return direction
 
 
+def op_enum_name(ri):
+    return f"{ri.family['operations']['name-prefix']}{ri.op_name.upper()}"
+
+
+def attr_enum_name(ri, attr):
+    return f"{ri.family['attributes']['list'][ri.attr_space]['name-prefix']}{attr.upper()}"
+
+
 def attribute_policy(family, space, attr, prototype=True, suffix=""):
     aspace = family["attributes"]["list"][space]
     spec = aspace["list"][attr]
@@ -130,6 +138,20 @@ def attribute_setter(ri, space, attr, direction):
     print('}')
 
 
+def attribute_put(ri, attr, var):
+    spec = ri.family["attributes"]["list"][ri.attr_space]["list"][attr]
+
+    if spec['type'] in scalars:
+        t = spec['type']
+    elif spec['type'] == 'nul-string':
+        t = 'strz'
+    else:
+        return
+
+    print(f"\tif ({var}->{attr}_present)")
+    print(f"\t\tmnl_attr_put_{t}(nlh, {attr_enum_name(ri, attr)}, {var}->{attr});")
+
+
 def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
     aspace = family["attributes"]["list"][space]
     spec = aspace["list"][attr]
@@ -170,6 +192,12 @@ def print_req(ri):
     print_prototype(ri, direction, terminate=False)
     print('{')
     print(f"\t{type_name(ri, rdir(direction))} *rsp;")
+    print(f'\tstruct nlmsghdr *nlh;')
+    print()
+    print(f'\tnlh = ynl_gemsg_start_req(ys, GENL_ID_CTRL, {op_enum_name(ri)}, 1);')
+    print()
+    for arg in ri.op[ri.op_mode]["request"]['attributes']:
+        attribute_put(ri, arg, "req")
     print()
     print("\trsp = calloc(1, sizeof(*rsp));")
     print()
@@ -293,6 +321,8 @@ def main():
         if not args.header:
             print("#include <stdlib.h>")
             print("#include <string.h>")
+            print("#include <libmnl/libmnl.h>")
+            print()
             for h in args.user_header:
                 print(f'#include "{h}"')
         else:

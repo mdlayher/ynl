@@ -98,9 +98,6 @@ struct nlmsghdr *ynl_msg_start(struct ynl_sock *ys, __u32 id, __u16 flags)
 {
 	struct nlmsghdr *nlh;
 
-	if (ys->nlh)
-		err("message already started\n");
-
 	nlh = ys->nlh = mnl_nlmsg_put_header(ys->buf);
 	nlh->nlmsg_type	= id;
 	nlh->nlmsg_flags = flags;
