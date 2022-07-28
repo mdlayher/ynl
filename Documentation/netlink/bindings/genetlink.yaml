@@ -10,7 +10,7 @@ headers:
   kernel: linux/genetlink.h
 
 attributes:
-  list:
+  spaces:
     main:
       name-prefix: CTRL_ATTR_
       list:

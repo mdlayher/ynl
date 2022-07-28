@@ -10,8 +10,25 @@ class Family:
         with open(file_name, "r") as stream:
             self.yaml = yaml.safe_load(stream)
 
+        self.root_spaces = set()
+        self.pure_nested_spaces = set()
+
+        self._load_root_spaces()
+        self._load_nested_spaces()
+
     def __getitem__(self, key):
         return self.yaml[key]
+
+    def _load_root_spaces(self):
+        for op_name, op in self.yaml['operations']['list'].items():
+            self.root_spaces.add(op['attribute-space'])
+
+    def _load_nested_spaces(self):
+        for root_space in self.root_spaces:
+            for attr, spec in self.yaml['attributes']['spaces'][root_space]['list'].items():
+                if 'nested-attributes' in spec:
+                    if spec['nested-attributes'] not in self.root_spaces:
+                        self.pure_nested_spaces.add(spec['nested-attributes'])
 
 
 class RenderInfo:
@@ -59,7 +76,7 @@ def op_enum_name(ri):
 
 
 def attr_enum_name(ri, attr):
-    return f"{ri.family['attributes']['list'][ri.attr_space]['name-prefix']}{attr.upper()}"
+    return f"{ri.family['attributes']['spaces'][ri.attr_space]['name-prefix']}{attr.upper()}"
 
 
 def op_prefix(ri, direction):
@@ -72,7 +89,7 @@ def type_name(ri, direction):
 
 
 def attribute_policy(family, space, attr, prototype=True, suffix=""):
-    aspace = family["attributes"]["list"][space]
+    aspace = family["attributes"]["spaces"][space]
     spec = aspace["list"][attr]
     policy = 'NLA_' + spec['type'].upper()
     policy = policy.replace('-', '_')
@@ -93,7 +110,7 @@ def _attribute_member_len(spec):
 
 
 def _attribute_member(ri, space, attr, prototype=True, suffix=""):
-    spec = ri.family["attributes"]["list"][space]["list"][attr]
+    spec = ri.family["attributes"]["spaces"][space]["list"][attr]
 
     t = spec['type']
     if t == "nul-string":
@@ -120,7 +137,7 @@ def attribute_member(ri, space, attr, prototype=True, suffix=""):
 
 
 def attribute_pres_member(ri, space, attr, suffix=""):
-    spec = ri.family["attributes"]["list"][space]["list"][attr]
+    spec = ri.family["attributes"]["spaces"][space]["list"][attr]
     pfx = '__' if ri.ku_space == 'user' else ''
 
     if spec['type'] == 'array-nest':
@@ -131,7 +148,7 @@ def attribute_pres_member(ri, space, attr, suffix=""):
 
 
 def attribute_setter(ri, space, attr, direction):
-    spec = ri.family["attributes"]["list"][space]["list"][attr]
+    spec = ri.family["attributes"]["spaces"][space]["list"][attr]
     var = "req"
 
     if spec['type'] in scalars:
@@ -155,7 +172,7 @@ def attribute_setter(ri, space, attr, direction):
 
 
 def attribute_put(ri, attr, var):
-    spec = ri.family["attributes"]["list"][ri.attr_space]["list"][attr]
+    spec = ri.family["attributes"]["spaces"][ri.attr_space]["list"][attr]
 
     if spec['type'] in scalars:
         t = spec['type']
@@ -169,7 +186,7 @@ def attribute_put(ri, attr, var):
 
 
 def attribute_get(ri, attr, var):
-    spec = ri.family["attributes"]["list"][ri.attr_space]["list"][attr]
+    spec = ri.family["attributes"]["spaces"][ri.attr_space]["list"][attr]
 
     if spec['type'] in scalars:
         get_lines = [f"{var}->{attr} = mnl_attr_get_{spec['type']}(attr);"]
@@ -193,7 +210,7 @@ def attribute_get(ri, attr, var):
 
 
 def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
-    aspace = family["attributes"]["list"][space]
+    aspace = family["attributes"]["spaces"][space]
     spec = aspace["list"][attr]
 
     t = spec['type']
@@ -382,17 +399,11 @@ def main():
 
     if args.header:
         print('// Common nested types')
-        for attr_space in parsed['attributes']['list']:
-            aspace = parsed['attributes']['list'][attr_space]['list']
-            for attr in aspace:
-                aspec = aspace[attr]
-                if 'nested-attributes' in aspec:
-                    ri = RenderInfo(parsed, args.mode, "", "", "", aspec['nested-attributes'])
-                    print_type_full(ri, parsed['attributes']['list'][aspec['nested-attributes']]['list'])
+        for attr_space in parsed.pure_nested_spaces:
+            ri = RenderInfo(parsed, args.mode, "", "", "", attr_space)
+            print_type_full(ri, parsed['attributes']['spaces'][attr_space]['list'])
 
-        for op_name in parsed['operations']['list']:
-            op = parsed['operations']['list'][op_name]
-
+        for op_name, op in parsed['operations']['list'].items():
             print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
 
             if op and "do" in op:
@@ -413,9 +424,7 @@ def main():
                 print()
 
     if not args.header:
-        for op_name in parsed['operations']['list']:
-            op = parsed['operations']['list'][op_name]
-
+        for op_name, op in parsed['operations']['list'].items():
             print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
 
             if op and "do" in op:
