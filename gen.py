@@ -38,6 +38,8 @@ class Family:
                         if nested in self.inherited_members and self.inherited_members[nested] != tv_set:
                             raise Exception("Inheriting different members not supported")
                         self.inherited_members[nested] = tv_set
+                    elif spec['type'] == 'array-nest':
+                        self.inherited_members[nested] = {'idx'}
                     else:
                         self.inherited_members[nested] = set()
 
@@ -284,7 +286,7 @@ def print_req(ri):
     print('}')
 
 
-def _print_type(ri, direction, type_list, inherited_list=[]):
+def _print_type(ri, direction, type_list, inherited_list={}):
     suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
 
     print(f"struct {ri.family['name']}{suffix} " + '{')
@@ -295,7 +297,7 @@ def _print_type(ri, direction, type_list, inherited_list=[]):
     if any_presence:
         print()
 
-    for arg in inherited_list:
+    for arg in sorted(inherited_list):
         print(f"\t__u32 {arg};")
 
     for arg in type_list:

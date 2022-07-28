@@ -39,6 +39,7 @@ struct genlctrl_operation {
 	__u32 id_present:1;
 	__u32 flags_present:1;
 
+	__u32 idx;
 	__u32 id;
 	__u32 flags;
 };
