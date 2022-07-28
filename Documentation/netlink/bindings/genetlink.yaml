@@ -40,7 +40,7 @@ attributes:
           nested-attributes: policy
         policy:
           type: nest-type-value
-          type-value: [ policy_idx, attr_idx ]
+          type-value: [ current_policy_idx, attr_idx ]
           nested-attributes: nl-policy
 
     operation:
