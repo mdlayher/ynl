@@ -34,13 +34,56 @@ attributes:
           nested-attributes: operation
         op: &op
           type: u32
+        op_policy:
+          type: nest-type-value
+          type-value: [ cmd ]
+          nested-attributes: policy
+        policy:
+          type: nest-type-value
+          type-value: [ policy_idx, attr_idx ]
+          nested-attributes: nl-policy
 
     operation:
       name-prefix: CTRL_ATTR_OP_
       list:
-        op_id: &op_id
+        id: &op_id
           type: u32
-        op_flags: &op_flags
+        flags: &op_flags
+          type: u32
+
+    policy:
+      name-prefix: CTRL_ATTR_POLICY_
+      list:
+        do:
+          type: u32
+        dump:
+          type: u32
+
+    nl-policy:
+      name-prefix: NL_POLICY_TYPE_ATTR_
+      list:
+        type:
+          type: u32
+          required: True
+        min_value_u:
+          type: u64
+        max_value_u:
+          type: u64
+        min_value_s:
+          type: s64
+        max_value_s:
+          type: s64
+        mask:
+          type: u64
+        min_length:
+          type: u32
+        max_length:
+          type: u32
+        policy_idx:
+          type: u32
+        policy_maxtype:
+          type: u32
+        bitfiled32_mask:
           type: u32
 
 operations:
@@ -72,3 +115,15 @@ operations:
         reply: *getfamily-do-reply
 
     getpolicy:
+      attribute-space: main
+
+      dump:
+        request:
+          attributes:
+            - family_id
+            - family_name
+            - op
+        reply:
+            - family_id
+            - op_policy
+            - policy

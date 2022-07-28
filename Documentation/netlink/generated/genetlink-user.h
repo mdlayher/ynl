@@ -8,11 +8,45 @@ struct ynl_sock;
 
 // Common nested types
 struct genlctrl_operation {
-	__u32 op_id_present:1;
-	__u32 op_flags_present:1;
+	__u32 id_present:1;
+	__u32 flags_present:1;
 
-	__u32 op_id;
-	__u32 op_flags;
+	__u32 id;
+	__u32 flags;
+};
+
+struct genlctrl_policy {
+	__u32 do_present:1;
+	__u32 dump_present:1;
+
+	__u32 do_;
+	__u32 dump;
+};
+
+struct genlctrl_nl_policy {
+	__u32 type_present:1;
+	__u32 min_value_u_present:1;
+	__u32 max_value_u_present:1;
+	__u32 min_value_s_present:1;
+	__u32 max_value_s_present:1;
+	__u32 mask_present:1;
+	__u32 min_length_present:1;
+	__u32 max_length_present:1;
+	__u32 policy_idx_present:1;
+	__u32 policy_maxtype_present:1;
+	__u32 bitfiled32_mask_present:1;
+
+	__u32 type;
+	__u64 min_value_u;
+	__u64 max_value_u;
+	__s64 min_value_s;
+	__s64 max_value_s;
+	__u64 mask;
+	__u32 min_length;
+	__u32 max_length;
+	__u32 policy_idx;
+	__u32 policy_maxtype;
+	__u32 bitfiled32_mask;
 };
 
 // CTRL_CMD_GETFAMILY
@@ -55,6 +89,7 @@ struct genlctrl_getfamily_rsp {
 	unsigned int n_ops;
 	struct genlctrl_operation *ops;
 };
+
 void genlctrl_getfamily_rsp_free(struct genlctrl_getfamily_rsp *req);
 
 struct genlctrl_getfamily_rsp *

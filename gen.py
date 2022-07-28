@@ -28,15 +28,19 @@ class RenderInfo:
         if op:
             self.type_name = op_name
         else:
-            self.type_name = attr_space
+            self.type_name = attr_space.replace('-', '_')
 
 
-scalars = {'u8', 'u16', 'u32'}
+scalars = {'u8', 'u16', 'u32', 'u64', 's64'}
 
 direction_to_suffix = {
     'reply': '_rsp',
     'request': '_req',
     '': ''
+}
+
+c_kw = {
+    'do'
 }
 
 # TODO: render interfaces
@@ -56,6 +60,15 @@ def op_enum_name(ri):
 
 def attr_enum_name(ri, attr):
     return f"{ri.family['attributes']['list'][ri.attr_space]['name-prefix']}{attr.upper()}"
+
+
+def op_prefix(ri, direction):
+    suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
+    return f"{ri.family['name']}{suffix}"
+
+
+def type_name(ri, direction):
+    return f"struct {op_prefix(ri, direction)}"
 
 
 def attribute_policy(family, space, attr, prototype=True, suffix=""):
@@ -97,6 +110,8 @@ def _attribute_member(ri, space, attr, prototype=True, suffix=""):
         pfx = '__' if ri.ku_space == 'user' else ''
         t = pfx + t + ' '
 
+    if attr in c_kw:
+        attr += '_'
     return f"{t}{attr}{suffix}"
 
 
@@ -191,15 +206,6 @@ def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
     print('\t}')
 
 
-def op_prefix(ri, direction):
-    suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
-    return f"{ri.family['name']}{suffix}"
-
-
-def type_name(ri, direction):
-    return f"struct {op_prefix(ri, direction)}"
-
-
 def print_prototype(ri, direction, terminate=True):
     suffix = ');' if terminate else ')'
 
@@ -264,6 +270,7 @@ def _print_type(ri, direction, type_list):
     for arg in type_list:
         attribute_member(ri, ri.attr_space, arg, prototype=False, suffix=';')
     print("};")
+    print()
 
 
 def print_type(ri, direction):
@@ -279,8 +286,6 @@ def print_type_helpers(ri, direction):
     suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
 
     if ri.ku_space == 'user' and direction == 'request':
-        if type_list:
-            print()
         for arg in type_list:
             attribute_setter(ri, ri.attr_space, arg, direction)
         if type_list:
@@ -384,7 +389,6 @@ def main():
                 if 'nested-attributes' in aspec:
                     ri = RenderInfo(parsed, args.mode, "", "", "", aspec['nested-attributes'])
                     print_type_full(ri, parsed['attributes']['list'][aspec['nested-attributes']]['list'])
-        print()
 
         for op_name in parsed['operations']['list']:
             op = parsed['operations']['list'][op_name]
