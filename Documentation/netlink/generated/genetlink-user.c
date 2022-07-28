@@ -12,6 +12,107 @@
 #include "genetlink-user.h"
 #include "user.h"
 
+// Common nested types
+int genlctrl_nl_policy_parse(struct genlctrl_nl_policy *dst,
+	const struct nlattr *nested, __u32 current_policy_idx, __u32 attr_idx)
+{
+	const struct nlattr *attr;
+
+	dst->current_policy_idx = current_policy_idx;
+	dst->attr_idx = attr_idx;
+
+	mnl_attr_for_each_nested(attr, nested) {
+		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_TYPE) {
+			dst->type_present = 1;
+			dst->type = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MIN_VALUE_U) {
+			dst->min_value_u_present = 1;
+			dst->min_value_u = mnl_attr_get_u64(attr);
+		}
+		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MAX_VALUE_U) {
+			dst->max_value_u_present = 1;
+			dst->max_value_u = mnl_attr_get_u64(attr);
+		}
+		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MIN_VALUE_S) {
+			dst->min_value_s_present = 1;
+			dst->min_value_s = mnl_attr_get_u64(attr);
+		}
+		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MAX_VALUE_S) {
+			dst->max_value_s_present = 1;
+			dst->max_value_s = mnl_attr_get_u64(attr);
+		}
+		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MASK) {
+			dst->mask_present = 1;
+			dst->mask = mnl_attr_get_u64(attr);
+		}
+		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MIN_LENGTH) {
+			dst->min_length_present = 1;
+			dst->min_length = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MAX_LENGTH) {
+			dst->max_length_present = 1;
+			dst->max_length = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_POLICY_IDX) {
+			dst->policy_idx_present = 1;
+			dst->policy_idx = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_POLICY_MAXTYPE) {
+			dst->policy_maxtype_present = 1;
+			dst->policy_maxtype = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_BITFIELD32_MASK) {
+			dst->bitfield32_mask_present = 1;
+			dst->bitfield32_mask = mnl_attr_get_u32(attr);
+		}
+	}
+
+	return 0;
+}
+
+int genlctrl_operation_parse(struct genlctrl_operation *dst,
+	const struct nlattr *nested, __u32 idx)
+{
+	const struct nlattr *attr;
+
+	dst->idx = idx;
+
+	mnl_attr_for_each_nested(attr, nested) {
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_OP_ID) {
+			dst->id_present = 1;
+			dst->id = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_OP_FLAGS) {
+			dst->flags_present = 1;
+			dst->flags = mnl_attr_get_u32(attr);
+		}
+	}
+
+	return 0;
+}
+
+int genlctrl_policy_parse(struct genlctrl_policy *dst,
+	const struct nlattr *nested, __u32 cmd)
+{
+	const struct nlattr *attr;
+
+	dst->cmd = cmd;
+
+	mnl_attr_for_each_nested(attr, nested) {
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_POLICY_DO) {
+			dst->do_present = 1;
+			dst->do_ = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_POLICY_DUMP) {
+			dst->dump_present = 1;
+			dst->dump = mnl_attr_get_u32(attr);
+		}
+	}
+
+	return 0;
+}
+
 // CTRL_CMD_GETFAMILY
 struct genlctrl_getfamily_rsp *
 genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req)

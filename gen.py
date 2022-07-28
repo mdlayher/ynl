@@ -14,11 +14,20 @@ class Family:
         self.pure_nested_spaces = set()
         self.inherited_members = dict()
 
+        self._compute_members()
         self._load_root_spaces()
         self._load_nested_spaces()
 
     def __getitem__(self, key):
         return self.yaml[key]
+
+    def _compute_members(self):
+        for _, space in self.yaml['attributes']['spaces'].items():
+            for name, attr in space['list'].items():
+                c_name = name
+                if c_name in c_kw:
+                    c_name += '_'
+                attr['c_name'] = c_name
 
     def _load_root_spaces(self):
         for op_name, op in self.yaml['operations']['list'].items():
@@ -106,6 +115,14 @@ def type_name(ri, direction):
     return f"struct {op_prefix(ri, direction)}"
 
 
+def nest_op_prefix(ri, attr_space):
+    return f"{ri.family['name']}_{attr_space.replace('-', '_')}"
+
+
+def nest_type_name(ri, attr_space):
+    return f"struct {nest_op_prefix(ri, attr_space)}"
+
+
 def attribute_policy(family, space, attr, prototype=True, suffix=""):
     aspace = family["attributes"]["spaces"][space]
     spec = aspace["list"][attr]
@@ -145,9 +162,7 @@ def _attribute_member(ri, space, attr, prototype=True, suffix=""):
         pfx = '__' if ri.ku_space == 'user' else ''
         t = pfx + t + ' '
 
-    if attr in c_kw:
-        attr += '_'
-    return f"{t}{attr}{suffix}"
+    return f"{t}{spec['c_name']}{suffix}"
 
 
 def attribute_member(ri, space, attr, prototype=True, suffix=""):
@@ -194,6 +209,9 @@ def attribute_put(ri, attr, var):
 
     if spec['type'] in scalars:
         t = spec['type']
+        # mnl does not have a helper for signed types
+        if t[0] == 's':
+            t = 'u' + t[1:]
     elif spec['type'] == 'nul-string':
         t = 'strz'
     else:
@@ -207,10 +225,14 @@ def attribute_get(ri, attr, var):
     spec = ri.family["attributes"]["spaces"][ri.attr_space]["list"][attr]
 
     if spec['type'] in scalars:
-        get_lines = [f"{var}->{attr} = mnl_attr_get_{spec['type']}(attr);"]
+        # mnl does not have a helper for signed types
+        t = spec['type']
+        if t[0] == 's':
+            t = 'u' + t[1:]
+        get_lines = [f"{var}->{spec['c_name']} = mnl_attr_get_{t}(attr);"]
     elif spec['type'] == 'nul-string':
-        get_lines = [f"strncpy({var}->{attr}, mnl_attr_get_str(attr), {spec['len']});",
-                     f"{var}->{attr}[{spec['len']}] = 0;"]
+        get_lines = [f"strncpy({var}->{spec['c_name']}, mnl_attr_get_str(attr), {spec['len']});",
+                     f"{var}->{spec['c_name']}[{spec['len']}] = 0;"]
     elif spec['type'] == 'array-nest':
         get_lines = ['const struct nlattr *attr2;',
                      '',
@@ -252,6 +274,36 @@ def print_prototype(ri, direction, terminate=True):
 
 def print_req_prototype(ri):
     print_prototype(ri, "request")
+
+
+def print_rsp_nested(ri, attr_space):
+    struct_type = nest_type_name(ri, attr_space)
+
+    extra_args = ''
+    for arg in ri.family.inherited_members[attr_space]:
+        extra_args += f", __u32 {arg}"
+
+    print(f"int {nest_op_prefix(ri, attr_space)}_parse({struct_type} *dst,")
+    print(f"\tconst struct nlattr *nested{extra_args})")
+    print('{')
+    print('\tconst struct nlattr *attr;')
+    print()
+
+    for arg in ri.family.inherited_members[attr_space]:
+        print(f'\tdst->{arg} = {arg};')
+    if ri.family.inherited_members[attr_space]:
+        print()
+
+    print("\tmnl_attr_for_each_nested(attr, nested) {")
+
+    for arg in ri.family['attributes']['spaces'][attr_space]['list']:
+        attribute_get(ri, arg, "dst")
+
+    print('\t}')
+    print()
+    print('\treturn 0;')
+    print('}')
+    print()
 
 
 def print_req(ri):
@@ -476,8 +528,13 @@ def main():
                     print_parse_prototype(ri, "request")
                     print_req_policy_fwd(ri)
                 print()
+    else:
+        if args.mode == "user":
+            print('// Common nested types')
+            for attr_space in sorted(parsed.pure_nested_spaces):
+                ri = RenderInfo(parsed, args.mode, "", "", "", attr_space)
+                print_rsp_nested(ri, attr_space)
 
-    if not args.header:
         for op_name, op in parsed['operations']['list'].items():
             print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
 

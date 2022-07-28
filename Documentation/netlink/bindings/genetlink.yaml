@@ -83,7 +83,7 @@ attributes:
           type: u32
         policy_maxtype:
           type: u32
-        bitfiled32_mask:
+        bitfield32_mask:
           type: u32
 
 operations:

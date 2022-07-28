@@ -219,6 +219,7 @@ int main(int argc, char **argv)
 	struct genlctrl_getfamily_rsp *rsp;
 	struct genlctrl_getfamily_req req;
 	struct ynl_sock *ys;
+	unsigned int i;
 
 	if (argc < 2)
 		return err_ret(1, "Usage: %s <family_name>\n", argv[0]);
@@ -232,9 +233,14 @@ int main(int argc, char **argv)
 
 	rsp = genlctrl_getfamily(ys, &req);
 	if (rsp) {
-		if (rsp->family_id_present && rsp->family_name_present)
+		if (rsp->family_id_present && rsp->family_name_present) {
 			printf("YS response family id %u name '%s' n_ops %d\n",
 			       rsp->family_id, rsp->family_name, rsp->n_ops);
+			for (i = 0; i < rsp->n_ops; i++)
+				printf("\top[%d]: cmd:%d flags:%x\n",
+				       rsp->ops[i].idx, rsp->ops[i].id,
+				       rsp->ops[i].flags);
+		}
 		free(rsp);
 	}
 

@@ -18,7 +18,7 @@ struct genlctrl_nl_policy {
 	__u32 max_length_present:1;
 	__u32 policy_idx_present:1;
 	__u32 policy_maxtype_present:1;
-	__u32 bitfiled32_mask_present:1;
+	__u32 bitfield32_mask_present:1;
 
 	__u32 attr_idx;
 	__u32 current_policy_idx;
@@ -32,7 +32,7 @@ struct genlctrl_nl_policy {
 	__u32 max_length;
 	__u32 policy_idx;
 	__u32 policy_maxtype;
-	__u32 bitfiled32_mask;
+	__u32 bitfield32_mask;
 };
 
 struct genlctrl_operation {
