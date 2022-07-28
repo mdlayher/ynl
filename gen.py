@@ -251,14 +251,20 @@ def print_req_prototype(ri):
 def print_req(ri):
     direction = "request"
     print_prototype(ri, direction, terminate=False)
-    print(f"""{'{'}
-	{type_name(ri, rdir(direction))} *rsp;
-	const struct nlattr *attr;
-	struct nlmsghdr *nlh;
-	int len, err;
+    print('{')
+    local_vars = [f'{type_name(ri, rdir(direction))} *rsp;',
+                  'const struct nlattr *attr;',
+                  'struct nlmsghdr *nlh;',
+                  'int len, err;']
 
-	nlh = ynl_gemsg_start_req(ys, GENL_ID_CTRL, {op_enum_name(ri)}, 1);
-""")
+    for var in local_vars:
+        print(f'\t{var}')
+    if local_vars:
+        print()
+
+    print(f"\tnlh = ynl_gemsg_start_req(ys, GENL_ID_CTRL, {op_enum_name(ri)}, 1);")
+    print()
+
     for arg in ri.op[ri.op_mode]["request"]['attributes']:
         attribute_put(ri, arg, "req")
     print("""
