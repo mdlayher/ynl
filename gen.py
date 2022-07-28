@@ -97,6 +97,11 @@ def op_prefix(ri, direction):
     return f"{ri.family['name']}{suffix}"
 
 
+def op_aspec(ri, attr):
+    aspace = ri.family["attributes"]["spaces"][ri.op['attribute-space']]
+    return aspace["list"][attr]
+
+
 def type_name(ri, direction):
     return f"struct {op_prefix(ri, direction)}"
 
@@ -209,6 +214,7 @@ def attribute_get(ri, attr, var):
     elif spec['type'] == 'array-nest':
         get_lines = ['const struct nlattr *attr2;',
                      '',
+                     f'attr_{attr} = attr;',
                      'mnl_attr_for_each_nested(attr2, attr)',
                      f'\t{var}->n_{attr}++;']
     else:
@@ -257,6 +263,15 @@ def print_req(ri):
                   'struct nlmsghdr *nlh;',
                   'int len, err;']
 
+    array_nests = set()
+    for arg in ri.op[ri.op_mode]["reply"]['attributes']:
+        aspec = op_aspec(ri, arg)
+        if aspec['type'] == 'array-nest':
+            local_vars.append(f'const struct nlattr *attr_{arg};')
+            array_nests.add(arg)
+    if array_nests:
+        local_vars.append('int i;')
+
     for var in local_vars:
         print(f'\t{var}')
     if local_vars:
@@ -288,6 +303,21 @@ def print_req(ri):
         attribute_get(ri, arg, "rsp")
 
     print("\t}")
+
+    if array_nests:
+        print()
+        for anest in sorted(array_nests):
+            aspec = op_aspec(ri, anest)
+            print(f'\t// {anest}')
+            print(f"\trsp->{anest} = calloc(rsp->n_{anest}, " +
+                  f"sizeof(struct {ri.family['name']}_{aspec['nested-attributes']}));")
+            print('\ti = 0;')
+            print(f"\tmnl_attr_for_each_nested(attr, attr_{anest})" + ' {')
+            print(f"\t\t{ri.family['name']}_{aspec['nested-attributes']}_parse(&rsp->ops[i], attr, i);")
+            print('\t\ti++;')
+            print('\t}')
+        print()
+
     print('\treturn rsp;')
     print('}')
 

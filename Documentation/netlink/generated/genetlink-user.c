@@ -20,6 +20,8 @@ genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req)
 	const struct nlattr *attr;
 	struct nlmsghdr *nlh;
 	int len, err;
+	const struct nlattr *attr_ops;
+	int i;
 
 	nlh = ynl_gemsg_start_req(ys, GENL_ID_CTRL, CTRL_CMD_GETFAMILY, 1);
 
@@ -67,10 +69,20 @@ genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req)
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_OPS) {
 			const struct nlattr *attr2;
 
+			attr_ops = attr;
 			mnl_attr_for_each_nested(attr2, attr)
 				rsp->n_ops++;
 		}
 	}
+
+	// ops
+	rsp->ops = calloc(rsp->n_ops, sizeof(struct genlctrl_operation));
+	i = 0;
+	mnl_attr_for_each_nested(attr, attr_ops) {
+		genlctrl_operation_parse(&rsp->ops[i], attr, i);
+		i++;
+	}
+
 	return rsp;
 }
 
