@@ -7,22 +7,6 @@
 struct ynl_sock;
 
 // Common nested types
-struct genlctrl_operation {
-	__u32 id_present:1;
-	__u32 flags_present:1;
-
-	__u32 id;
-	__u32 flags;
-};
-
-struct genlctrl_policy {
-	__u32 do_present:1;
-	__u32 dump_present:1;
-
-	__u32 do_;
-	__u32 dump;
-};
-
 struct genlctrl_nl_policy {
 	__u32 type_present:1;
 	__u32 min_value_u_present:1;
@@ -36,6 +20,8 @@ struct genlctrl_nl_policy {
 	__u32 policy_maxtype_present:1;
 	__u32 bitfiled32_mask_present:1;
 
+	__u32 attr_idx;
+	__u32 policy_idx;
 	__u32 type;
 	__u64 min_value_u;
 	__u64 max_value_u;
@@ -47,6 +33,23 @@ struct genlctrl_nl_policy {
 	__u32 policy_idx;
 	__u32 policy_maxtype;
 	__u32 bitfiled32_mask;
+};
+
+struct genlctrl_operation {
+	__u32 id_present:1;
+	__u32 flags_present:1;
+
+	__u32 id;
+	__u32 flags;
+};
+
+struct genlctrl_policy {
+	__u32 do_present:1;
+	__u32 dump_present:1;
+
+	__u32 cmd;
+	__u32 do_;
+	__u32 dump;
 };
 
 // CTRL_CMD_GETFAMILY

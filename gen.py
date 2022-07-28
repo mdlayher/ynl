@@ -38,6 +38,8 @@ class Family:
                         if nested in self.inherited_members and self.inherited_members[nested] != tv_set:
                             raise Exception("Inheriting different members not supported")
                         self.inherited_members[nested] = tv_set
+                    else:
+                        self.inherited_members[nested] = set()
 
 
 class RenderInfo:
@@ -282,7 +284,7 @@ def print_req(ri):
     print('}')
 
 
-def _print_type(ri, direction, type_list):
+def _print_type(ri, direction, type_list, inherited_list=[]):
     suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
 
     print(f"struct {ri.family['name']}{suffix} " + '{')
@@ -292,6 +294,9 @@ def _print_type(ri, direction, type_list):
             attribute_pres_member(ri, ri.attr_space, arg, suffix=';')
     if any_presence:
         print()
+
+    for arg in inherited_list:
+        print(f"\t__u32 {arg};")
 
     for arg in type_list:
         attribute_member(ri, ri.attr_space, arg, prototype=False, suffix=';')
@@ -303,8 +308,9 @@ def print_type(ri, direction):
     return _print_type(ri, direction, ri.op[ri.op_mode][direction]['attributes'])
 
 
-def print_type_full(ri, aspace):
-    return _print_type(ri, "", aspace)
+def print_type_full(ri, attr_space):
+    types = ri.family['attributes']['spaces'][attr_space]['list']
+    return _print_type(ri, "", types, ri.family.inherited_members[attr_space])
 
 
 def print_type_helpers(ri, direction):
@@ -408,9 +414,9 @@ def main():
 
     if args.header:
         print('// Common nested types')
-        for attr_space in parsed.pure_nested_spaces:
+        for attr_space in sorted(parsed.pure_nested_spaces):
             ri = RenderInfo(parsed, args.mode, "", "", "", attr_space)
-            print_type_full(ri, parsed['attributes']['spaces'][attr_space]['list'])
+            print_type_full(ri, attr_space)
 
         for op_name, op in parsed['operations']['list'].items():
             print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")

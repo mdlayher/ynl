@@ -7,22 +7,6 @@
 #include <linux/genetlink.h>
 
 // Common nested types
-struct genlctrl_policy {
-	u32 do_present:1;
-	u32 dump_present:1;
-
-	u32 do_;
-	u32 dump;
-};
-
-struct genlctrl_operation {
-	u32 id_present:1;
-	u32 flags_present:1;
-
-	u32 id;
-	u32 flags;
-};
-
 struct genlctrl_nl_policy {
 	u32 type_present:1;
 	u32 min_value_u_present:1;
@@ -36,6 +20,8 @@ struct genlctrl_nl_policy {
 	u32 policy_maxtype_present:1;
 	u32 bitfiled32_mask_present:1;
 
+	__u32 attr_idx;
+	__u32 policy_idx;
 	u32 type;
 	u64 min_value_u;
 	u64 max_value_u;
@@ -47,6 +33,23 @@ struct genlctrl_nl_policy {
 	u32 policy_idx;
 	u32 policy_maxtype;
 	u32 bitfiled32_mask;
+};
+
+struct genlctrl_operation {
+	u32 id_present:1;
+	u32 flags_present:1;
+
+	u32 id;
+	u32 flags;
+};
+
+struct genlctrl_policy {
+	u32 do_present:1;
+	u32 dump_present:1;
+
+	__u32 cmd;
+	u32 do_;
+	u32 dump;
 };
 
 // CTRL_CMD_GETFAMILY
