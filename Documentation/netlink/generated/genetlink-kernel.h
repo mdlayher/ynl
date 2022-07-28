@@ -31,7 +31,6 @@ struct genlctrl_getfamily_rsp {
 	u32 version_present:1;
 	u32 hdrsize_present:1;
 	u32 maxattr_present:1;
-	u32 ops_present:1;
 
 	u16 family_id;
 	char family_name[GENL_NAMSIZ];

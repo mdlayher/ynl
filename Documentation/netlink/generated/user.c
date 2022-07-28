@@ -233,8 +233,8 @@ int main(int argc, char **argv)
 	rsp = genlctrl_getfamily(ys, &req);
 	if (rsp) {
 		if (rsp->family_id_present && rsp->family_name_present)
-			printf("YS response family id %u name %s\n",
-			       rsp->family_id, rsp->family_name);
+			printf("YS response family id %u name '%s' n_ops %d\n",
+			       rsp->family_id, rsp->family_name, rsp->n_ops);
 		free(rsp);
 	}
 

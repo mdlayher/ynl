@@ -64,6 +64,12 @@ genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req)
 			rsp->maxattr_present = 1;
 			rsp->maxattr = mnl_attr_get_u32(attr);
 		}
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_OPS) {
+			const struct nlattr *attr2;
+
+			mnl_attr_for_each_nested(attr2, attr)
+				rsp->n_ops++;
+		}
 	}
 	return rsp;
 }

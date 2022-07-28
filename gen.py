@@ -108,7 +108,7 @@ def attribute_pres_member(ri, space, attr, suffix=""):
     spec = ri.family["attributes"]["list"][space]["list"][attr]
     pfx = '__' if ri.ku_space == 'user' else ''
 
-    if 'required' in spec:
+    if spec['type'] == 'array-nest':
         return False
 
     print(f"\t{pfx}u32 {attr}_present:1{suffix}")
@@ -161,13 +161,19 @@ def attribute_get(ri, attr, var):
     elif spec['type'] == 'nul-string':
         get_lines = [f"strncpy({var}->{attr}, mnl_attr_get_str(attr), {spec['len']});",
                      f"{var}->{attr}[{spec['len']}] = 0;"]
+    elif spec['type'] == 'array-nest':
+        get_lines = ['const struct nlattr *attr2;',
+                     '',
+                     'mnl_attr_for_each_nested(attr2, attr)',
+                     f'\t{var}->n_{attr}++;']
     else:
         return
 
-    print(f"""		if (mnl_attr_get_type(attr) == {attr_enum_name(ri, attr)}) {'{'}
-			{var}->{attr}_present = 1;""")
+    print(f"\t\tif (mnl_attr_get_type(attr) == {attr_enum_name(ri, attr)}) {'{'}")
+    if spec['type'] != 'array-nest':
+        print(f"\t\t\t{var}->{attr}_present = 1;")
     for l in get_lines:
-        print('\t\t\t' + l)
+        print('\t\t\t' + l if l else "")
     print('\t\t}')
 
 
