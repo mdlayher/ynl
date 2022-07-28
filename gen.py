@@ -12,6 +12,7 @@ class Family:
 
         self.root_spaces = set()
         self.pure_nested_spaces = set()
+        self.inherited_members = dict()
 
         self._load_root_spaces()
         self._load_nested_spaces()
@@ -27,8 +28,16 @@ class Family:
         for root_space in self.root_spaces:
             for attr, spec in self.yaml['attributes']['spaces'][root_space]['list'].items():
                 if 'nested-attributes' in spec:
-                    if spec['nested-attributes'] not in self.root_spaces:
-                        self.pure_nested_spaces.add(spec['nested-attributes'])
+                    nested = spec['nested-attributes']
+                    if nested not in self.root_spaces:
+                        self.pure_nested_spaces.add(nested)
+                    if 'type-value' in spec:
+                        tv_set = set(spec['type-value'])
+                        if nested in self.root_spaces:
+                            raise Exception("Inheriting members to a space used as root not supported")
+                        if nested in self.inherited_members and self.inherited_members[nested] != tv_set:
+                            raise Exception("Inheriting different members not supported")
+                        self.inherited_members[nested] = tv_set
 
 
 class RenderInfo:
