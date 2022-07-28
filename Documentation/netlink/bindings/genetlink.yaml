@@ -64,7 +64,7 @@ attributes:
       list:
         type:
           type: u32
-          required: True
+          presence: always
         min_value_u:
           type: u64
         max_value_u:
