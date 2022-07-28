@@ -117,6 +117,7 @@ def attribute_pres_member(ri, space, attr, suffix=""):
 
 def attribute_setter(ri, space, attr, direction):
     spec = ri.family["attributes"]["list"][space]["list"][attr]
+    var = "req"
 
     if spec['type'] in scalars:
         pass
@@ -126,15 +127,15 @@ def attribute_setter(ri, space, attr, direction):
         return
 
     print('static inline void')
-    print(f'{op_prefix(ri, direction)}_set_{attr}({type_name(ri, direction)} *req, ' +
+    print(f'{op_prefix(ri, direction)}_set_{attr}({type_name(ri, direction)} *{var}, ' +
           f'{_attribute_member(ri, space, attr, prototype=True)})')
     print('{')
-    print(f'\treq->{attr}_present = 1;')
+    print(f'\t{var}->{attr}_present = 1;')
     if spec['type'] in scalars:
-        print(f'\treq->{attr} = {attr};')
+        print(f'\t{var}->{attr} = {attr};')
     elif spec['type'] == 'nul-string':
-        print(f'\tstrncpy(req->{attr}, {attr}, sizeof(req->{attr}));')
-        print(f'\treq->{attr}[{spec["len"]}] = 0;')
+        print(f'\tstrncpy({var}->{attr}, {attr}, sizeof({var}->{attr}));')
+        print(f'\t{var}->{attr}[{spec["len"]}] = 0;')
     print('}')
 
 
@@ -150,6 +151,24 @@ def attribute_put(ri, attr, var):
 
     print(f"\tif ({var}->{attr}_present)")
     print(f"\t\tmnl_attr_put_{t}(nlh, {attr_enum_name(ri, attr)}, {var}->{attr});")
+
+
+def attribute_get(ri, attr, var):
+    spec = ri.family["attributes"]["list"][ri.attr_space]["list"][attr]
+
+    if spec['type'] in scalars:
+        get_lines = [f"{var}->{attr} = mnl_attr_get_{spec['type']}(attr);"]
+    elif spec['type'] == 'nul-string':
+        get_lines = [f"strncpy({var}->{attr}, mnl_attr_get_str(attr), {spec['len']});",
+                     f"{var}->{attr}[{spec['len']}] = 0;"]
+    else:
+        return
+
+    print(f"""		if (mnl_attr_get_type(attr) == {attr_enum_name(ri, attr)}) {'{'}
+			{var}->{attr}_present = 1;""")
+    for l in get_lines:
+        print('\t\t\t' + l)
+    print('\t\t}')
 
 
 def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
@@ -190,17 +209,37 @@ def print_req_prototype(ri):
 def print_req(ri):
     direction = "request"
     print_prototype(ri, direction, terminate=False)
-    print('{')
-    print(f"\t{type_name(ri, rdir(direction))} *rsp;")
-    print(f'\tstruct nlmsghdr *nlh;')
-    print()
-    print(f'\tnlh = ynl_gemsg_start_req(ys, GENL_ID_CTRL, {op_enum_name(ri)}, 1);')
-    print()
+    print(f"""{'{'}
+	{type_name(ri, rdir(direction))} *rsp;
+	const struct nlattr *attr;
+	struct nlmsghdr *nlh;
+	int len, err;
+
+	nlh = ynl_gemsg_start_req(ys, GENL_ID_CTRL, {op_enum_name(ri)}, 1);
+""")
     for arg in ri.op[ri.op_mode]["request"]['attributes']:
         attribute_put(ri, arg, "req")
-    print()
-    print("\trsp = calloc(1, sizeof(*rsp));")
-    print()
+    print("""
+	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+	if (err < 0)
+		return NULL;
+
+	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	if (len < 0)
+		return NULL;
+
+	nlh = (struct nlmsghdr *)ys->buf;
+	if (!mnl_nlmsg_ok(nlh, len) || (unsigned int)len != nlh->nlmsg_len)
+		return NULL;
+
+	rsp = calloc(1, sizeof(*rsp));
+
+	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {""")
+
+    for arg in ri.op[ri.op_mode]["reply"]['attributes']:
+        attribute_get(ri, arg, "rsp")
+
+    print("\t}")
     print('\treturn rsp;')
     print('}')
 
@@ -320,6 +359,7 @@ def main():
     if args.mode == "user":
         if not args.header:
             print("#include <stdlib.h>")
+            print("#include <stdio.h>")
             print("#include <string.h>")
             print("#include <libmnl/libmnl.h>")
             print()

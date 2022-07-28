@@ -227,14 +227,14 @@ int main(int argc, char **argv)
 	if (!ys)
 		return 1;
 
-	printf("Loaded family id is %u\n", ys->family_id);
-
 	memset(&req, 0, sizeof(req));
 	genlctrl_getfamily_req_set_family_name(&req, argv[1]);
 
 	rsp = genlctrl_getfamily(ys, &req);
 	if (rsp) {
-		printf("YS response family id %u\n", rsp->family_id);
+		if (rsp->family_id_present && rsp->family_name_present)
+			printf("YS response family id %u name %s\n",
+			       rsp->family_id, rsp->family_name);
 		free(rsp);
 	}
 
