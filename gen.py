@@ -413,10 +413,11 @@ def main():
         print()
 
     if args.header:
-        print('// Common nested types')
-        for attr_space in sorted(parsed.pure_nested_spaces):
-            ri = RenderInfo(parsed, args.mode, "", "", "", attr_space)
-            print_type_full(ri, attr_space)
+        if args.mode == "user":
+            print('// Common nested types')
+            for attr_space in sorted(parsed.pure_nested_spaces):
+                ri = RenderInfo(parsed, args.mode, "", "", "", attr_space)
+                print_type_full(ri, attr_space)
 
         for op_name, op in parsed['operations']['list'].items():
             print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
