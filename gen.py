@@ -69,6 +69,14 @@ class RenderInfo:
         self.op = op
         self.op_name = op_name
         self.op_mode = op_mode
+
+        # 'do' and 'dump' response parsing is identical
+        if op_mode == 'dump' and 'do' in op and 'reply' in op['do'] and \
+           op["do"]["reply"] == op["dump"]["reply"]:
+            self.dump_consistent = True
+        else:
+            self.dump_consistent = False
+
         self.attr_space = attr_space
         if not self.attr_space:
             self.attr_space = op['attribute-space']
@@ -164,7 +172,11 @@ def attr_enum_name(ri, attr):
 
 
 def op_prefix(ri, direction):
-    suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
+    suffix = f'_{ri.type_name}'
+    if ri.op_mode != 'dump' or not ri.dump_consistent:
+        suffix += f"{direction_to_suffix[direction]}"
+    if ri.op_mode == 'dump':
+        suffix += '_list'
     return f"{ri.family['name']}{suffix}"
 
 
@@ -330,11 +342,15 @@ def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
 def print_prototype(ri, direction, terminate=True):
     suffix = ';' if terminate else ''
 
-    ri.cw.write_func_prot(f"{type_name(ri, rdir(direction))} *",
-                          f"{ri.family['name']}_{ri.op_name}",
-                          ['struct ynl_sock *ys',
-                           f"{type_name(ri, direction)} *" + f"{direction_to_suffix[direction][1:]}"],
-                          suffix)
+    fname = f"{ri.family['name']}_{ri.op_name}"
+    if ri.op_mode == 'dump':
+        fname += '_dump'
+
+    args = ['struct ynl_sock *ys']
+    if 'request' in ri.op[ri.op_mode]:
+        args.append(f"{type_name(ri, direction)} *" + f"{direction_to_suffix[direction][1:]}")
+
+    ri.cw.write_func_prot(f"{type_name(ri, rdir(direction))} *", fname, args, suffix)
 
 
 def print_req_prototype(ri):
@@ -436,6 +452,7 @@ def print_req(ri):
 
     for arg in ri.op[ri.op_mode]["request"]['attributes']:
         attribute_put(ri, arg, "req")
+
     print(f"""
 	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
 	if (err < 0)
@@ -449,12 +466,67 @@ def print_req(ri):
 
 	err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
 			 {op_prefix(ri, "reply")}_parse, rsp);""" + """
-	if (err > 0) {
+	if (err) {
 		// not expecting multiple replies to a request
 		free(rsp);
 		return NULL;
 	}
 	return rsp;
+}""")
+
+
+def print_dump(ri):
+    direction = "request"
+    print_prototype(ri, direction, terminate=False)
+    print('{')
+    local_vars = [f'{type_name(ri, rdir(direction))} *rsp, *cur, *prev;',
+                  'struct nlmsghdr *nlh;',
+                  'int len, err;']
+
+    for var in local_vars:
+        print(f'\t{var}')
+    if local_vars:
+        print()
+
+    print(f"\tnlh = ynl_gemsg_start_dump(ys, {ri.nl.get_family_id()}, {op_enum_name(ri)}, 1);")
+    print()
+
+    if "request" in ri.op[ri.op_mode]:
+        for arg in ri.op[ri.op_mode]["request"]['attributes']:
+            attribute_put(ri, arg, "req")
+        print()
+
+    print(f"""	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+	if (err < 0)
+		return NULL;
+
+	do {'{'}
+		len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+		if (len < 0)
+			goto free_list;
+
+		cur = calloc(1, sizeof(*cur));
+		if (!rsp)
+			rsp = cur;
+		else
+			prev->next = cur;
+		prev = cur;
+
+		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+				 {op_prefix(ri, "reply")}_parse, cur);""" + """
+		if (err < 0)
+			goto free_list;
+	} while (err > 0);
+
+	return rsp;
+
+free_list:
+	while (rsp) {
+		cur = rsp;
+		rsp = rsp->next;
+		free(cur);
+	}
+	return NULL;
 }""")
 
 
@@ -626,16 +698,24 @@ def main():
         for op_name, op in parsed['operations']['list'].items():
             print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
 
-            if op and "do" in op:
-                ri = RenderInfo(parsed, args.mode, op, op_name, "do")
-                if args.mode == "user":
-                    parse_rsp_msg(ri)
-                    print_req(ri)
-                elif args.mode == "kernel":
-                    print_parse_kernel(ri, "request")
+            if op:
+                if "do" in op:
+                    ri = RenderInfo(parsed, args.mode, op, op_name, "do")
+                    if args.mode == "user":
+                        parse_rsp_msg(ri)
+                        print_req(ri)
+                    elif args.mode == "kernel":
+                        print_parse_kernel(ri, "request")
+                        print()
+                        print_req_policy(ri)
                     print()
-                    print_req_policy(ri)
-                print()
+
+                if 'dump' in op:
+                    ri = RenderInfo(parsed, args.mode, op, op_name, "dump")
+                    if args.mode == "user":
+                        if not ri.dump_consistent:
+                            parse_rsp_msg(ri)
+                        print_dump(ri)
 
 
 if __name__ == "__main__":
