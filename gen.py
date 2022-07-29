@@ -110,6 +110,17 @@ class CodeWriter:
             i += 1
         print(v + ')' + suffix)
 
+    def write_func_lvar(self, local_vars):
+        if not local_vars:
+            return
+
+        if type(local_vars) is str:
+            local_vars = [local_vars]
+
+        for var in local_vars:
+            print('\t' + var)
+        print()
+
 
 scalars = {'u8', 'u16', 'u32', 'u64', 's64'}
 
@@ -329,10 +340,8 @@ def parse_rsp_nested(ri, attr_space):
         func_args.append('__u32 ' + arg)
 
     ri.cw.write_func_prot('int', f'{nest_op_prefix(ri, attr_space)}_parse', func_args)
-
     print('{')
-    print('\tconst struct nlattr *attr;')
-    print()
+    ri.cw.write_func_lvar('const struct nlattr *attr;')
 
     for arg in sorted(ri.family.inherited_members[attr_space]):
         print(f'\tdst->{arg} = {arg};')
@@ -357,9 +366,6 @@ def parse_rsp_msg(ri):
     func_args = [f'{struct_type} *dst',
                  'const struct nlmsghdr *nlh']
 
-    ri.cw.write_func_prot('int', f'{op_prefix(ri, "reply")}_parse', func_args)
-
-    print('{')
     local_vars = ['const struct nlattr *attr;']
 
     array_nests = set()
@@ -371,10 +377,9 @@ def parse_rsp_msg(ri):
     if array_nests:
         local_vars.append('int i;')
 
-    for var in local_vars:
-        print(f'\t{var}')
-    if local_vars:
-        print()
+    ri.cw.write_func_prot('int', f'{op_prefix(ri, "reply")}_parse', func_args)
+    print('{')
+    ri.cw.write_func_lvar(local_vars)
 
     print("\tmnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {")
 
