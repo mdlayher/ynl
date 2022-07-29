@@ -126,6 +126,7 @@ class CodeWriter:
         if type(local_vars) is str:
             local_vars = [local_vars]
 
+        local_vars.sort(key=len, reverse=True)
         for var in local_vars:
             print('\t' + var)
         print()

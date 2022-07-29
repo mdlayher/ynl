@@ -119,8 +119,8 @@ int nlctrl_policy_parse(struct nlctrl_policy *dst, const struct nlattr *nested,
 int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 {
 	struct nlctrl_getfamily_rsp *dst = data;
-	const struct nlattr *attr;
 	const struct nlattr *attr_ops;
+	const struct nlattr *attr;
 	int i;
 
 	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
