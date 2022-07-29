@@ -14,12 +14,13 @@
 
 // Common nested types
 int genlctrl_nl_policy_parse(struct genlctrl_nl_policy *dst,
-	const struct nlattr *nested, __u32 current_policy_idx, __u32 attr_idx)
+			     const struct nlattr *nested, __u32 attr_idx,
+			     __u32 current_policy_idx)
 {
 	const struct nlattr *attr;
 
-	dst->current_policy_idx = current_policy_idx;
 	dst->attr_idx = attr_idx;
+	dst->current_policy_idx = current_policy_idx;
 
 	mnl_attr_for_each_nested(attr, nested) {
 		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_TYPE) {
@@ -72,7 +73,7 @@ int genlctrl_nl_policy_parse(struct genlctrl_nl_policy *dst,
 }
 
 int genlctrl_operation_parse(struct genlctrl_operation *dst,
-	const struct nlattr *nested, __u32 idx)
+			     const struct nlattr *nested, __u32 idx)
 {
 	const struct nlattr *attr;
 
@@ -93,7 +94,7 @@ int genlctrl_operation_parse(struct genlctrl_operation *dst,
 }
 
 int genlctrl_policy_parse(struct genlctrl_policy *dst,
-	const struct nlattr *nested, __u32 cmd)
+			  const struct nlattr *nested, __u32 cmd)
 {
 	const struct nlattr *attr;
 

@@ -124,6 +124,7 @@ operations:
             - family_name
             - op
         reply:
+          attributes:
             - family_id
             - op_policy
             - policy

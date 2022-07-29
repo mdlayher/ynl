@@ -69,6 +69,45 @@ class RenderInfo:
         else:
             self.type_name = attr_space.replace('-', '_')
 
+        self.cw = CodeWriter()
+
+
+class CodeWriter:
+    def write_function(self, qual_ret, name, args=None):
+        if not args:
+            args = ['void']
+
+        oneline = qual_ret
+        if oneline[-1] != '*':
+            oneline += ' '
+        oneline += f"{name}({', '.join(args)})"
+
+        if len(oneline) < 80:
+            print(oneline)
+            return
+
+        v = qual_ret
+        if len(v) > 3:
+            print(v)
+            v = ''
+        v += ' ' + name + '('
+        ind = '\t' * (len(v) // 8) + ' ' * (len(v) % 8)
+        delta_ind = len(v) - len(ind)
+        v += args[0]
+        i = 1
+        while i < len(args):
+            next_len = len(v) + len(args[i])
+            if v[0] == '\t':
+                next_len += delta_ind
+            if next_len > 76:
+                print(v + ',')
+                v = ind
+            else:
+                v += ', '
+            v += args[i]
+            i += 1
+        print(v + ')')
+
 
 scalars = {'u8', 'u16', 'u32', 'u64', 's64'}
 
@@ -277,14 +316,16 @@ def print_req_prototype(ri):
 
 
 def print_rsp_nested(ri, attr_space):
+    cw = CodeWriter()
     struct_type = nest_type_name(ri, attr_space)
 
-    extra_args = ''
+    func_args = [f'{struct_type} *dst',
+                 'const struct nlattr *nested']
     for arg in ri.family.inherited_members[attr_space]:
-        extra_args += f", __u32 {arg}"
+        func_args.append('__u32 ' + arg)
 
-    print(f"int {nest_op_prefix(ri, attr_space)}_parse({struct_type} *dst,")
-    print(f"\tconst struct nlattr *nested{extra_args})")
+    cw.write_function('int', f'{nest_op_prefix(ri, attr_space)}_parse', func_args)
+
     print('{')
     print('\tconst struct nlattr *attr;')
     print()
