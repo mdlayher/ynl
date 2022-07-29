@@ -154,7 +154,6 @@ int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 		}
 	}
 
-	// ops
 	if (dst->n_ops) {
 		dst->ops = calloc(dst->n_ops, sizeof(struct nlctrl_operation));
 		i = 0;
@@ -214,7 +213,7 @@ struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys)
 	struct nlmsghdr *nlh;
 	int len, err;
 
-	yds.alloc_sz = sizeof(struct nlctrl_getfamily_list);
+	yds.alloc_sz = sizeof(*rsp);
 	yds.cb = nlctrl_getfamily_rsp_parse;
 
 	nlh = ynl_gemsg_start_dump(ys, ys->family_id, CTRL_CMD_GETFAMILY, 1);

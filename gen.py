@@ -425,17 +425,18 @@ def parse_rsp_msg(ri):
         print()
         for anest in sorted(array_nests):
             aspec = op_aspec(ri, anest)
-            print(f'\t// {anest}')
-            print(f"\tdst->{anest} = calloc(dst->n_{anest}, " +
+            print(f"\tif (dst->n_{anest}) {'{'}")
+            print(f"\t\tdst->{anest} = calloc(dst->n_{anest}, " +
                   f"sizeof(struct {ri.family['name']}_{aspec['nested-attributes']}));")
-            print('\ti = 0;')
-            print(f"\tmnl_attr_for_each_nested(attr, attr_{anest})" + ' {')
-            print(f"\t\t{ri.family['name']}_{aspec['nested-attributes']}_parse(&dst->ops[i], attr, i);")
-            print('\t\ti++;')
+            print('\t\ti = 0;')
+            print(f"\t\tmnl_attr_for_each_nested(attr, attr_{anest})" + ' {')
+            print(f"\t\t\t{ri.family['name']}_{aspec['nested-attributes']}_parse(&dst->ops[i], attr, i);")
+            print('\t\t\ti++;')
+            print('\t\t}')
             print('\t}')
 
     print()
-    print('\treturn 0;')
+    print('\treturn MNL_CB_OK;')
     print('}')
     print()
 
@@ -472,12 +473,18 @@ def print_req(ri):
 
 	err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
 			 {op_prefix(ri, "reply")}_parse, rsp);""" + """
-	if (err) {
-		// not expecting multiple replies to a request
-		free(rsp);
-		return NULL;
-	}
+	if (err < 0)
+		goto err_free;
+
+	err = ynl_recv_ack(ys, err);
+	if (err)
+		goto err_free;
+
 	return rsp;
+
+err_free:
+	free(rsp); /* TODO: type destroy */
+	return NULL;
 }""")
 
 
@@ -485,7 +492,8 @@ def print_dump(ri):
     direction = "request"
     print_prototype(ri, direction, terminate=False)
     print('{')
-    local_vars = [f'{type_name(ri, rdir(direction))} *rsp = NULL, *cur, *prev;',
+    local_vars = [f'{type_name(ri, rdir(direction))} *rsp, *cur;',
+                  'struct ynl_dump_state yds = {};',
                   'struct nlmsghdr *nlh;',
                   'int len, err;']
 
@@ -494,6 +502,9 @@ def print_dump(ri):
     if local_vars:
         print()
 
+    print('\tyds.alloc_sz = sizeof(*rsp);')
+    print(f"\tyds.cb = {op_prefix(ri, 'reply', deref=True)}_parse;")
+    print()
     print(f"\tnlh = ynl_gemsg_start_dump(ys, {ri.nl.get_family_id()}, {op_enum_name(ri)}, 1);")
     print()
 
@@ -502,35 +513,29 @@ def print_dump(ri):
             attribute_put(ri, arg, "req")
         print()
 
-    print(f"""	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+    print("""	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
 	if (err < 0)
 		return NULL;
 
-	do {'{'}
+	do {
 		len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
 		if (len < 0)
 			goto free_list;
 
-		cur = calloc(1, sizeof(*cur));
-		if (!rsp)
-			rsp = cur;
-		else
-			prev->next = cur;
-		prev = cur;
-
 		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
-				 {op_prefix(ri, "reply", deref=True)}_parse, &cur->obj);""" + """
+				 ynl_dump_trampoline, &yds);
 		if (err < 0)
 			goto free_list;
 	} while (err > 0);
 
-	return rsp;
+	return yds.first;
 
 free_list:
+	rsp = yds.first;
 	while (rsp) {
 		cur = rsp;
 		rsp = rsp->next;
-		free(cur);
+		free(cur); /* TODO: type destroy */
 	}
 	return NULL;
 }""")
