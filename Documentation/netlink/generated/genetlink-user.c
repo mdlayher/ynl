@@ -115,15 +115,62 @@ int genlctrl_policy_parse(struct genlctrl_policy *dst,
 }
 
 // CTRL_CMD_GETFAMILY
+int genlctrl_getfamily_rsp_parse(struct genlctrl_getfamily_rsp *dst,
+				 const struct nlmsghdr *nlh)
+{
+	const struct nlattr *attr;
+	const struct nlattr *attr_ops;
+	int i;
+
+	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_FAMILY_ID) {
+			dst->family_id_present = 1;
+			dst->family_id = mnl_attr_get_u16(attr);
+		}
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_FAMILY_NAME) {
+			dst->family_name_present = 1;
+			strncpy(dst->family_name, mnl_attr_get_str(attr), GENL_NAMSIZ - 1);
+			dst->family_name[GENL_NAMSIZ - 1] = 0;
+		}
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_VERSION) {
+			dst->version_present = 1;
+			dst->version = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_HDRSIZE) {
+			dst->hdrsize_present = 1;
+			dst->hdrsize = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_MAXATTR) {
+			dst->maxattr_present = 1;
+			dst->maxattr = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_OPS) {
+			const struct nlattr *attr2;
+
+			attr_ops = attr;
+			mnl_attr_for_each_nested(attr2, attr)
+				dst->n_ops++;
+		}
+	}
+
+	// ops
+	dst->ops = calloc(dst->n_ops, sizeof(struct genlctrl_operation));
+	i = 0;
+	mnl_attr_for_each_nested(attr, attr_ops) {
+		genlctrl_operation_parse(&dst->ops[i], attr, i);
+		i++;
+	}
+
+
+	return 0;
+}
+
 struct genlctrl_getfamily_rsp *
 genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req)
 {
 	struct genlctrl_getfamily_rsp *rsp;
-	const struct nlattr *attr;
 	struct nlmsghdr *nlh;
 	int len, err;
-	const struct nlattr *attr_ops;
-	int i;
 
 	nlh = ynl_gemsg_start_req(ys, GENL_ID_CTRL, CTRL_CMD_GETFAMILY, 1);
 
@@ -145,46 +192,7 @@ genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req)
 		return NULL;
 
 	rsp = calloc(1, sizeof(*rsp));
-
-	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_FAMILY_ID) {
-			rsp->family_id_present = 1;
-			rsp->family_id = mnl_attr_get_u16(attr);
-		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_FAMILY_NAME) {
-			rsp->family_name_present = 1;
-			strncpy(rsp->family_name, mnl_attr_get_str(attr), GENL_NAMSIZ - 1);
-			rsp->family_name[GENL_NAMSIZ - 1] = 0;
-		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_VERSION) {
-			rsp->version_present = 1;
-			rsp->version = mnl_attr_get_u32(attr);
-		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_HDRSIZE) {
-			rsp->hdrsize_present = 1;
-			rsp->hdrsize = mnl_attr_get_u32(attr);
-		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_MAXATTR) {
-			rsp->maxattr_present = 1;
-			rsp->maxattr = mnl_attr_get_u32(attr);
-		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_OPS) {
-			const struct nlattr *attr2;
-
-			attr_ops = attr;
-			mnl_attr_for_each_nested(attr2, attr)
-				rsp->n_ops++;
-		}
-	}
-
-	// ops
-	rsp->ops = calloc(rsp->n_ops, sizeof(struct genlctrl_operation));
-	i = 0;
-	mnl_attr_for_each_nested(attr, attr_ops) {
-		genlctrl_operation_parse(&rsp->ops[i], attr, i);
-		i++;
-	}
-
+	genlctrl_getfamily_rsp_parse(rsp, nlh);
 	return rsp;
 }
 

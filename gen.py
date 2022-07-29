@@ -320,7 +320,7 @@ def print_req_prototype(ri):
     print_prototype(ri, "request")
 
 
-def print_rsp_nested(ri, attr_space):
+def parse_rsp_nested(ri, attr_space):
     struct_type = nest_type_name(ri, attr_space)
 
     func_args = [f'{struct_type} *dst',
@@ -351,14 +351,16 @@ def print_rsp_nested(ri, attr_space):
     print()
 
 
-def print_req(ri):
-    direction = "request"
-    print_prototype(ri, direction, terminate=False)
+def parse_rsp_msg(ri):
+    struct_type = type_name(ri, "reply")
+
+    func_args = [f'{struct_type} *dst',
+                 'const struct nlmsghdr *nlh']
+
+    ri.cw.write_func_prot('int', f'{op_prefix(ri, "reply")}_parse', func_args)
+
     print('{')
-    local_vars = [f'{type_name(ri, rdir(direction))} *rsp;',
-                  'const struct nlattr *attr;',
-                  'struct nlmsghdr *nlh;',
-                  'int len, err;']
+    local_vars = ['const struct nlattr *attr;']
 
     array_nests = set()
     for arg in ri.op[ri.op_mode]["reply"]['attributes']:
@@ -368,6 +370,46 @@ def print_req(ri):
             array_nests.add(arg)
     if array_nests:
         local_vars.append('int i;')
+
+    for var in local_vars:
+        print(f'\t{var}')
+    if local_vars:
+        print()
+
+    print("\tmnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {")
+
+    for arg in ri.op[ri.op_mode]["reply"]['attributes']:
+        attribute_get(ri, arg, "dst")
+
+    print('\t}')
+
+    if array_nests:
+        print()
+        for anest in sorted(array_nests):
+            aspec = op_aspec(ri, anest)
+            print(f'\t// {anest}')
+            print(f"\tdst->{anest} = calloc(dst->n_{anest}, " +
+                  f"sizeof(struct {ri.family['name']}_{aspec['nested-attributes']}));")
+            print('\ti = 0;')
+            print(f"\tmnl_attr_for_each_nested(attr, attr_{anest})" + ' {')
+            print(f"\t\t{ri.family['name']}_{aspec['nested-attributes']}_parse(&dst->ops[i], attr, i);")
+            print('\t\ti++;')
+            print('\t}')
+        print()
+
+    print()
+    print('\treturn 0;')
+    print('}')
+    print()
+
+
+def print_req(ri):
+    direction = "request"
+    print_prototype(ri, direction, terminate=False)
+    print('{')
+    local_vars = [f'{type_name(ri, rdir(direction))} *rsp;',
+                  'struct nlmsghdr *nlh;',
+                  'int len, err;']
 
     for var in local_vars:
         print(f'\t{var}')
@@ -392,28 +434,9 @@ def print_req(ri):
 	if (!mnl_nlmsg_ok(nlh, len) || (unsigned int)len != nlh->nlmsg_len)
 		return NULL;
 
-	rsp = calloc(1, sizeof(*rsp));
+	rsp = calloc(1, sizeof(*rsp));""")
 
-	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {""")
-
-    for arg in ri.op[ri.op_mode]["reply"]['attributes']:
-        attribute_get(ri, arg, "rsp")
-
-    print("\t}")
-
-    if array_nests:
-        print()
-        for anest in sorted(array_nests):
-            aspec = op_aspec(ri, anest)
-            print(f'\t// {anest}')
-            print(f"\trsp->{anest} = calloc(rsp->n_{anest}, " +
-                  f"sizeof(struct {ri.family['name']}_{aspec['nested-attributes']}));")
-            print('\ti = 0;')
-            print(f"\tmnl_attr_for_each_nested(attr, attr_{anest})" + ' {')
-            print(f"\t\t{ri.family['name']}_{aspec['nested-attributes']}_parse(&rsp->ops[i], attr, i);")
-            print('\t\ti++;')
-            print('\t}')
-        print()
+    print(f'\t{op_prefix(ri, "reply")}_parse(rsp, nlh);')
 
     print('\treturn rsp;')
     print('}')
@@ -581,7 +604,7 @@ def main():
             print('// Common nested types')
             for attr_space in sorted(parsed.pure_nested_spaces):
                 ri = RenderInfo(parsed, args.mode, "", "", "", attr_space)
-                print_rsp_nested(ri, attr_space)
+                parse_rsp_nested(ri, attr_space)
 
         for op_name, op in parsed['operations']['list'].items():
             print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
@@ -589,6 +612,7 @@ def main():
             if op and "do" in op:
                 ri = RenderInfo(parsed, args.mode, op, op_name, "do")
                 if args.mode == "user":
+                    parse_rsp_msg(ri)
                     print_req(ri)
                 elif args.mode == "kernel":
                     print_parse_kernel(ri, "request")
