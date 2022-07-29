@@ -171,11 +171,11 @@ def attr_enum_name(ri, attr):
     return f"{ri.family['attributes']['spaces'][ri.attr_space]['name-prefix']}{attr.upper()}"
 
 
-def op_prefix(ri, direction):
+def op_prefix(ri, direction, deref=False):
     suffix = f'_{ri.type_name}'
     if ri.op_mode != 'dump' or not ri.dump_consistent:
         suffix += f"{direction_to_suffix[direction]}"
-    if ri.op_mode == 'dump' and (not ri.dump_consistent or direction == 'request'):
+    if ri.op_mode == 'dump' and not deref:
         suffix += '_list'
     return f"{ri.family['name']}{suffix}"
 
@@ -513,7 +513,7 @@ def print_dump(ri):
 		prev = cur;
 
 		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
-				 {op_prefix(ri, "reply")}_parse, cur);""" + """
+				 {op_prefix(ri, "reply", deref=True)}_parse, &cur->obj);""" + """
 		if (err < 0)
 			goto free_list;
 	} while (err > 0);

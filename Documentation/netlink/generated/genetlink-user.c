@@ -199,9 +199,9 @@ nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req)
 	return rsp;
 }
 
-struct nlctrl_getfamily *nlctrl_getfamily_dump(struct ynl_sock *ys)
+struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys)
 {
-	struct nlctrl_getfamily *rsp, *cur, *prev;
+	struct nlctrl_getfamily_list *rsp, *cur, *prev;
 	struct nlmsghdr *nlh;
 	int len, err;
 
@@ -224,7 +224,7 @@ struct nlctrl_getfamily *nlctrl_getfamily_dump(struct ynl_sock *ys)
 		prev = cur;
 
 		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
-				 nlctrl_getfamily_parse, cur);
+				 nlctrl_getfamily_parse, &cur->obj);
 		if (err < 0)
 			goto free_list;
 	} while (err > 0);
@@ -289,7 +289,7 @@ nlctrl_getpolicy_dump(struct ynl_sock *ys,
 		prev = cur;
 
 		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
-				 nlctrl_getpolicy_rsp_list_parse, cur);
+				 nlctrl_getpolicy_rsp_parse, &cur->obj);
 		if (err < 0)
 			goto free_list;
 	} while (err > 0);
