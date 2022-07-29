@@ -34,7 +34,7 @@ struct nlctrl_getfamily_rsp {
 	struct nlctrl_operation *ops;
 };
 
-void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *req);
+void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *rsp);
 
 void
 nlctrl_getfamily_req_parse(const struct nlattr **tb,

@@ -202,7 +202,7 @@ nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req)
 	return rsp;
 
 err_free:
-	free(rsp); /* TODO: type destroy */
+	nlctrl_getfamily_rsp_free(rsp);
 	return NULL;
 }
 
@@ -240,7 +240,7 @@ free_list:
 	while (rsp) {
 		cur = rsp;
 		rsp = rsp->next;
-		free(cur); /* TODO: type destroy */
+		nlctrl_getfamily_list_free(cur);
 	}
 	return NULL;
 }

@@ -472,7 +472,7 @@ def print_req(ri):
 	rsp = calloc(1, sizeof(*rsp));
 
 	err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
-			 {op_prefix(ri, "reply")}_parse, rsp);""" + """
+			 {op_prefix(ri, "reply")}_parse, rsp);
 	if (err < 0)
 		goto err_free;
 
@@ -483,9 +483,9 @@ def print_req(ri):
 	return rsp;
 
 err_free:
-	free(rsp); /* TODO: type destroy */
+	{op_prefix(ri, rdir(direction))}_free(rsp);
 	return NULL;
-}""")
+{'}'}""")
 
 
 def print_dump(ri):
@@ -513,11 +513,11 @@ def print_dump(ri):
             attribute_put(ri, arg, "req")
         print()
 
-    print("""	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+    print(f"""	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
 	if (err < 0)
 		return NULL;
 
-	do {
+	do {'{'}
 		len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
 		if (len < 0)
 			goto free_list;
@@ -526,19 +526,27 @@ def print_dump(ri):
 				 ynl_dump_trampoline, &yds);
 		if (err < 0)
 			goto free_list;
-	} while (err > 0);
+	{'}'} while (err > 0);
 
 	return yds.first;
 
 free_list:
 	rsp = yds.first;
-	while (rsp) {
+	while (rsp) {'{'}
 		cur = rsp;
 		rsp = rsp->next;
-		free(cur); /* TODO: type destroy */
-	}
+		{op_prefix(ri, rdir(direction))}_free(cur);
+	{'}'}
 	return NULL;
-}""")
+{'}'}""")
+
+
+def print_free_prototype(ri, direction):
+    name = op_prefix(ri, direction)
+    arg = 'obj'
+    if direction:
+        arg = direction_to_suffix[direction][1:]
+    ri.cw.write_func_prot('void', f"{name}_free", [f"struct {name} *{arg}"], suffix=';')
 
 
 def _print_type(ri, direction, type_list, inherited_list={}):
@@ -562,27 +570,25 @@ def _print_type(ri, direction, type_list, inherited_list={}):
 
 
 def print_type(ri, direction):
-    return _print_type(ri, direction, ri.op[ri.op_mode][direction]['attributes'])
+    _print_type(ri, direction, ri.op[ri.op_mode][direction]['attributes'])
+    print_free_prototype(ri, direction)
 
 
 def print_type_full(ri, attr_space):
     types = ri.family['attributes']['spaces'][attr_space]['list']
-    return _print_type(ri, "", types, ri.family.inherited_members[attr_space])
+    _print_type(ri, "", types, ri.family.inherited_members[attr_space])
+    print_free_prototype(ri, '')
+    print()
 
 
 def print_type_helpers(ri, direction):
     type_list = ri.op[ri.op_mode][direction]['attributes']
-    suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
 
     if ri.ku_space == 'user' and direction == 'request':
         for arg in type_list:
             attribute_setter(ri, ri.attr_space, arg, direction)
         if type_list:
             print()
-
-    ri.cw.write_func_prot('void', f"{ri.family['name']}{suffix}_free",
-                          [f"struct {ri.family['name']}{suffix} *req"],
-                          suffix=';')
 
 
 def print_req_type_helpers(ri):
@@ -625,6 +631,7 @@ def print_dump_type(ri):
     print(f"\t{type_name(ri, 'reply', deref=True)} obj;")
     print('};')
     print()
+    print_free_prototype(ri, '')
 
 
 def print_req_policy_fwd(ri, terminate=True):

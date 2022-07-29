@@ -36,6 +36,8 @@ struct nlctrl_nl_policy {
 	__u32 bitfield32_mask;
 };
 
+void nlctrl_nl_policy_free(struct nlctrl_nl_policy *obj);
+
 struct nlctrl_operation {
 	__u32 id_present:1;
 	__u32 flags_present:1;
@@ -44,6 +46,8 @@ struct nlctrl_operation {
 	__u32 id;
 	__u32 flags;
 };
+
+void nlctrl_operation_free(struct nlctrl_operation *obj);
 
 struct nlctrl_policy {
 	__u32 do_present:1;
@@ -54,6 +58,8 @@ struct nlctrl_policy {
 	__u32 dump;
 };
 
+void nlctrl_policy_free(struct nlctrl_policy *obj);
+
 // CTRL_CMD_GETFAMILY
 struct nlctrl_getfamily_req {
 	__u32 family_id_present:1;
@@ -63,6 +69,7 @@ struct nlctrl_getfamily_req {
 	char family_name[GENL_NAMSIZ];
 };
 
+void nlctrl_getfamily_req_free(struct nlctrl_getfamily_req *req);
 static inline void
 nlctrl_getfamily_req_set_family_id(struct nlctrl_getfamily_req *req,
 				   __u16 family_id)
@@ -79,7 +86,6 @@ nlctrl_getfamily_req_set_family_name(struct nlctrl_getfamily_req *req,
 	req->family_name[GENL_NAMSIZ - 1] = 0;
 }
 
-void nlctrl_getfamily_req_free(struct nlctrl_getfamily_req *req);
 
 struct nlctrl_getfamily_rsp {
 	__u32 family_id_present:1;
@@ -97,7 +103,7 @@ struct nlctrl_getfamily_rsp {
 	struct nlctrl_operation *ops;
 };
 
-void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *req);
+void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *rsp);
 
 struct nlctrl_getfamily_rsp *
 nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req);
@@ -107,5 +113,6 @@ struct nlctrl_getfamily_list {
 	struct nlctrl_getfamily_rsp obj;
 };
 
+void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *obj);
 struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys);
 
