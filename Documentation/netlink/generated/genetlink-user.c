@@ -155,14 +155,16 @@ int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 	}
 
 	// ops
-	dst->ops = calloc(dst->n_ops, sizeof(struct nlctrl_operation));
-	i = 0;
-	mnl_attr_for_each_nested(attr, attr_ops) {
-		nlctrl_operation_parse(&dst->ops[i], attr, i);
-		i++;
+	if (dst->n_ops) {
+		dst->ops = calloc(dst->n_ops, sizeof(struct nlctrl_operation));
+		i = 0;
+		mnl_attr_for_each_nested(attr, attr_ops) {
+			nlctrl_operation_parse(&dst->ops[i], attr, i);
+			i++;
+		}
 	}
 
-	return 0;
+	return MNL_CB_OK;
 }
 
 struct nlctrl_getfamily_rsp *
@@ -191,19 +193,29 @@ nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req)
 
 	err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
 			 nlctrl_getfamily_rsp_parse, rsp);
-	if (err) {
-		// not expecting multiple replies to a request
-		free(rsp);
-		return NULL;
-	}
+	if (err < 0)
+		goto err_free;
+
+	err = ynl_recv_ack(ys, err);
+	if (err)
+		goto err_free;
+
 	return rsp;
+
+err_free:
+	free(rsp); /* TODO: type destroy */
+	return NULL;
 }
 
 struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys)
 {
-	struct nlctrl_getfamily_list *rsp, *cur, *prev;
+	struct nlctrl_getfamily_list *rsp, *cur;
+	struct ynl_dump_state yds = {};
 	struct nlmsghdr *nlh;
 	int len, err;
+
+	yds.alloc_sz = sizeof(struct nlctrl_getfamily_list);
+	yds.cb = nlctrl_getfamily_rsp_parse;
 
 	nlh = ynl_gemsg_start_dump(ys, ys->family_id, CTRL_CMD_GETFAMILY, 1);
 
@@ -216,26 +228,20 @@ struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys)
 		if (len < 0)
 			goto free_list;
 
-		cur = calloc(1, sizeof(*cur));
-		if (!rsp)
-			rsp = cur;
-		else
-			prev->next = cur;
-		prev = cur;
-
 		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
-				 nlctrl_getfamily_rsp_parse, &cur->obj);
+				 ynl_dump_trampoline, &yds);
 		if (err < 0)
 			goto free_list;
 	} while (err > 0);
 
-	return rsp;
+	return yds.first;
 
 free_list:
+	rsp = yds.first;
 	while (rsp) {
 		cur = rsp;
 		rsp = rsp->next;
-		free(cur);
+		free(cur); /* TODO: type destroy */
 	}
 	return NULL;
 }

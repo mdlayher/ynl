@@ -485,7 +485,7 @@ def print_dump(ri):
     direction = "request"
     print_prototype(ri, direction, terminate=False)
     print('{')
-    local_vars = [f'{type_name(ri, rdir(direction))} *rsp, *cur, *prev;',
+    local_vars = [f'{type_name(ri, rdir(direction))} *rsp = NULL, *cur, *prev;',
                   'struct nlmsghdr *nlh;',
                   'int len, err;']
 

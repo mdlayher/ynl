@@ -131,10 +131,22 @@ void ynl_msg_start_req(struct ynl_sock *ys, __u32 id)
 	ynl_msg_start(ys, id, NLM_F_REQUEST | NLM_F_ACK);
 }
 
+void ynl_msg_start_dump(struct ynl_sock *ys, __u32 id)
+{
+	ynl_msg_start(ys, id, NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP);
+}
+
 struct nlmsghdr *
 ynl_gemsg_start_req(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version)
 {
 	return ynl_gemsg_start(ys, id, NLM_F_REQUEST | NLM_F_ACK, cmd, version);
+}
+
+struct nlmsghdr *
+ynl_gemsg_start_dump(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version)
+{
+	return ynl_gemsg_start(ys, id, NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP,
+			       cmd, version);
 }
 
 struct ynl_sock *ynl_sock_create(const char *family_name)
@@ -210,12 +222,47 @@ void ynl_sock_destroy(struct ynl_sock *ys)
 	free(ys);
 }
 
+int ynl_recv_ack(struct ynl_sock *ys, int ret)
+{
+	if (!ret)
+		return 0;
+
+	ret = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	if (ret < 0)
+		return ret;
+	return mnl_cb_run(ys->buf, ret, ys->seq, ys->portid, ynl_cb_null, NULL);
+}
+
+int ynl_cb_null(const struct nlmsghdr *nlh, void *data)
+{
+	return MNL_CB_ERROR;
+}
+
+int ynl_dump_trampoline(const struct nlmsghdr *nlh, void *data)
+{
+	struct ynl_dump_state *ds = data;
+	struct ynl_dump_list_type *obj;
+
+	obj = calloc(1, ds->alloc_sz);
+	if (!obj)
+		return MNL_CB_ERROR;
+
+	if (!ds->first)
+		ds->first = obj;
+	if (ds->last)
+		ds->last->next = obj;
+	ds->last = obj;
+
+	return ds->cb(nlh, obj->data);
+}
+
 /* -- sample main -- */
 
 #include "genetlink-user.h"
 
 int main(int argc, char **argv)
 {
+	struct nlctrl_getfamily_list *families, *f;
 	struct nlctrl_getfamily_rsp *rsp;
 	struct nlctrl_getfamily_req req;
 	struct ynl_sock *ys;
@@ -232,18 +279,40 @@ int main(int argc, char **argv)
 	nlctrl_getfamily_req_set_family_name(&req, argv[1]);
 
 	rsp = nlctrl_getfamily(ys, &req);
-	if (rsp) {
-		if (rsp->family_id_present && rsp->family_name_present) {
-			printf("YS response family id %u name '%s' n_ops %d\n",
+	if (!rsp)
+		goto out;
+
+	if (rsp->family_id_present && rsp->family_name_present) {
+		printf("YS response family id %u name '%s' n_ops %d\n",
+		       rsp->family_id, rsp->family_name, rsp->n_ops);
+		for (i = 0; i < rsp->n_ops; i++)
+			printf("\top[%d]: cmd:%d flags:%x\n",
+			       rsp->ops[i].idx, rsp->ops[i].id,
+			       rsp->ops[i].flags);
+	}
+	free(rsp);
+
+	families = nlctrl_getfamily_dump(ys);
+	if (!families)
+		goto out;
+
+	printf("\nFAMILIES:\n");
+	while (families) {
+		f = families;
+		families = families->next;
+
+		rsp = &f->obj;
+
+		if (rsp->family_id_present && rsp->family_name_present)
+			printf("\t[%u] '%s' (%d)\n",
 			       rsp->family_id, rsp->family_name, rsp->n_ops);
-			for (i = 0; i < rsp->n_ops; i++)
-				printf("\top[%d]: cmd:%d flags:%x\n",
-				       rsp->ops[i].idx, rsp->ops[i].id,
-				       rsp->ops[i].flags);
-		}
-		free(rsp);
+		else
+			printf("\tSKIP\n");
+
+		free(f);
 	}
 
+out:
 	ynl_sock_destroy(ys);
 	return 0;
 }
