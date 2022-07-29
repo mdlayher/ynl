@@ -188,12 +188,15 @@ nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req)
 	if (len < 0)
 		return NULL;
 
-	nlh = (struct nlmsghdr *)ys->buf;
-	if (!mnl_nlmsg_ok(nlh, len) || (unsigned int)len != nlh->nlmsg_len)
-		return NULL;
-
 	rsp = calloc(1, sizeof(*rsp));
-	nlctrl_getfamily_rsp_parse(nlh, rsp);
+
+	err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+			 nlctrl_getfamily_rsp_parse, rsp);
+	if (err > 0) {
+		// not expecting multiple replies to a request
+		free(rsp);
+		return NULL;
+	}
 	return rsp;
 }
 

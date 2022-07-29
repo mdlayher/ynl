@@ -437,7 +437,7 @@ def print_req(ri):
 
     for arg in ri.op[ri.op_mode]["request"]['attributes']:
         attribute_put(ri, arg, "req")
-    print("""
+    print(f"""
 	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
 	if (err < 0)
 		return NULL;
@@ -446,16 +446,17 @@ def print_req(ri):
 	if (len < 0)
 		return NULL;
 
-	nlh = (struct nlmsghdr *)ys->buf;
-	if (!mnl_nlmsg_ok(nlh, len) || (unsigned int)len != nlh->nlmsg_len)
+	rsp = calloc(1, sizeof(*rsp));
+
+	err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+			 {op_prefix(ri, "reply")}_parse, rsp);""" + """
+	if (err > 0) {
+		// not expecting multiple replies to a request
+		free(rsp);
 		return NULL;
-
-	rsp = calloc(1, sizeof(*rsp));""")
-
-    print(f'\t{op_prefix(ri, "reply")}_parse(nlh, rsp);')
-
-    print('\treturn rsp;')
-    print('}')
+	}
+	return rsp;
+}""")
 
 
 def _print_type(ri, direction, type_list, inherited_list={}):
