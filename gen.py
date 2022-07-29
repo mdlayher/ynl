@@ -483,7 +483,7 @@ def print_req(ri):
 	return rsp;
 
 err_free:
-	{op_prefix(ri, rdir(direction))}_free(rsp);
+	{call_free(ri, rdir(direction), 'rsp')}
 	return NULL;
 {'}'}""")
 
@@ -535,18 +535,26 @@ free_list:
 	while (rsp) {'{'}
 		cur = rsp;
 		rsp = rsp->next;
-		{op_prefix(ri, rdir(direction))}_free(cur);
+		{call_free(ri, rdir(direction), 'cur')}
 	{'}'}
 	return NULL;
 {'}'}""")
 
 
-def print_free_prototype(ri, direction):
-    name = op_prefix(ri, direction)
-    arg = 'obj'
+def call_free(ri, direction, var):
+    return f"{op_prefix(ri, direction)}_free({var});"
+
+
+def free_arg_name(ri, direction):
     if direction:
-        arg = direction_to_suffix[direction][1:]
-    ri.cw.write_func_prot('void', f"{name}_free", [f"struct {name} *{arg}"], suffix=';')
+        return direction_to_suffix[direction][1:]
+    return 'obj'
+
+
+def print_free_prototype(ri, direction, suffix=';'):
+    name = op_prefix(ri, direction)
+    arg = free_arg_name(ri, direction)
+    ri.cw.write_func_prot('void', f"{name}_free", [f"struct {name} *{arg}"], suffix=suffix)
 
 
 def _print_type(ri, direction, type_list, inherited_list={}):
@@ -577,8 +585,6 @@ def print_type(ri, direction):
 def print_type_full(ri, attr_space):
     types = ri.family['attributes']['spaces'][attr_space]['list']
     _print_type(ri, "", types, ri.family.inherited_members[attr_space])
-    print_free_prototype(ri, '')
-    print()
 
 
 def print_type_helpers(ri, direction):
@@ -634,8 +640,53 @@ def print_dump_type(ri):
     print_free_prototype(ri, '')
 
 
+def _free_type_members(ri, var, type_list, ref=''):
+    ind = '\t'
+    if ref:
+        ind = '\t\t'
+
+    for arg in type_list:
+        spec = ri.family["attributes"]["spaces"][ri.attr_space]["list"][arg]
+        if spec['type'] == 'array-nest':
+            print(f'{ind}free({var}->{ref}{arg});')
+    print(f'{ind}free({var});')
+
+
+def _free_type(ri, direction, type_list):
+    var = free_arg_name(ri, direction)
+
+    print_free_prototype(ri, direction, suffix='')
+    print('{')
+    _free_type_members(ri, var, type_list)
+    print('}')
+    print()
+
+
+def free_rsp_nested(ri, attr_space):
+    types = ri.family['attributes']['spaces'][attr_space]['list']
+    _free_type(ri, "", types)
+
+
+def print_rsp_free(ri):
+    _free_type(ri, 'reply', ri.op[ri.op_mode]['reply']['attributes'])
+
+
 def print_dump_type_free(ri):
-    pass
+    free_obj = 'free'
+    sub_type = type_name(ri, 'reply')
+
+    print_free_prototype(ri, '', suffix='')
+    print(f"""{'{'}
+	{sub_type} *next = obj;
+
+	while (next) {'{'}
+		obj = next;
+		next = obj->next;
+""")
+    _free_type_members(ri, 'obj', ri.op[ri.op_mode]['reply']['attributes'], ref='obj.')
+    print('\t}')
+    print('}')
+    print()
 
 
 def print_req_policy_fwd(ri, terminate=True):
@@ -730,6 +781,7 @@ def main():
             print('// Common nested types')
             for attr_space in sorted(parsed.pure_nested_spaces):
                 ri = RenderInfo(parsed, args.mode, "", "", "", attr_space)
+                free_rsp_nested(ri, attr_space)
                 parse_rsp_nested(ri, attr_space)
 
         for op_name, op in parsed['operations']['list'].items():
@@ -738,6 +790,7 @@ def main():
             if 'do' in op:
                 ri = RenderInfo(parsed, args.mode, op, op_name, "do")
                 if args.mode == "user":
+                    print_rsp_free(ri)
                     parse_rsp_msg(ri)
                     print_req(ri)
                 elif args.mode == "kernel":

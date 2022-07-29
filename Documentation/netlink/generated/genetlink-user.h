@@ -36,8 +36,6 @@ struct nlctrl_nl_policy {
 	__u32 bitfield32_mask;
 };
 
-void nlctrl_nl_policy_free(struct nlctrl_nl_policy *obj);
-
 struct nlctrl_operation {
 	__u32 id_present:1;
 	__u32 flags_present:1;
@@ -47,8 +45,6 @@ struct nlctrl_operation {
 	__u32 flags;
 };
 
-void nlctrl_operation_free(struct nlctrl_operation *obj);
-
 struct nlctrl_policy {
 	__u32 do_present:1;
 	__u32 dump_present:1;
@@ -57,8 +53,6 @@ struct nlctrl_policy {
 	__u32 do_;
 	__u32 dump;
 };
-
-void nlctrl_policy_free(struct nlctrl_policy *obj);
 
 // CTRL_CMD_GETFAMILY
 struct nlctrl_getfamily_req {

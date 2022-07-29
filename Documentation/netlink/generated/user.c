@@ -290,17 +290,14 @@ int main(int argc, char **argv)
 			       rsp->ops[i].idx, rsp->ops[i].id,
 			       rsp->ops[i].flags);
 	}
-	free(rsp);
+	nlctrl_getfamily_rsp_free(rsp);
 
 	families = nlctrl_getfamily_dump(ys);
 	if (!families)
 		goto out;
 
 	printf("\nFAMILIES:\n");
-	while (families) {
-		f = families;
-		families = families->next;
-
+	for (f = families; f; f = f->next) {
 		rsp = &f->obj;
 
 		if (rsp->family_id_present && rsp->family_name_present)
@@ -308,9 +305,8 @@ int main(int argc, char **argv)
 			       rsp->family_id, rsp->family_name, rsp->n_ops);
 		else
 			printf("\tSKIP\n");
-
-		free(f);
 	}
+	nlctrl_getfamily_list_free(families);
 
 out:
 	ynl_sock_destroy(ys);

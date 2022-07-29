@@ -14,6 +14,11 @@
 #include "user.h"
 
 // Common nested types
+void nlctrl_nl_policy_free(struct nlctrl_nl_policy *obj)
+{
+	free(obj);
+}
+
 int nlctrl_nl_policy_parse(struct nlctrl_nl_policy *dst,
 			   const struct nlattr *nested, __u32 attr_idx,
 			   __u32 current_policy_idx)
@@ -73,6 +78,11 @@ int nlctrl_nl_policy_parse(struct nlctrl_nl_policy *dst,
 	return 0;
 }
 
+void nlctrl_operation_free(struct nlctrl_operation *obj)
+{
+	free(obj);
+}
+
 int nlctrl_operation_parse(struct nlctrl_operation *dst,
 			   const struct nlattr *nested, __u32 idx)
 {
@@ -92,6 +102,11 @@ int nlctrl_operation_parse(struct nlctrl_operation *dst,
 	}
 
 	return 0;
+}
+
+void nlctrl_policy_free(struct nlctrl_policy *obj)
+{
+	free(obj);
 }
 
 int nlctrl_policy_parse(struct nlctrl_policy *dst, const struct nlattr *nested,
@@ -116,6 +131,12 @@ int nlctrl_policy_parse(struct nlctrl_policy *dst, const struct nlattr *nested,
 }
 
 // CTRL_CMD_GETFAMILY
+void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *rsp)
+{
+	free(rsp->ops);
+	free(rsp);
+}
+
 int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 {
 	struct nlctrl_getfamily_rsp *dst = data;
@@ -204,6 +225,19 @@ nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req)
 err_free:
 	nlctrl_getfamily_rsp_free(rsp);
 	return NULL;
+}
+
+void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *obj)
+{
+	struct nlctrl_getfamily_list *next = obj;
+
+	while (next) {
+		obj = next;
+		next = obj->next;
+
+		free(obj->obj.ops);
+		free(obj);
+	}
 }
 
 struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys)
