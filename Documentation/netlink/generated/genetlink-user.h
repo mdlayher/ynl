@@ -106,7 +106,7 @@ struct nlctrl_getfamily_list {
 	struct nlctrl_getfamily_rsp obj;
 };
 
-void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *obj);
+void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *rsp);
 struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys);
 
 // CTRL_CMD_GETPOLICY
@@ -120,13 +120,12 @@ struct nlctrl_getpolicy_rsp {
 	struct nlctrl_nl_policy policy;
 };
 
-void nlctrl_getpolicy_rsp_list_free(struct nlctrl_getpolicy_rsp_list *rsp);
 struct nlctrl_getpolicy_rsp_list {
 	struct nlctrl_getpolicy_rsp_list *next;
 	struct nlctrl_getpolicy_rsp obj;
 };
 
-void nlctrl_getpolicy_list_free(struct nlctrl_getpolicy_list *obj);
+void nlctrl_getpolicy_rsp_list_free(struct nlctrl_getpolicy_rsp_list *rsp);
 struct nlctrl_getpolicy_rsp_list *
 nlctrl_getpolicy_dump(struct ynl_sock *ys,
 		      struct nlctrl_getpolicy_req_list *req);

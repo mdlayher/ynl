@@ -625,7 +625,6 @@ def _print_type(ri, direction, type_list, inherited_list={}):
 
 def print_type(ri, direction):
     _print_type(ri, direction, ri.op[ri.op_mode][direction]['attributes'])
-    print_free_prototype(ri, direction)
 
 
 def print_type_full(ri, attr_space):
@@ -634,6 +633,8 @@ def print_type_full(ri, attr_space):
 
 
 def print_type_helpers(ri, direction):
+    print_free_prototype(ri, direction)
+
     type_list = ri.op[ri.op_mode][direction]['attributes']
 
     if ri.ku_space == 'user' and direction == 'request':
@@ -682,7 +683,7 @@ def print_dump_type(ri):
     ri.cw.p(f"{type_name(ri, 'reply', deref=True)} obj;")
     ri.cw.block_end(line=';')
     ri.cw.nl()
-    print_free_prototype(ri, '')
+    print_free_prototype(ri, 'reply')
 
 
 def _free_type_members(ri, var, type_list, ref=''):
