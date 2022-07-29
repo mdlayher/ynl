@@ -114,17 +114,18 @@ operations:
       dump:
         reply: *getfamily-do-reply
 
-    getpolicy:
-      attribute-space: main
+# break the indent for now
+  getpolicy:
+    attribute-space: main
 
-      dump:
-        request:
-          attributes:
-            - family_id
-            - family_name
-            - op
-        reply:
-          attributes:
-            - family_id
-            - op_policy
-            - policy
+    dump:
+      request:
+        attributes:
+          - family_id
+          - family_name
+          - op
+      reply:
+        attributes:
+          - family_id
+          - op_policy
+          - policy

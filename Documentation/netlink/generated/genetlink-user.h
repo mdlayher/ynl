@@ -102,6 +102,10 @@ void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *req);
 struct nlctrl_getfamily_rsp *
 nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req);
 
+struct nlctrl_getfamily_list {
+	struct nlctrl_getfamily_list *next;
+	struct nlctrl_getfamily_rsp obj;
+};
 
-// CTRL_CMD_GETPOLICY
+struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys);
 

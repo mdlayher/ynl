@@ -173,9 +173,11 @@ def attr_enum_name(ri, attr):
 
 def op_prefix(ri, direction, deref=False):
     suffix = f'_{ri.type_name}'
-    if ri.op_mode != 'dump' or not ri.dump_consistent:
+
+    dump_type = ri.op_mode == 'dump' and not deref
+    if not dump_type or not ri.dump_consistent:
         suffix += f"{direction_to_suffix[direction]}"
-    if ri.op_mode == 'dump' and not deref:
+    if dump_type:
         suffix += '_list'
     return f"{ri.family['name']}{suffix}"
 
@@ -185,8 +187,8 @@ def op_aspec(ri, attr):
     return aspace["list"][attr]
 
 
-def type_name(ri, direction):
-    return f"struct {op_prefix(ri, direction)}"
+def type_name(ri, direction, deref=False):
+    return f"struct {op_prefix(ri, direction, deref=deref)}"
 
 
 def nest_op_prefix(ri, attr_space):
@@ -358,7 +360,7 @@ def print_req_prototype(ri):
 
 
 def print_dump_prototype(ri):
-    pass
+    print_prototype(ri, "request")
 
 
 def parse_rsp_nested(ri, attr_space):
@@ -613,7 +615,11 @@ def print_rsp_type(ri):
 
 
 def print_dump_type(ri):
-    pass
+    print(f"{type_name(ri, 'reply')} {'{'}")
+    print(f"\t{type_name(ri, 'reply')} *next;")
+    print(f"\t{type_name(ri, 'reply', deref=True)} obj;")
+    print('};')
+    print()
 
 
 def print_req_policy_fwd(ri, terminate=True):

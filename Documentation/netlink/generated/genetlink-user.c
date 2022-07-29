@@ -224,72 +224,7 @@ struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys)
 		prev = cur;
 
 		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
-				 nlctrl_getfamily_parse, &cur->obj);
-		if (err < 0)
-			goto free_list;
-	} while (err > 0);
-
-	return rsp;
-
-free_list:
-	while (rsp) {
-		cur = rsp;
-		rsp = rsp->next;
-		free(cur);
-	}
-	return NULL;
-}
-// CTRL_CMD_GETPOLICY
-int nlctrl_getpolicy_rsp_list_parse(const struct nlmsghdr *nlh, void *data)
-{
-	struct nlctrl_getpolicy_rsp_list *dst = data;
-	const struct nlattr *attr;
-
-	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_FAMILY_ID) {
-			dst->family_id_present = 1;
-			dst->family_id = mnl_attr_get_u16(attr);
-		}
-	}
-
-	return 0;
-}
-
-struct nlctrl_getpolicy_rsp_list *
-nlctrl_getpolicy_dump(struct ynl_sock *ys,
-		      struct nlctrl_getpolicy_req_list *req)
-{
-	struct nlctrl_getpolicy_rsp_list *rsp, *cur, *prev;
-	struct nlmsghdr *nlh;
-	int len, err;
-
-	nlh = ynl_gemsg_start_dump(ys, ys->family_id, CTRL_CMD_GETPOLICY, 1);
-
-	if (req->family_id_present)
-		mnl_attr_put_u16(nlh, CTRL_ATTR_FAMILY_ID, req->family_id);
-	if (req->family_name_present)
-		mnl_attr_put_strz(nlh, CTRL_ATTR_FAMILY_NAME, req->family_name);
-	if (req->op_present)
-		mnl_attr_put_u32(nlh, CTRL_ATTR_OP, req->op);
-
-	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
-	if (err < 0)
-		return NULL;
-
-	do {
-		len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
-		if (len < 0)
-			goto free_list;
-
-		cur = calloc(1, sizeof(*cur));
-		if (!rsp)
-			rsp = cur;
-		else
-			prev->next = cur;
-		prev = cur;
-
-		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
-				 nlctrl_getpolicy_rsp_parse, &cur->obj);
+				 nlctrl_getfamily_rsp_parse, &cur->obj);
 		if (err < 0)
 			goto free_list;
 	} while (err > 0);
