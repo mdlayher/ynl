@@ -8,7 +8,7 @@
 #include <linux/genetlink.h>
 
 // CTRL_CMD_GETFAMILY
-struct genlctrl_getfamily_req {
+struct nlctrl_getfamily_req {
 	u32 family_id_present:1;
 	u32 family_name_present:1;
 
@@ -16,9 +16,9 @@ struct genlctrl_getfamily_req {
 	char family_name[GENL_NAMSIZ];
 };
 
-void genlctrl_getfamily_req_free(struct genlctrl_getfamily_req *req);
+void nlctrl_getfamily_req_free(struct nlctrl_getfamily_req *req);
 
-struct genlctrl_getfamily_rsp {
+struct nlctrl_getfamily_rsp {
 	u32 family_id_present:1;
 	u32 family_name_present:1;
 	u32 version_present:1;
@@ -31,14 +31,14 @@ struct genlctrl_getfamily_rsp {
 	u32 hdrsize;
 	u32 maxattr;
 	unsigned int n_ops;
-	struct genlctrl_operation *ops;
+	struct nlctrl_operation *ops;
 };
 
-void genlctrl_getfamily_rsp_free(struct genlctrl_getfamily_rsp *req);
+void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *req);
 
 void
-genlctrl_getfamily_req_parse(const struct nlattr **tb,
-			     struct genlctrl_getfamily_req *req);
-const struct nla_policy genlctrl_getfamily_policy[];
+nlctrl_getfamily_req_parse(const struct nlattr **tb,
+			   struct nlctrl_getfamily_req *req);
+const struct nla_policy nlctrl_getfamily_policy[];
 
 // CTRL_CMD_GETPOLICY

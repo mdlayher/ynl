@@ -5,6 +5,14 @@ import os
 import yaml
 
 
+class BaseNlLib:
+    def __init__(self):
+        pass
+
+    def get_family_id(self):
+        return 'ys->family_id'
+
+
 class Family:
     def __init__(self, file_name):
         with open(file_name, "r") as stream:
@@ -56,6 +64,7 @@ class Family:
 class RenderInfo:
     def __init__(self, family, ku_space, op, op_name, op_mode, attr_space=None):
         self.family = family
+        self.nl = BaseNlLib()
         self.ku_space = ku_space
         self.op = op
         self.op_name = op_name
@@ -421,7 +430,7 @@ def print_req(ri):
     if local_vars:
         print()
 
-    print(f"\tnlh = ynl_gemsg_start_req(ys, GENL_ID_CTRL, {op_enum_name(ri)}, 1);")
+    print(f"\tnlh = ynl_gemsg_start_req(ys, {ri.nl.get_family_id()}, {op_enum_name(ri)}, 1);")
     print()
 
     for arg in ri.op[ri.op_mode]["request"]['attributes']:

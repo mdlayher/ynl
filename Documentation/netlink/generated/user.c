@@ -216,22 +216,22 @@ void ynl_sock_destroy(struct ynl_sock *ys)
 
 int main(int argc, char **argv)
 {
-	struct genlctrl_getfamily_rsp *rsp;
-	struct genlctrl_getfamily_req req;
+	struct nlctrl_getfamily_rsp *rsp;
+	struct nlctrl_getfamily_req req;
 	struct ynl_sock *ys;
 	unsigned int i;
 
 	if (argc < 2)
 		return err_ret(1, "Usage: %s <family_name>\n", argv[0]);
 
-	ys = ynl_sock_create(argv[1]);
+	ys = ynl_sock_create("nlctrl");
 	if (!ys)
 		return 1;
 
 	memset(&req, 0, sizeof(req));
-	genlctrl_getfamily_req_set_family_name(&req, argv[1]);
+	nlctrl_getfamily_req_set_family_name(&req, argv[1]);
 
-	rsp = genlctrl_getfamily(ys, &req);
+	rsp = nlctrl_getfamily(ys, &req);
 	if (rsp) {
 		if (rsp->family_id_present && rsp->family_name_present) {
 			printf("YS response family id %u name '%s' n_ops %d\n",

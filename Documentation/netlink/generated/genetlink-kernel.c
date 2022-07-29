@@ -9,8 +9,8 @@
 
 // CTRL_CMD_GETFAMILY
 void
-genlctrl_getfamily_req_parse(const struct nlattr **tb,
-			     struct genlctrl_getfamily_req *req)
+nlctrl_getfamily_req_parse(const struct nlattr **tb,
+			   struct nlctrl_getfamily_req *req)
 {
 	if (tb[CTRL_ATTR_FAMILY_ID]) {
 		req->family_id_present = 1;
@@ -22,7 +22,7 @@ genlctrl_getfamily_req_parse(const struct nlattr **tb,
 	}
 }
 
-const struct nla_policy genlctrl_getfamily_policy[] = {
+const struct nla_policy nlctrl_getfamily_policy[] = {
 	[CTRL_ATTR_FAMILY_ID] = { .type = NLA_U16 },
 	[CTRL_ATTR_FAMILY_NAME] = { .type = NLA_NUL_STRING, .len = GENL_NAMSIZ - 1 },
 };

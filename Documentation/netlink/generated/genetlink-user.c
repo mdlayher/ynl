@@ -14,9 +14,9 @@
 #include "user.h"
 
 // Common nested types
-int genlctrl_nl_policy_parse(struct genlctrl_nl_policy *dst,
-			     const struct nlattr *nested, __u32 attr_idx,
-			     __u32 current_policy_idx)
+int nlctrl_nl_policy_parse(struct nlctrl_nl_policy *dst,
+			   const struct nlattr *nested, __u32 attr_idx,
+			   __u32 current_policy_idx)
 {
 	const struct nlattr *attr;
 
@@ -73,8 +73,8 @@ int genlctrl_nl_policy_parse(struct genlctrl_nl_policy *dst,
 	return 0;
 }
 
-int genlctrl_operation_parse(struct genlctrl_operation *dst,
-			     const struct nlattr *nested, __u32 idx)
+int nlctrl_operation_parse(struct nlctrl_operation *dst,
+			   const struct nlattr *nested, __u32 idx)
 {
 	const struct nlattr *attr;
 
@@ -94,8 +94,8 @@ int genlctrl_operation_parse(struct genlctrl_operation *dst,
 	return 0;
 }
 
-int genlctrl_policy_parse(struct genlctrl_policy *dst,
-			  const struct nlattr *nested, __u32 cmd)
+int nlctrl_policy_parse(struct nlctrl_policy *dst, const struct nlattr *nested,
+			__u32 cmd)
 {
 	const struct nlattr *attr;
 
@@ -116,8 +116,8 @@ int genlctrl_policy_parse(struct genlctrl_policy *dst,
 }
 
 // CTRL_CMD_GETFAMILY
-int genlctrl_getfamily_rsp_parse(struct genlctrl_getfamily_rsp *dst,
-				 const struct nlmsghdr *nlh)
+int nlctrl_getfamily_rsp_parse(struct nlctrl_getfamily_rsp *dst,
+			       const struct nlmsghdr *nlh)
 {
 	const struct nlattr *attr;
 	const struct nlattr *attr_ops;
@@ -155,10 +155,10 @@ int genlctrl_getfamily_rsp_parse(struct genlctrl_getfamily_rsp *dst,
 	}
 
 	// ops
-	dst->ops = calloc(dst->n_ops, sizeof(struct genlctrl_operation));
+	dst->ops = calloc(dst->n_ops, sizeof(struct nlctrl_operation));
 	i = 0;
 	mnl_attr_for_each_nested(attr, attr_ops) {
-		genlctrl_operation_parse(&dst->ops[i], attr, i);
+		nlctrl_operation_parse(&dst->ops[i], attr, i);
 		i++;
 	}
 
@@ -166,14 +166,14 @@ int genlctrl_getfamily_rsp_parse(struct genlctrl_getfamily_rsp *dst,
 	return 0;
 }
 
-struct genlctrl_getfamily_rsp *
-genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req)
+struct nlctrl_getfamily_rsp *
+nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req)
 {
-	struct genlctrl_getfamily_rsp *rsp;
+	struct nlctrl_getfamily_rsp *rsp;
 	struct nlmsghdr *nlh;
 	int len, err;
 
-	nlh = ynl_gemsg_start_req(ys, GENL_ID_CTRL, CTRL_CMD_GETFAMILY, 1);
+	nlh = ynl_gemsg_start_req(ys, ys->family_id, CTRL_CMD_GETFAMILY, 1);
 
 	if (req->family_id_present)
 		mnl_attr_put_u16(nlh, CTRL_ATTR_FAMILY_ID, req->family_id);
@@ -193,7 +193,7 @@ genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req)
 		return NULL;
 
 	rsp = calloc(1, sizeof(*rsp));
-	genlctrl_getfamily_rsp_parse(rsp, nlh);
+	nlctrl_getfamily_rsp_parse(rsp, nlh);
 	return rsp;
 }
 

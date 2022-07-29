@@ -8,7 +8,7 @@
 struct ynl_sock;
 
 // Common nested types
-struct genlctrl_nl_policy {
+struct nlctrl_nl_policy {
 	__u32 type_present:1;
 	__u32 min_value_u_present:1;
 	__u32 max_value_u_present:1;
@@ -36,7 +36,7 @@ struct genlctrl_nl_policy {
 	__u32 bitfield32_mask;
 };
 
-struct genlctrl_operation {
+struct nlctrl_operation {
 	__u32 id_present:1;
 	__u32 flags_present:1;
 
@@ -45,7 +45,7 @@ struct genlctrl_operation {
 	__u32 flags;
 };
 
-struct genlctrl_policy {
+struct nlctrl_policy {
 	__u32 do_present:1;
 	__u32 dump_present:1;
 
@@ -55,7 +55,7 @@ struct genlctrl_policy {
 };
 
 // CTRL_CMD_GETFAMILY
-struct genlctrl_getfamily_req {
+struct nlctrl_getfamily_req {
 	__u32 family_id_present:1;
 	__u32 family_name_present:1;
 
@@ -64,24 +64,24 @@ struct genlctrl_getfamily_req {
 };
 
 static inline void
-genlctrl_getfamily_req_set_family_id(struct genlctrl_getfamily_req *req,
-				     __u16 family_id)
+nlctrl_getfamily_req_set_family_id(struct nlctrl_getfamily_req *req,
+				   __u16 family_id)
 {
 	req->family_id_present = 1;
 	req->family_id = family_id;
 }
 static inline void
-genlctrl_getfamily_req_set_family_name(struct genlctrl_getfamily_req *req,
-				       const char *family_name)
+nlctrl_getfamily_req_set_family_name(struct nlctrl_getfamily_req *req,
+				     const char *family_name)
 {
 	req->family_name_present = 1;
 	strncpy(req->family_name, family_name, sizeof(req->family_name));
 	req->family_name[GENL_NAMSIZ - 1] = 0;
 }
 
-void genlctrl_getfamily_req_free(struct genlctrl_getfamily_req *req);
+void nlctrl_getfamily_req_free(struct nlctrl_getfamily_req *req);
 
-struct genlctrl_getfamily_rsp {
+struct nlctrl_getfamily_rsp {
 	__u32 family_id_present:1;
 	__u32 family_name_present:1;
 	__u32 version_present:1;
@@ -94,12 +94,12 @@ struct genlctrl_getfamily_rsp {
 	__u32 hdrsize;
 	__u32 maxattr;
 	unsigned int n_ops;
-	struct genlctrl_operation *ops;
+	struct nlctrl_operation *ops;
 };
 
-void genlctrl_getfamily_rsp_free(struct genlctrl_getfamily_rsp *req);
+void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *req);
 
-struct genlctrl_getfamily_rsp *
-genlctrl_getfamily(struct ynl_sock *ys, struct genlctrl_getfamily_req *req);
+struct nlctrl_getfamily_rsp *
+nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req);
 
 // CTRL_CMD_GETPOLICY

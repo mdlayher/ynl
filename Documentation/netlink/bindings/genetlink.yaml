@@ -1,4 +1,4 @@
-name: genlctrl
+name: nlctrl
 
 description: |
   Generic netlink control protocol. Interface to query information about
