@@ -258,16 +258,22 @@ def _attribute_member(ri, space, attr, prototype=True, suffix=""):
     elif t == 'array-nest':
         t = f"struct {ri.family['name']}_{spec['nested-attributes']} *"
         if not prototype:
-            ri.cw.p(f"\tunsigned int n_{attr};")
+            ri.cw.p(f"unsigned int n_{attr};")
+    elif t == 'nest-type-value':
+        t = f"struct {nest_op_prefix(ri, spec['nested-attributes'])} "
     elif t in scalars:
         pfx = '__' if ri.ku_space == 'user' else ''
         t = pfx + t + ' '
+    else:
+        raise Exception(f'Type {t} not supported yet')
 
-    return f"{t}{spec['c_name']}{suffix}"
+    return [f"{t}{spec['c_name']}{suffix}"]
 
 
 def attribute_member(ri, space, attr, prototype=True, suffix=""):
-    ri.cw.p(f"\t{_attribute_member(ri, space, attr, prototype, suffix)}")
+    members = _attribute_member(ri, space, attr, prototype, suffix)
+    for line in members:
+        ri.cw.p(line)
 
 
 def attribute_pres_member(ri, space, attr, suffix=""):
@@ -277,7 +283,7 @@ def attribute_pres_member(ri, space, attr, suffix=""):
     if spec['type'] == 'array-nest':
         return False
 
-    ri.cw.p(f"\t{pfx}u32 {attr}_present:1{suffix}")
+    ri.cw.p(f"{pfx}u32 {attr}_present:1{suffix}")
     return True
 
 
@@ -294,8 +300,8 @@ def attribute_setter(ri, space, attr, direction):
 
     ri.cw.write_func_prot('static inline void',
                           f'{op_prefix(ri, direction)}_set_{attr}',
-                          [f'{type_name(ri, direction)} *{var}',
-                           f'{_attribute_member(ri, space, attr, prototype=True)}'])
+                          [f'{type_name(ri, direction)} *{var}'] +
+                          _attribute_member(ri, space, attr, prototype=True))
     ri.cw.block_start()
     ri.cw.p(f'{var}->{attr}_present = 1;')
     if spec['type'] in scalars:
@@ -317,7 +323,7 @@ def attribute_put(ri, attr, var):
     elif spec['type'] == 'nul-string':
         t = 'strz'
     else:
-        return
+        raise Exception(f"Type {spec['type']} not supported yet")
 
     ri.cw.p(f"\tif ({var}->{attr}_present)")
     ri.cw.p(f"\t\tmnl_attr_put_{t}(nlh, {attr_enum_name(ri, attr)}, {var}->{attr});")
@@ -325,6 +331,8 @@ def attribute_put(ri, attr, var):
 
 def attribute_get(ri, attr, var):
     spec = ri.family["attributes"]["spaces"][ri.attr_space]["list"][attr]
+    local_vars = []
+    get_lines = []
 
     if spec['type'] in scalars:
         # mnl does not have a helper for signed types
@@ -336,19 +344,36 @@ def attribute_get(ri, attr, var):
         get_lines = [f"strncpy({var}->{spec['c_name']}, mnl_attr_get_str(attr), {spec['len']});",
                      f"{var}->{spec['c_name']}[{spec['len']}] = 0;"]
     elif spec['type'] == 'array-nest':
-        get_lines = ['const struct nlattr *attr2;',
-                     '',
-                     f'attr_{attr} = attr;',
-                     'mnl_attr_for_each_nested(attr2, attr)',
-                     f'\t{var}->n_{attr}++;']
+        local_vars += ['const struct nlattr *attr2;']
+        get_lines += [f'attr_{attr} = attr;',
+                      'mnl_attr_for_each_nested(attr2, attr)',
+                      f'\t{var}->n_{attr}++;']
+    elif spec['type'] == 'nest-type-value':
+        prev = 'attr'
+        if 'type-value' in spec:
+            local_vars += [f'const struct nlattr *attr_{", *attr_".join(spec["type-value"])};']
+            local_vars += [f'__u32 {", ".join(spec["type-value"])};']
+            for level in spec["type-value"]:
+                get_lines += [f'{level} = mnl_attr_get_type({prev});']
+                get_lines += [f'attr_{level} = mnl_attr_get_payload({prev});']
+                prev = 'attr_' + level
+
+        get_lines += [f"{nest_op_prefix(ri, spec['nested-attributes'])}_parse(&{var}->{attr}, " +
+                      f"{prev}, {', '.join(spec['type-value'])});"]
     else:
-        return
+        raise Exception(f"Type {spec['type']} not supported yet")
 
     ri.cw.p(f"\t\tif (mnl_attr_get_type(attr) == {attr_enum_name(ri, attr)}) {'{'}")
+    if local_vars:
+        for l in local_vars:
+            ri.cw.p('\t\t\t' + l)
+        ri.cw.nl()
+
     if spec['type'] != 'array-nest':
         ri.cw.p(f"\t\t\t{var}->{attr}_present = 1;")
+
     for l in get_lines:
-        ri.cw.p('\t\t\t' + l if l else "")
+        ri.cw.p('\t\t\t' + l)
     ri.cw.p('\t\t}')
 
 
@@ -583,17 +608,18 @@ def print_free_prototype(ri, direction, suffix=';'):
 def _print_type(ri, direction, type_list, inherited_list={}):
     suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
 
-    ri.cw.p(f"struct {ri.family['name']}{suffix} " + '{')
+    ri.cw.block_start(line=f"struct {ri.family['name']}{suffix}")
     for arg in type_list:
         attribute_pres_member(ri, ri.attr_space, arg, suffix=';')
     ri.cw.nl()
 
     for arg in sorted(inherited_list):
-        ri.cw.p(f"\t__u32 {arg};")
+        ri.cw.p(f"__u32 {arg};")
 
     for arg in type_list:
         attribute_member(ri, ri.attr_space, arg, prototype=False, suffix=';')
-    ri.cw.p("};")
+
+    ri.cw.block_end(line=';')
     ri.cw.nl()
 
 
@@ -790,6 +816,8 @@ def main():
             if 'dump' in op:
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'dump')
                 if args.mode == "user":
+                    if not ri.dump_consistent:
+                        print_rsp_type(ri)
                     print_dump_type(ri)
                     print_dump_prototype(ri)
                     cw.nl()

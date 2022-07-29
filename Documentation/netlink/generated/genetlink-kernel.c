@@ -26,3 +26,5 @@ const struct nla_policy nlctrl_getfamily_policy[] = {
 	[CTRL_ATTR_FAMILY_ID] = { .type = NLA_U16 },
 	[CTRL_ATTR_FAMILY_NAME] = { .type = NLA_NUL_STRING, .len = GENL_NAMSIZ - 1 },
 };
+
+// CTRL_CMD_GETPOLICY

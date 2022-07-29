@@ -40,3 +40,5 @@ void
 nlctrl_getfamily_req_parse(const struct nlattr **tb,
 			   struct nlctrl_getfamily_req *req);
 const struct nla_policy nlctrl_getfamily_policy[];
+
+// CTRL_CMD_GETPOLICY
