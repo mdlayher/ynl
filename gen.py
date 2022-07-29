@@ -94,15 +94,26 @@ class CodeWriter:
         self.nlib = nlib
 
         self._nl = False
+        self._ind = 0
 
     def p(self, line):
         if self._nl:
             print()
             self._nl = False
-        print(line)
+        print('\t' * self._ind + line)
 
     def nl(self):
         self._nl = True
+
+    def block_start(self, line=''):
+        if line:
+            line = line + ' '
+        self.p(line + '{')
+        self._ind += 1
+
+    def block_end(self, line=''):
+        self._ind -= 1
+        self.p('}' + line)
 
     def write_func_prot(self, qual_ret, name, args=None, suffix=''):
         if not args:
@@ -285,14 +296,14 @@ def attribute_setter(ri, space, attr, direction):
                           f'{op_prefix(ri, direction)}_set_{attr}',
                           [f'{type_name(ri, direction)} *{var}',
                            f'{_attribute_member(ri, space, attr, prototype=True)}'])
-    ri.cw.p('{')
-    ri.cw.p(f'\t{var}->{attr}_present = 1;')
+    ri.cw.block_start()
+    ri.cw.p(f'{var}->{attr}_present = 1;')
     if spec['type'] in scalars:
-        ri.cw.p(f'\t{var}->{attr} = {attr};')
+        ri.cw.p(f'{var}->{attr} = {attr};')
     elif spec['type'] == 'nul-string':
-        ri.cw.p(f'\tstrncpy({var}->{attr}, {attr}, sizeof({var}->{attr}));')
-        ri.cw.p(f'\t{var}->{attr}[{spec["len"]}] = 0;')
-    ri.cw.p('}')
+        ri.cw.p(f'strncpy({var}->{attr}, {attr}, sizeof({var}->{attr}));')
+        ri.cw.p(f'{var}->{attr}[{spec["len"]}] = 0;')
+    ri.cw.block_end()
 
 
 def attribute_put(ri, attr, var):
@@ -640,33 +651,29 @@ def print_rsp_type(ri):
 
 
 def print_dump_type(ri):
-    ri.cw.p(f"{type_name(ri, 'reply')} {'{'}")
-    ri.cw.p(f"\t{type_name(ri, 'reply')} *next;")
-    ri.cw.p(f"\t{type_name(ri, 'reply', deref=True)} obj;")
-    ri.cw.p('};')
+    ri.cw.block_start(line=f"{type_name(ri, 'reply')}")
+    ri.cw.p(f"{type_name(ri, 'reply')} *next;")
+    ri.cw.p(f"{type_name(ri, 'reply', deref=True)} obj;")
+    ri.cw.block_end(line=';')
     ri.cw.nl()
     print_free_prototype(ri, '')
 
 
 def _free_type_members(ri, var, type_list, ref=''):
-    ind = '\t'
-    if ref:
-        ind = '\t\t'
-
     for arg in type_list:
         spec = ri.family["attributes"]["spaces"][ri.attr_space]["list"][arg]
         if spec['type'] == 'array-nest':
-            ri.cw.p(f'{ind}free({var}->{ref}{arg});')
-    ri.cw.p(f'{ind}free({var});')
+            ri.cw.p(f'free({var}->{ref}{arg});')
+    ri.cw.p(f'free({var});')
 
 
 def _free_type(ri, direction, type_list):
     var = free_arg_name(ri, direction)
 
     print_free_prototype(ri, direction, suffix='')
-    ri.cw.p('{')
+    ri.cw.block_start()
     _free_type_members(ri, var, type_list)
-    ri.cw.p('}')
+    ri.cw.block_end()
     ri.cw.nl()
 
 
@@ -680,20 +687,20 @@ def print_rsp_free(ri):
 
 
 def print_dump_type_free(ri):
-    free_obj = 'free'
     sub_type = type_name(ri, 'reply')
 
     print_free_prototype(ri, '', suffix='')
-    ri.cw.p(f"""{'{'}
-	{sub_type} *next = obj;
+    ri.cw.block_start()
+    ri.cw.p(f"{sub_type} *next = obj;")
+    ri.cw.nl()
+    ri.cw.block_start(line='while (next)')
+    ri.cw.p('obj = next;')
+    ri.cw.p('next = obj->next;')
+    ri.cw.nl()
 
-	while (next) {'{'}
-		obj = next;
-		next = obj->next;
-""")
     _free_type_members(ri, 'obj', ri.op[ri.op_mode]['reply']['attributes'], ref='obj.')
-    ri.cw.p('\t}')
-    ri.cw.p('}')
+    ri.cw.block_end()
+    ri.cw.block_end()
     ri.cw.nl()
 
 
