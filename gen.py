@@ -357,6 +357,10 @@ def print_req_prototype(ri):
     print_prototype(ri, "request")
 
 
+def print_dump_prototype(ri):
+    pass
+
+
 def parse_rsp_nested(ri, attr_space):
     struct_type = nest_type_name(ri, attr_space)
 
@@ -608,6 +612,10 @@ def print_rsp_type(ri):
     print_type(ri, "reply")
 
 
+def print_dump_type(ri):
+    pass
+
+
 def print_req_policy_fwd(ri, terminate=True):
     suffix = ';' if terminate else ' = {'
     print(f"const struct nla_policy {ri.family['name']}_{ri.op_name}_policy[]{suffix}")
@@ -672,7 +680,7 @@ def main():
         for op_name, op in parsed['operations']['list'].items():
             print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
 
-            if op and "do" in op:
+            if 'do' in op:
                 ri = RenderInfo(parsed, args.mode, op, op_name, "do")
 
                 print_req_type(ri)
@@ -688,6 +696,13 @@ def main():
                     print_parse_prototype(ri, "request")
                     print_req_policy_fwd(ri)
                 print()
+
+            if 'dump' in op:
+                ri = RenderInfo(parsed, args.mode, op, op_name, 'dump')
+                if args.mode == "user":
+                    print_dump_type(ri)
+                    print_dump_prototype(ri)
+                    print()
     else:
         if args.mode == "user":
             print('// Common nested types')
@@ -698,24 +713,23 @@ def main():
         for op_name, op in parsed['operations']['list'].items():
             print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
 
-            if op:
-                if "do" in op:
-                    ri = RenderInfo(parsed, args.mode, op, op_name, "do")
-                    if args.mode == "user":
-                        parse_rsp_msg(ri)
-                        print_req(ri)
-                    elif args.mode == "kernel":
-                        print_parse_kernel(ri, "request")
-                        print()
-                        print_req_policy(ri)
+            if 'do' in op:
+                ri = RenderInfo(parsed, args.mode, op, op_name, "do")
+                if args.mode == "user":
+                    parse_rsp_msg(ri)
+                    print_req(ri)
+                elif args.mode == "kernel":
+                    print_parse_kernel(ri, "request")
                     print()
+                    print_req_policy(ri)
+                print()
 
-                if 'dump' in op:
-                    ri = RenderInfo(parsed, args.mode, op, op_name, "dump")
-                    if args.mode == "user":
-                        if not ri.dump_consistent:
-                            parse_rsp_msg(ri)
-                        print_dump(ri)
+            if 'dump' in op:
+                ri = RenderInfo(parsed, args.mode, op, op_name, "dump")
+                if args.mode == "user":
+                    if not ri.dump_consistent:
+                        parse_rsp_msg(ri)
+                    print_dump(ri)
 
 
 if __name__ == "__main__":
