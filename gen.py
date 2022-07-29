@@ -175,7 +175,7 @@ def op_prefix(ri, direction):
     suffix = f'_{ri.type_name}'
     if ri.op_mode != 'dump' or not ri.dump_consistent:
         suffix += f"{direction_to_suffix[direction]}"
-    if ri.op_mode == 'dump':
+    if ri.op_mode == 'dump' and (not ri.dump_consistent or direction == 'request'):
         suffix += '_list'
     return f"{ri.family['name']}{suffix}"
 
