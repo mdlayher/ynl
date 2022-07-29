@@ -62,9 +62,9 @@ class Family:
 
 
 class RenderInfo:
-    def __init__(self, family, ku_space, op, op_name, op_mode, attr_space=None):
+    def __init__(self, cw, family, ku_space, op, op_name, op_mode, attr_space=None):
         self.family = family
-        self.nl = BaseNlLib()
+        self.nl = cw.nl
         self.ku_space = ku_space
         self.op = op
         self.op_name = op_name
@@ -86,10 +86,13 @@ class RenderInfo:
         else:
             self.type_name = attr_space.replace('-', '_')
 
-        self.cw = CodeWriter()
+        self.cw = cw
 
 
 class CodeWriter:
+    def __init__(self, nl):
+        self.nl = nl
+
     def write_func_prot(self, qual_ret, name, args=None, suffix=''):
         if not args:
             args = ['void']
@@ -720,6 +723,8 @@ def main():
         os.sys.exit(1)
         return
 
+    cw = CodeWriter(BaseNlLib())
+
     print(f"// SPDX-License-Identifier: MIT")
     print("// Do not edit directly, auto-generated from:")
     print(f"//\t{args.spec}")
@@ -747,14 +752,14 @@ def main():
         if args.mode == "user":
             print('// Common nested types')
             for attr_space in sorted(parsed.pure_nested_spaces):
-                ri = RenderInfo(parsed, args.mode, "", "", "", attr_space)
+                ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
                 print_type_full(ri, attr_space)
 
         for op_name, op in parsed['operations']['list'].items():
             print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
 
             if 'do' in op:
-                ri = RenderInfo(parsed, args.mode, op, op_name, "do")
+                ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
 
                 print_req_type(ri)
                 print_req_type_helpers(ri)
@@ -771,7 +776,7 @@ def main():
                 print()
 
             if 'dump' in op:
-                ri = RenderInfo(parsed, args.mode, op, op_name, 'dump')
+                ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'dump')
                 if args.mode == "user":
                     print_dump_type(ri)
                     print_dump_prototype(ri)
@@ -780,7 +785,7 @@ def main():
         if args.mode == "user":
             print('// Common nested types')
             for attr_space in sorted(parsed.pure_nested_spaces):
-                ri = RenderInfo(parsed, args.mode, "", "", "", attr_space)
+                ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
                 free_rsp_nested(ri, attr_space)
                 parse_rsp_nested(ri, attr_space)
 
@@ -788,7 +793,7 @@ def main():
             print(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
 
             if 'do' in op:
-                ri = RenderInfo(parsed, args.mode, op, op_name, "do")
+                ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
                 if args.mode == "user":
                     print_rsp_free(ri)
                     parse_rsp_msg(ri)
@@ -800,7 +805,7 @@ def main():
                 print()
 
             if 'dump' in op:
-                ri = RenderInfo(parsed, args.mode, op, op_name, "dump")
+                ri = RenderInfo(cw, parsed, args.mode, op, op_name, "dump")
                 if args.mode == "user":
                     if not ri.dump_consistent:
                         parse_rsp_msg(ri)
