@@ -554,6 +554,7 @@ def main():
     print(f"// SPDX-License-Identifier: MIT")
     print("// Do not edit directly, auto-generated from:")
     print(f"//\t{args.spec}")
+    print(f"// {' '.join(os.sys.argv)}")
     print()
     if args.mode == 'kernel':
         print(f'#include <net/netlink.h>')

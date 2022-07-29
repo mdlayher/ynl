@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
 //	Documentation/netlink/bindings/genetlink.yaml
+// ./gen.py --mode user --user-header genetlink-user.h user.h --header --spec Documentation/netlink/bindings/genetlink.yaml
 
 #include <linux/genetlink.h>
 
