@@ -162,7 +162,6 @@ int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 		i++;
 	}
 
-
 	return 0;
 }
 

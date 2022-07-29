@@ -411,7 +411,6 @@ def parse_rsp_msg(ri):
             print(f"\t\t{ri.family['name']}_{aspec['nested-attributes']}_parse(&dst->ops[i], attr, i);")
             print('\t\ti++;')
             print('\t}')
-        print()
 
     print()
     print('\treturn 0;')
