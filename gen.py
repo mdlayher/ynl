@@ -634,6 +634,10 @@ def print_dump_type(ri):
     print_free_prototype(ri, '')
 
 
+def print_dump_type_free(ri):
+    pass
+
+
 def print_req_policy_fwd(ri, terminate=True):
     suffix = ';' if terminate else ' = {'
     print(f"const struct nla_policy {ri.family['name']}_{ri.op_name}_policy[]{suffix}")
@@ -747,6 +751,7 @@ def main():
                 if args.mode == "user":
                     if not ri.dump_consistent:
                         parse_rsp_msg(ri)
+                    print_dump_type_free(ri)
                     print_dump(ri)
 
 
