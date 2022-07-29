@@ -18,7 +18,6 @@ struct nlctrl_getfamily_req {
 
 void nlctrl_getfamily_req_free(struct nlctrl_getfamily_req *req);
 
-
 struct nlctrl_getfamily_rsp {
 	u32 family_id_present:1;
 	u32 family_name_present:1;
@@ -37,9 +36,7 @@ struct nlctrl_getfamily_rsp {
 
 void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *rsp);
 
-
 void
 nlctrl_getfamily_req_parse(const struct nlattr **tb,
 			   struct nlctrl_getfamily_req *req);
 const struct nla_policy nlctrl_getfamily_policy[];
-

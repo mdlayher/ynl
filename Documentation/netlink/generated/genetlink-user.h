@@ -80,7 +80,6 @@ nlctrl_getfamily_req_set_family_name(struct nlctrl_getfamily_req *req,
 	req->family_name[GENL_NAMSIZ - 1] = 0;
 }
 
-
 struct nlctrl_getfamily_rsp {
 	__u32 family_id_present:1;
 	__u32 family_name_present:1;
@@ -99,7 +98,6 @@ struct nlctrl_getfamily_rsp {
 
 void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *rsp);
 
-
 struct nlctrl_getfamily_rsp *
 nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req);
 
@@ -110,4 +108,3 @@ struct nlctrl_getfamily_list {
 
 void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *obj);
 struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys);
-

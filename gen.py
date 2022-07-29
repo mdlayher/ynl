@@ -93,11 +93,16 @@ class CodeWriter:
     def __init__(self, nlib):
         self.nlib = nlib
 
+        self._nl = False
+
     def p(self, line):
+        if self._nl:
+            print()
+            self._nl = False
         print(line)
 
     def nl(self):
-        print()
+        self._nl = True
 
     def write_func_prot(self, qual_ret, name, args=None, suffix=''):
         if not args:
