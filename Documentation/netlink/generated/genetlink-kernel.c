@@ -7,7 +7,9 @@
 #include <linux/genetlink.h>
 
 // CTRL_CMD_GETFAMILY
-void genlctrl_getfamily_req_parse(const struct nlattr **tb, struct genlctrl_getfamily_req *req)
+void
+genlctrl_getfamily_req_parse(const struct nlattr **tb,
+			     struct genlctrl_getfamily_req *req)
 {
 	if (tb[CTRL_ATTR_FAMILY_ID]) {
 		req->family_id_present = 1;

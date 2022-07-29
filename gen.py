@@ -73,14 +73,14 @@ class RenderInfo:
 
 
 class CodeWriter:
-    def write_function(self, qual_ret, name, args=None):
+    def write_func_prot(self, qual_ret, name, args=None, suffix=''):
         if not args:
             args = ['void']
 
         oneline = qual_ret
-        if oneline[-1] != '*':
+        if qual_ret[-1] != '*':
             oneline += ' '
-        oneline += f"{name}({', '.join(args)})"
+        oneline += f"{name}({', '.join(args)}){suffix}"
 
         if len(oneline) < 80:
             print(oneline)
@@ -90,7 +90,9 @@ class CodeWriter:
         if len(v) > 3:
             print(v)
             v = ''
-        v += ' ' + name + '('
+        elif qual_ret[-1] != '*':
+            v += ' '
+        v += name + '('
         ind = '\t' * (len(v) // 8) + ' ' * (len(v) % 8)
         delta_ind = len(v) - len(ind)
         v += args[0]
@@ -106,7 +108,7 @@ class CodeWriter:
                 v += ', '
             v += args[i]
             i += 1
-        print(v + ')')
+        print(v + ')' + suffix)
 
 
 scalars = {'u8', 'u16', 'u32', 'u64', 's64'}
@@ -230,9 +232,10 @@ def attribute_setter(ri, space, attr, direction):
     else:
         return
 
-    print('static inline void')
-    print(f'{op_prefix(ri, direction)}_set_{attr}({type_name(ri, direction)} *{var}, ' +
-          f'{_attribute_member(ri, space, attr, prototype=True)})')
+    ri.cw.write_func_prot('static inline void',
+                          f'{op_prefix(ri, direction)}_set_{attr}',
+                          [f'{type_name(ri, direction)} *{var}',
+                           f'{_attribute_member(ri, space, attr, prototype=True)}'])
     print('{')
     print(f'\t{var}->{attr}_present = 1;')
     if spec['type'] in scalars:
@@ -304,11 +307,13 @@ def attribute_parse_kernel(family, space, attr, prototype=True, suffix=""):
 
 
 def print_prototype(ri, direction, terminate=True):
-    suffix = ');' if terminate else ')'
+    suffix = ';' if terminate else ''
 
-    print(f"{type_name(ri, rdir(direction))} *")
-    print(f"{ri.family['name']}_{ri.op_name}(struct ynl_sock *ys, {type_name(ri, direction)} *" +
-          f"{direction_to_suffix[direction][1:]}{suffix}")
+    ri.cw.write_func_prot(f"{type_name(ri, rdir(direction))} *",
+                          f"{ri.family['name']}_{ri.op_name}",
+                          ['struct ynl_sock *ys',
+                           f"{type_name(ri, direction)} *" + f"{direction_to_suffix[direction][1:]}"],
+                          suffix)
 
 
 def print_req_prototype(ri):
@@ -316,21 +321,20 @@ def print_req_prototype(ri):
 
 
 def print_rsp_nested(ri, attr_space):
-    cw = CodeWriter()
     struct_type = nest_type_name(ri, attr_space)
 
     func_args = [f'{struct_type} *dst',
                  'const struct nlattr *nested']
-    for arg in ri.family.inherited_members[attr_space]:
+    for arg in sorted(ri.family.inherited_members[attr_space]):
         func_args.append('__u32 ' + arg)
 
-    cw.write_function('int', f'{nest_op_prefix(ri, attr_space)}_parse', func_args)
+    ri.cw.write_func_prot('int', f'{nest_op_prefix(ri, attr_space)}_parse', func_args)
 
     print('{')
     print('\tconst struct nlattr *attr;')
     print()
 
-    for arg in ri.family.inherited_members[attr_space]:
+    for arg in sorted(ri.family.inherited_members[attr_space]):
         print(f'\tdst->{arg} = {arg};')
     if ri.family.inherited_members[attr_space]:
         print()
@@ -454,8 +458,9 @@ def print_type_helpers(ri, direction):
         if type_list:
             print()
 
-    print(f"void {ri.family['name']}{suffix}_free(" +
-          f"struct {ri.family['name']}{suffix} *req);")
+    ri.cw.write_func_prot('void', f"{ri.family['name']}{suffix}_free",
+                          [f"struct {ri.family['name']}{suffix} *req"],
+                          suffix=';')
 
 
 def print_req_type_helpers(ri):
@@ -470,8 +475,10 @@ def print_parse_prototype(ri, direction, terminate=True):
     suffix = "_rsp" if direction == "reply" else "_req"
     term = ';' if terminate else ''
 
-    print(f"void {ri.family['name']}_{ri.op_name}{suffix}_parse(const struct nlattr **tb," +
-          f" struct {ri.family['name']}_{ri.op_name}{suffix} *req){term}")
+    ri.cw.write_func_prot('void', f"{ri.family['name']}_{ri.op_name}{suffix}_parse",
+                          ['const struct nlattr **tb',
+                           f"struct {ri.family['name']}_{ri.op_name}{suffix} *req"],
+                          suffix=term)
 
 
 def print_parse_kernel(ri, direction):

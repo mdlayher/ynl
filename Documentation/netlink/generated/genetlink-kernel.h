@@ -35,7 +35,9 @@ struct genlctrl_getfamily_rsp {
 
 void genlctrl_getfamily_rsp_free(struct genlctrl_getfamily_rsp *req);
 
-void genlctrl_getfamily_req_parse(const struct nlattr **tb, struct genlctrl_getfamily_req *req);
+void
+genlctrl_getfamily_req_parse(const struct nlattr **tb,
+			     struct genlctrl_getfamily_req *req);
 const struct nla_policy genlctrl_getfamily_policy[];
 
 // CTRL_CMD_GETPOLICY

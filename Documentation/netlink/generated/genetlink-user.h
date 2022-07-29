@@ -63,13 +63,15 @@ struct genlctrl_getfamily_req {
 };
 
 static inline void
-genlctrl_getfamily_req_set_family_id(struct genlctrl_getfamily_req *req, __u16 family_id)
+genlctrl_getfamily_req_set_family_id(struct genlctrl_getfamily_req *req,
+				     __u16 family_id)
 {
 	req->family_id_present = 1;
 	req->family_id = family_id;
 }
 static inline void
-genlctrl_getfamily_req_set_family_name(struct genlctrl_getfamily_req *req, const char *family_name)
+genlctrl_getfamily_req_set_family_name(struct genlctrl_getfamily_req *req,
+				       const char *family_name)
 {
 	req->family_name_present = 1;
 	strncpy(req->family_name, family_name, sizeof(req->family_name));
