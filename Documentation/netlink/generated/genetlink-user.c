@@ -116,9 +116,9 @@ int nlctrl_policy_parse(struct nlctrl_policy *dst, const struct nlattr *nested,
 }
 
 // CTRL_CMD_GETFAMILY
-int nlctrl_getfamily_rsp_parse(struct nlctrl_getfamily_rsp *dst,
-			       const struct nlmsghdr *nlh)
+int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 {
+	struct nlctrl_getfamily_rsp *dst = data;
 	const struct nlattr *attr;
 	const struct nlattr *attr_ops;
 	int i;
@@ -193,7 +193,7 @@ nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req)
 		return NULL;
 
 	rsp = calloc(1, sizeof(*rsp));
-	nlctrl_getfamily_rsp_parse(rsp, nlh);
+	nlctrl_getfamily_rsp_parse(nlh, rsp);
 	return rsp;
 }
 

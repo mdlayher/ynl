@@ -372,10 +372,11 @@ def parse_rsp_nested(ri, attr_space):
 def parse_rsp_msg(ri):
     struct_type = type_name(ri, "reply")
 
-    func_args = [f'{struct_type} *dst',
-                 'const struct nlmsghdr *nlh']
+    func_args = ['const struct nlmsghdr *nlh',
+                 'void *data']
 
-    local_vars = ['const struct nlattr *attr;']
+    local_vars = [f'{struct_type} *dst = data;',
+                  'const struct nlattr *attr;']
 
     array_nests = set()
     for arg in ri.op[ri.op_mode]["reply"]['attributes']:
@@ -450,7 +451,7 @@ def print_req(ri):
 
 	rsp = calloc(1, sizeof(*rsp));""")
 
-    print(f'\t{op_prefix(ri, "reply")}_parse(rsp, nlh);')
+    print(f'\t{op_prefix(ri, "reply")}_parse(nlh, rsp);')
 
     print('\treturn rsp;')
     print('}')
