@@ -14,28 +14,28 @@ attributes:
     main:
       name-prefix: CTRL_ATTR_
       list:
-        family_id: &family_id
+        family_id:
           type: u16
           decription: |
             Numerical identifier of the family.
-        family_name: &family_name
+        family_name:
           type: nul-string
           len: GENL_NAMSIZ - 1
           description: |
             String identifier of the family. Guaranteed to be unique.
-        version: &version
+        version:
           type: u32
-        hdrsize: &hdrsize
+        hdrsize:
           type: u32
-        maxattr: &maxattr
+        maxattr:
           type: u32
-        ops: &ops
+        ops:
           type: array-nest
           nested-attributes: operation
         mcast_groups:
           type: array-nest
           nested-attributes: mcast-group
-        op: &op
+        op:
           type: u32
         op_policy:
           type: nest-type-value
@@ -49,9 +49,9 @@ attributes:
     operation:
       name-prefix: CTRL_ATTR_OP_
       list:
-        id: &op_id
+        id:
           type: u32
-        flags: &op_flags
+        flags:
           type: u32
 
     mcast-group:
@@ -107,6 +107,7 @@ operations:
 
       do:
         request:
+          # TODO
           interfaces:
             by_id:
               - family_id
@@ -126,6 +127,13 @@ operations:
             - mcast_groups
       dump:
         reply: *getfamily-do-reply
+
+      # TODO
+      notify:
+        - newfamily
+        - delfamily
+        - newmcast_grp
+        - delmcast_grp
 
     getpolicy:
       attribute-space: main
