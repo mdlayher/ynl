@@ -199,11 +199,21 @@ def attr_enum_name(ri, attr):
 def op_prefix(ri, direction, deref=False):
     suffix = f'_{ri.type_name}'
 
-    dump_type = ri.op_mode == 'dump' and not deref
-    if not dump_type or not ri.dump_consistent:
+    if ri.op_mode != 'dump':
         suffix += f"{direction_to_suffix[direction]}"
-    if dump_type:
-        suffix += '_list' if direction == 'reply' else '_dump'
+    else:
+        if direction == 'request':
+            suffix += '_req_dump'
+        else:
+            if ri.dump_consistent:
+                if deref:
+                    suffix += f"{direction_to_suffix[direction]}"
+                else:
+                    suffix += '_list'
+            else:
+                suffix += '_rsp'
+                suffix += '_dump' if deref else '_list'
+
     return f"{ri.family['name']}{suffix}"
 
 
@@ -213,10 +223,7 @@ def op_aspec(ri, attr):
 
 
 def type_name(ri, direction, deref=False):
-    name = f"struct {op_prefix(ri, direction, deref=deref)}"
-    if ri.op_mode == 'dump' and not ri.dump_consistent and deref:
-        name += '_dump'
-    return name
+    return f"struct {op_prefix(ri, direction, deref=deref)}"
 
 
 def nest_op_prefix(ri, attr_space):
@@ -290,7 +297,7 @@ def attribute_pres_member(ri, space, attr, suffix=""):
     return True
 
 
-def attribute_setter(ri, space, attr, direction):
+def attribute_setter(ri, space, attr, direction, deref=False):
     spec = ri.family["attributes"]["spaces"][space]["list"][attr]
     var = "req"
 
@@ -302,8 +309,8 @@ def attribute_setter(ri, space, attr, direction):
         return
 
     ri.cw.write_func_prot('static inline void',
-                          f'{op_prefix(ri, direction)}_set_{attr}',
-                          [f'{type_name(ri, direction)} *{var}'] +
+                          f'{op_prefix(ri, direction, deref=True)}_set_{attr}',
+                          [f'{type_name(ri, direction, deref=True)} *{var}'] +
                           _attribute_member(ri, space, attr, prototype=True))
     ri.cw.block_start()
     ri.cw.p(f'{var}->{attr}_present = 1;')
@@ -445,8 +452,7 @@ def parse_rsp_nested(ri, attr_space):
     ri.cw.nl()
 
 
-def parse_rsp_msg(ri):
-    deref = ri.op_mode == 'dump' and not ri.dump_consistent
+def parse_rsp_msg(ri, deref=False):
     struct_type = type_name(ri, "reply", deref=deref)
 
     func_args = ['const struct nlmsghdr *nlh',
@@ -464,7 +470,7 @@ def parse_rsp_msg(ri):
     if array_nests:
         local_vars.append('int i;')
 
-    ri.cw.write_func_prot('int', f'{op_prefix(ri, "reply")}_parse', func_args)
+    ri.cw.write_func_prot('int', f'{op_prefix(ri, "reply", deref=deref)}_parse', func_args)
     ri.cw.p('{')
     ri.cw.write_func_lvar(local_vars)
 
@@ -639,14 +645,14 @@ def print_type_full(ri, attr_space):
     _print_type(ri, "", types, ri.family.inherited_members[attr_space])
 
 
-def print_type_helpers(ri, direction):
+def print_type_helpers(ri, direction, deref=False):
     print_free_prototype(ri, direction)
 
     type_list = ri.op[ri.op_mode][direction]['attributes']
 
     if ri.ku_space == 'user' and direction == 'request':
         for arg in type_list:
-            attribute_setter(ri, ri.attr_space, arg, direction)
+            attribute_setter(ri, ri.attr_space, arg, direction, deref=deref)
     ri.cw.nl()
 
 
@@ -859,7 +865,7 @@ def main():
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "dump")
                 if args.mode == "user":
                     if not ri.dump_consistent:
-                        parse_rsp_msg(ri)
+                        parse_rsp_msg(ri, deref=True)
                     print_dump_type_free(ri)
                     print_dump(ri)
 

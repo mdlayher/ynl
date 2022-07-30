@@ -279,7 +279,7 @@ free_list:
 	return NULL;
 }
 // CTRL_CMD_GETPOLICY
-int nlctrl_getpolicy_rsp_list_parse(const struct nlmsghdr *nlh, void *data)
+int nlctrl_getpolicy_rsp_dump_parse(const struct nlmsghdr *nlh, void *data)
 {
 	struct nlctrl_getpolicy_rsp_dump *dst = data;
 	const struct nlattr *attr;
@@ -336,7 +336,7 @@ nlctrl_getpolicy_dump(struct ynl_sock *ys,
 	int len, err;
 
 	yds.alloc_sz = sizeof(*rsp);
-	yds.cb = nlctrl_getpolicy_rsp_parse;
+	yds.cb = nlctrl_getpolicy_rsp_dump_parse;
 
 	nlh = ynl_gemsg_start_dump(ys, ys->family_id, CTRL_CMD_GETPOLICY, 1);
 
