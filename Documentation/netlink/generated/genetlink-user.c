@@ -294,8 +294,8 @@ int nlctrl_getpolicy_rsp_dump_parse(const struct nlmsghdr *nlh, void *data)
 			__u32 cmd;
 
 			dst->op_policy_present = 1;
-			cmd = mnl_attr_get_type(attr);
 			attr_cmd = mnl_attr_get_payload(attr);
+			cmd = mnl_attr_get_type(attr_cmd);
 			nlctrl_policy_parse(&dst->op_policy, attr_cmd, cmd);
 		}
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_POLICY) {
@@ -303,10 +303,10 @@ int nlctrl_getpolicy_rsp_dump_parse(const struct nlmsghdr *nlh, void *data)
 			__u32 current_policy_idx, attr_idx;
 
 			dst->policy_present = 1;
-			current_policy_idx = mnl_attr_get_type(attr);
 			attr_current_policy_idx = mnl_attr_get_payload(attr);
-			attr_idx = mnl_attr_get_type(attr_current_policy_idx);
+			current_policy_idx = mnl_attr_get_type(attr_current_policy_idx);
 			attr_attr_idx = mnl_attr_get_payload(attr_current_policy_idx);
+			attr_idx = mnl_attr_get_type(attr_attr_idx);
 			nlctrl_nl_policy_parse(&dst->policy, attr_attr_idx, current_policy_idx, attr_idx);
 		}
 	}

@@ -364,8 +364,8 @@ def attribute_get(ri, attr, var):
             local_vars += [f'const struct nlattr *attr_{", *attr_".join(spec["type-value"])};']
             local_vars += [f'__u32 {", ".join(spec["type-value"])};']
             for level in spec["type-value"]:
-                get_lines += [f'{level} = mnl_attr_get_type({prev});']
                 get_lines += [f'attr_{level} = mnl_attr_get_payload({prev});']
+                get_lines += [f'{level} = mnl_attr_get_type(attr_{level});']
                 prev = 'attr_' + level
 
         get_lines += [f"{nest_op_prefix(ri, spec['nested-attributes'])}_parse(&{var}->{attr}, " +

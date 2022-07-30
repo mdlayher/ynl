@@ -316,7 +316,6 @@ int main(int argc, char **argv)
 	memset(&pdr, 0, sizeof(pdr));
 
 	nlctrl_getpolicy_req_dump_set_family_id(&pdr, fam_id);
-	nlctrl_getpolicy_req_dump_set_op(&pdr, 10);
 
 	policies = nlctrl_getpolicy_dump(ys, &pdr);
 	if (!policies)
@@ -325,6 +324,12 @@ int main(int argc, char **argv)
 	for (p = policies; p; p = p->next) {
 		if (!p->obj.policy_present)
 			continue;
+		if (!p->obj.policy.type_present) {
+			printf("\t[%d, %d] -- no type\n",
+			       p->obj.policy.attr_idx,
+			       p->obj.policy.current_policy_idx);
+			continue;
+		}
 		printf("\t[%d, %d] %d\n", p->obj.policy.attr_idx,
 		       p->obj.policy.current_policy_idx, p->obj.policy.type);
 	}
