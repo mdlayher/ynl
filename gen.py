@@ -752,6 +752,16 @@ def print_dump_type_free(ri):
     ri.cw.nl()
 
 
+def print_ntf_type_free(ri):
+    sub_type = type_name(ri, 'reply')
+
+    print_free_prototype(ri, 'reply', suffix='')
+    ri.cw.block_start()
+    _free_type_members(ri, 'rsp', ri.op[ri.op_mode]['reply']['attributes'], ref='obj.')
+    ri.cw.block_end()
+    ri.cw.nl()
+
+
 def print_req_policy_fwd(ri, terminate=True):
     suffix = ';' if terminate else ' = {'
     ri.cw.p(f"const struct nla_policy {ri.family['name']}_{ri.op_name}_policy[]{suffix}")
@@ -883,7 +893,14 @@ def main():
                         parse_rsp_msg(ri, deref=True)
                     print_dump_type_free(ri)
                     print_dump(ri)
+                    cw.nl()
 
+            if 'notify' in op:
+                ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'notify')
+                if args.mode == "user":
+                    if not ri.type_consistent:
+                        raise Exception('Only notifications with consistent types supported')
+                    print_ntf_type_free(ri)
 
 if __name__ == "__main__":
     main()

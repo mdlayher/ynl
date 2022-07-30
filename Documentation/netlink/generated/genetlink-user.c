@@ -323,6 +323,14 @@ free_list:
 	}
 	return NULL;
 }
+
+void nlctrl_getfamily_ntf_free(struct nlctrl_getfamily_ntf *rsp)
+{
+	free(rsp->obj.ops);
+	free(rsp->obj.mcast_groups);
+	free(rsp);
+}
+
 // CTRL_CMD_GETPOLICY
 int nlctrl_getpolicy_rsp_dump_parse(const struct nlmsghdr *nlh, void *data)
 {

@@ -130,10 +130,12 @@ operations:
 
       # TODO
       notify:
-        - newfamily
-        - delfamily
-        - newmcast_grp
-        - delmcast_grp
+        reply: *getfamily-do-reply
+        cmds:
+          - newfamily
+          - delfamily
+          - newmcast_grp
+          - delmcast_grp
 
     getpolicy:
       attribute-space: main
