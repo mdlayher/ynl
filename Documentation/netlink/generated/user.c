@@ -265,8 +265,10 @@ int main(int argc, char **argv)
 	struct nlctrl_getfamily_list *families, *f;
 	struct nlctrl_getfamily_rsp *rsp;
 	struct nlctrl_getfamily_req req;
+	struct nlctrl_getpolicy_req_dump pdr;
+	struct nlctrl_getpolicy_rsp_list *policies, *p;
+	unsigned int i, fam_id;
 	struct ynl_sock *ys;
-	unsigned int i;
 
 	if (argc < 2)
 		return err_ret(1, "Usage: %s <family_name>\n", argv[0]);
@@ -279,8 +281,10 @@ int main(int argc, char **argv)
 	nlctrl_getfamily_req_set_family_name(&req, argv[1]);
 
 	rsp = nlctrl_getfamily(ys, &req);
-	if (!rsp)
+	if (!rsp || !rsp->family_id_present)
 		goto out;
+
+	fam_id = rsp->family_id;
 
 	if (rsp->family_id_present && rsp->family_name_present) {
 		printf("YS response family id %u name '%s' n_ops %d\n",
@@ -308,7 +312,25 @@ int main(int argc, char **argv)
 	}
 	nlctrl_getfamily_list_free(families);
 
+	printf("\nPOLICY");
+	memset(&pdr, 0, sizeof(pdr));
+
+	nlctrl_getpolicy_req_dump_set_family_id(&pdr, fam_id);
+	nlctrl_getpolicy_req_dump_set_op(&pdr, 1);
+
+	policies = nlctrl_getpolicy_dump(ys, &pdr);
+	if (!policies)
+		goto out;
+
+	for (p = policies; p; p = p->next) {
+		if (!p->obj.policy_present)
+			continue;
+		printf("\t[%d, %d] %d\n", p->obj.policy.attr_idx,
+		       p->obj.policy.current_policy_idx, p->obj.policy.type);
+	}
+	nlctrl_getpolicy_rsp_list_free(policies);
 out:
 	ynl_sock_destroy(ys);
+
 	return 0;
 }
