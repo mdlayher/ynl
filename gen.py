@@ -170,8 +170,13 @@ scalars = {'u8', 'u16', 'u32', 'u64', 's64'}
 direction_to_suffix = {
     'reply': '_rsp',
     'request': '_req',
-    'notify': '_ntf',
     '': ''
+}
+
+op_mode_to_wrapper = {
+    'do': '',
+    'dump': '_list',
+    'notify': '_ntf',
 }
 
 c_kw = {
@@ -200,7 +205,7 @@ def attr_enum_name(ri, attr):
 def op_prefix(ri, direction, deref=False):
     suffix = f"_{ri.type_name.replace('-', '_')}"
 
-    if ri.op_mode != 'dump':
+    if not ri.op_mode or ri.op_mode == 'do':
         suffix += f"{direction_to_suffix[direction]}"
     else:
         if direction == 'request':
@@ -210,7 +215,7 @@ def op_prefix(ri, direction, deref=False):
                 if deref:
                     suffix += f"{direction_to_suffix[direction]}"
                 else:
-                    suffix += '_list'
+                    suffix += op_mode_to_wrapper[ri.op_mode]
             else:
                 suffix += '_rsp'
                 suffix += '_dump' if deref else '_list'
@@ -688,13 +693,18 @@ def print_rsp_type(ri):
     print_type(ri, "reply")
 
 
-def print_dump_type(ri):
+def print_wrapped_type(ri):
     ri.cw.block_start(line=f"{type_name(ri, 'reply')}")
-    ri.cw.p(f"{type_name(ri, 'reply')} *next;")
+    if ri.op_mode == 'dump':
+        ri.cw.p(f"{type_name(ri, 'reply')} *next;")
+    elif ri.op_mode == 'notify':
+        ri.cw.p('__u16 family;')
+        ri.cw.p('__u8 cmd;')
     ri.cw.p(f"{type_name(ri, 'reply', deref=True)} obj;")
     ri.cw.block_end(line=';')
     ri.cw.nl()
     print_free_prototype(ri, 'reply')
+    ri.cw.nl()
 
 
 def _free_type_members(ri, var, type_list, ref=''):
@@ -833,7 +843,7 @@ def main():
                         print_req_type_helpers(ri)
                     if not ri.type_consistent:
                         print_rsp_type(ri)
-                    print_dump_type(ri)
+                    print_wrapped_type(ri)
                     print_dump_prototype(ri)
                     cw.nl()
 
@@ -842,6 +852,7 @@ def main():
                 if args.mode == "user":
                     if not ri.type_consistent:
                         raise Exception('Only notifications with consistent types supported')
+                    print_wrapped_type(ri)
     else:
         if args.mode == "user":
             cw.p('// Common nested types')
