@@ -203,7 +203,7 @@ def op_prefix(ri, direction, deref=False):
     if not dump_type or not ri.dump_consistent:
         suffix += f"{direction_to_suffix[direction]}"
     if dump_type:
-        suffix += '_list'
+        suffix += '_list' if direction == 'reply' else '_dump'
     return f"{ri.family['name']}{suffix}"
 
 
@@ -607,7 +607,7 @@ def print_free_prototype(ri, direction, suffix=';'):
 
 def _print_type(ri, direction, type_list, inherited_list={}):
     suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
-
+    
     ri.cw.block_start(line=f"struct {ri.family['name']}{suffix}")
     for arg in type_list:
         attribute_pres_member(ri, ri.attr_space, arg, suffix=';')
@@ -716,16 +716,16 @@ def print_rsp_free(ri):
 def print_dump_type_free(ri):
     sub_type = type_name(ri, 'reply')
 
-    print_free_prototype(ri, '', suffix='')
+    print_free_prototype(ri, 'reply', suffix='')
     ri.cw.block_start()
-    ri.cw.p(f"{sub_type} *next = obj;")
+    ri.cw.p(f"{sub_type} *next = rsp;")
     ri.cw.nl()
     ri.cw.block_start(line='while (next)')
-    ri.cw.p('obj = next;')
-    ri.cw.p('next = obj->next;')
+    ri.cw.p('rsp = next;')
+    ri.cw.p('next = rsp->next;')
     ri.cw.nl()
 
-    _free_type_members(ri, 'obj', ri.op[ri.op_mode]['reply']['attributes'], ref='obj.')
+    _free_type_members(ri, 'rsp', ri.op[ri.op_mode]['reply']['attributes'], ref='obj.')
     ri.cw.block_end()
     ri.cw.block_end()
     ri.cw.nl()
@@ -817,6 +817,9 @@ def main():
             if 'dump' in op:
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'dump')
                 if args.mode == "user":
+                    if 'request' in op['dump']:
+                        print_req_type(ri)
+                        print_req_type_helpers(ri)
                     if not ri.dump_consistent:
                         print_rsp_type(ri)
                     print_dump_type(ri)

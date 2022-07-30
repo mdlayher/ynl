@@ -227,16 +227,16 @@ err_free:
 	return NULL;
 }
 
-void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *obj)
+void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *rsp)
 {
-	struct nlctrl_getfamily_list *next = obj;
+	struct nlctrl_getfamily_list *next = rsp;
 
 	while (next) {
-		obj = next;
-		next = obj->next;
+		rsp = next;
+		next = rsp->next;
 
-		free(obj->obj.ops);
-		free(obj);
+		free(rsp->obj.ops);
+		free(rsp);
 	}
 }
 
@@ -314,21 +314,21 @@ int nlctrl_getpolicy_rsp_list_parse(const struct nlmsghdr *nlh, void *data)
 	return MNL_CB_OK;
 }
 
-void nlctrl_getpolicy_list_free(struct nlctrl_getpolicy_list *obj)
+void nlctrl_getpolicy_rsp_list_free(struct nlctrl_getpolicy_rsp_list *rsp)
 {
-	struct nlctrl_getpolicy_rsp_list *next = obj;
+	struct nlctrl_getpolicy_rsp_list *next = rsp;
 
 	while (next) {
-		obj = next;
-		next = obj->next;
+		rsp = next;
+		next = rsp->next;
 
-		free(obj);
+		free(rsp);
 	}
 }
 
 struct nlctrl_getpolicy_rsp_list *
 nlctrl_getpolicy_dump(struct ynl_sock *ys,
-		      struct nlctrl_getpolicy_req_list *req)
+		      struct nlctrl_getpolicy_req_dump *req)
 {
 	struct nlctrl_getpolicy_rsp_list *rsp, *cur;
 	struct ynl_dump_state yds = {};
