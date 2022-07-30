@@ -161,7 +161,7 @@ class CodeWriter:
 
         local_vars.sort(key=len, reverse=True)
         for var in local_vars:
-            self.p('\t' + var)
+            self.p(var)
         self.nl()
 
 
@@ -335,8 +335,8 @@ def attribute_put(ri, attr, var):
     else:
         raise Exception(f"Type {spec['type']} not supported yet")
 
-    ri.cw.p(f"\tif ({var}->{attr}_present)")
-    ri.cw.p(f"\t\tmnl_attr_put_{t}(nlh, {attr_enum_name(ri, attr)}, {var}->{attr});")
+    ri.cw.p(f"if ({var}->{attr}_present)")
+    ri.cw.p(f"\tmnl_attr_put_{t}(nlh, {attr_enum_name(ri, attr)}, {var}->{attr});")
 
 
 def attribute_get(ri, attr, var):
@@ -373,18 +373,18 @@ def attribute_get(ri, attr, var):
     else:
         raise Exception(f"Type {spec['type']} not supported yet")
 
-    ri.cw.p(f"\t\tif (mnl_attr_get_type(attr) == {attr_enum_name(ri, attr)}) {'{'}")
+    ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {attr_enum_name(ri, attr)})")
     if local_vars:
         for l in local_vars:
-            ri.cw.p('\t\t\t' + l)
+            ri.cw.p(l)
         ri.cw.nl()
 
     if spec['type'] != 'array-nest':
-        ri.cw.p(f"\t\t\t{var}->{attr}_present = 1;")
+        ri.cw.p(f"{var}->{attr}_present = 1;")
 
     for l in get_lines:
-        ri.cw.p('\t\t\t' + l)
-    ri.cw.p('\t\t}')
+        ri.cw.p(l)
+    ri.cw.block_end()
 
 
 def attribute_parse_kernel(ri, attr, prototype=True, suffix=""):
@@ -392,13 +392,13 @@ def attribute_parse_kernel(ri, attr, prototype=True, suffix=""):
     spec = aspace["list"][attr]
 
     t = spec['type']
-    ri.cw.p(f"\tif (tb[{aspace['name-prefix']}{attr.upper()}]) " + '{')
-    ri.cw.p(f"\t\treq->{attr}_present = 1;")
+    ri.cw.block_start(line=f"if (tb[{aspace['name-prefix']}{attr.upper()}])")
+    ri.cw.p(f"req->{attr}_present = 1;")
     if t in scalars:
-        ri.cw.p(f"\t\treq->{attr} = nla_get_{t}(tb[{aspace['name-prefix']}{attr.upper()}]);")
+        ri.cw.p(f"req->{attr} = nla_get_{t}(tb[{aspace['name-prefix']}{attr.upper()}]);")
     elif t == 'nul-string':
-        ri.cw.p(f"\t\tstrcpy(req->{attr}, nla_data(tb[{aspace['name-prefix']}{attr.upper()}]));")
-    ri.cw.p('\t}')
+        ri.cw.p(f"strcpy(req->{attr}, nla_data(tb[{aspace['name-prefix']}{attr.upper()}]));")
+    ri.cw.block_end()
 
 
 def print_prototype(ri, direction, terminate=True):
@@ -432,23 +432,23 @@ def parse_rsp_nested(ri, attr_space):
         func_args.append('__u32 ' + arg)
 
     ri.cw.write_func_prot('int', f'{nest_op_prefix(ri, attr_space)}_parse', func_args)
-    ri.cw.p('{')
+    ri.cw.block_start()
     ri.cw.write_func_lvar('const struct nlattr *attr;')
 
     for arg in sorted(ri.family.inherited_members[attr_space]):
-        ri.cw.p(f'\tdst->{arg} = {arg};')
+        ri.cw.p(f'dst->{arg} = {arg};')
     if ri.family.inherited_members[attr_space]:
         ri.cw.nl()
 
-    ri.cw.p("\tmnl_attr_for_each_nested(attr, nested) {")
+    ri.cw.block_start(line="mnl_attr_for_each_nested(attr, nested)")
 
     for arg in ri.family['attributes']['spaces'][attr_space]['list']:
         attribute_get(ri, arg, "dst")
 
-    ri.cw.p('\t}')
+    ri.cw.block_end()
     ri.cw.nl()
-    ri.cw.p('\treturn 0;')
-    ri.cw.p('}')
+    ri.cw.p('return 0;')
+    ri.cw.block_end()
     ri.cw.nl()
 
 
@@ -471,56 +471,54 @@ def parse_rsp_msg(ri, deref=False):
         local_vars.append('int i;')
 
     ri.cw.write_func_prot('int', f'{op_prefix(ri, "reply", deref=deref)}_parse', func_args)
-    ri.cw.p('{')
+    ri.cw.block_start()
     ri.cw.write_func_lvar(local_vars)
 
-    ri.cw.p("\tmnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {")
+    ri.cw.block_start(line="mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr))")
 
     for arg in ri.op[ri.op_mode]["reply"]['attributes']:
         attribute_get(ri, arg, "dst")
 
-    ri.cw.p('\t}')
+    ri.cw.block_end()
 
     if array_nests:
         ri.cw.nl()
         for anest in sorted(array_nests):
             aspec = op_aspec(ri, anest)
-            ri.cw.p(f"\tif (dst->n_{anest}) {'{'}")
-            ri.cw.p(f"\t\tdst->{anest} = calloc(dst->n_{anest}, " +
+            ri.cw.block_start(line=f"if (dst->n_{anest})")
+            ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, " +
                   f"sizeof(struct {ri.family['name']}_{aspec['nested-attributes']}));")
-            ri.cw.p('\t\ti = 0;')
-            ri.cw.p(f"\t\tmnl_attr_for_each_nested(attr, attr_{anest})" + ' {')
-            ri.cw.p(f"\t\t\t{ri.family['name']}_{aspec['nested-attributes']}_parse(&dst->ops[i], attr, i);")
-            ri.cw.p('\t\t\ti++;')
-            ri.cw.p('\t\t}')
-            ri.cw.p('\t}')
+            ri.cw.p('i = 0;')
+            ri.cw.block_start(line=f"mnl_attr_for_each_nested(attr, attr_{anest})")
+            ri.cw.p(f"{ri.family['name']}_{aspec['nested-attributes']}_parse(&dst->ops[i], attr, i);")
+            ri.cw.p('i++;')
+            ri.cw.block_end()
+            ri.cw.block_end()
 
     ri.cw.nl()
-    ri.cw.p('\treturn MNL_CB_OK;')
-    ri.cw.p('}')
+    ri.cw.p('return MNL_CB_OK;')
+    ri.cw.block_end()
     ri.cw.nl()
 
 
 def print_req(ri):
     direction = "request"
-    print_prototype(ri, direction, terminate=False)
-    ri.cw.p('{')
     local_vars = [f'{type_name(ri, rdir(direction))} *rsp;',
                   'struct nlmsghdr *nlh;',
                   'int len, err;']
 
-    for var in local_vars:
-        ri.cw.p(f'\t{var}')
-    ri.cw.nl()
+    print_prototype(ri, direction, terminate=False)
+    ri.cw.block_start()
+    ri.cw.write_func_lvar(local_vars)
 
-    ri.cw.p(f"\tnlh = ynl_gemsg_start_req(ys, {ri.nl.get_family_id()}, {op_enum_name(ri)}, 1);")
+    ri.cw.p(f"nlh = ynl_gemsg_start_req(ys, {ri.nl.get_family_id()}, {op_enum_name(ri)}, 1);")
     ri.cw.nl()
 
     for arg in ri.op[ri.op_mode]["request"]['attributes']:
         attribute_put(ri, arg, "req")
+    ri.cw.nl()
 
-    ri.cw.p(f"""
-	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+    ri.cw.p(f"""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
 	if (err < 0)
 		return NULL;
 
@@ -543,27 +541,27 @@ def print_req(ri):
 
 err_free:
 	{call_free(ri, rdir(direction), 'rsp')}
-	return NULL;
-{'}'}""")
+	return NULL;""")
+    ri.cw.block_end()
 
 
 def print_dump(ri):
     direction = "request"
     print_prototype(ri, direction, terminate=False)
-    ri.cw.p('{')
+    ri.cw.block_start()
     local_vars = [f'{type_name(ri, rdir(direction))} *rsp, *cur;',
                   'struct ynl_dump_state yds = {};',
                   'struct nlmsghdr *nlh;',
                   'int len, err;']
 
     for var in local_vars:
-        ri.cw.p(f'\t{var}')
+        ri.cw.p(f'{var}')
     ri.cw.nl()
 
-    ri.cw.p('\tyds.alloc_sz = sizeof(*rsp);')
-    ri.cw.p(f"\tyds.cb = {op_prefix(ri, 'reply', deref=True)}_parse;")
+    ri.cw.p('yds.alloc_sz = sizeof(*rsp);')
+    ri.cw.p(f"yds.cb = {op_prefix(ri, 'reply', deref=True)}_parse;")
     ri.cw.nl()
-    ri.cw.p(f"\tnlh = ynl_gemsg_start_dump(ys, {ri.nl.get_family_id()}, {op_enum_name(ri)}, 1);")
+    ri.cw.p(f"nlh = ynl_gemsg_start_dump(ys, {ri.nl.get_family_id()}, {op_enum_name(ri)}, 1);")
     ri.cw.nl()
 
     if "request" in ri.op[ri.op_mode]:
@@ -571,7 +569,7 @@ def print_dump(ri):
             attribute_put(ri, arg, "req")
         ri.cw.nl()
 
-    ri.cw.p(f"""	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+    ri.cw.p(f"""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
 	if (err < 0)
 		return NULL;
 
@@ -595,8 +593,8 @@ free_list:
 		rsp = rsp->next;
 		{call_free(ri, rdir(direction), 'cur')}
 	{'}'}
-	return NULL;
-{'}'}""")
+	return NULL;""")
+    ri.cw.block_end()
 
 
 def call_free(ri, direction, var):
@@ -676,10 +674,10 @@ def print_parse_prototype(ri, direction, terminate=True):
 
 def print_parse_kernel(ri, direction):
     print_parse_prototype(ri, direction, terminate=False)
-    ri.cw.p('{')
+    ri.cw.block_start()
     for arg in ri.op[ri.op_mode][direction]['attributes']:
         attribute_parse_kernel(ri, arg, prototype=False, suffix=';')
-    ri.cw.p("}")
+    ri.cw.block_end()
 
 
 def print_req_type(ri):
