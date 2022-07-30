@@ -213,7 +213,10 @@ def op_aspec(ri, attr):
 
 
 def type_name(ri, direction, deref=False):
-    return f"struct {op_prefix(ri, direction, deref=deref)}"
+    name = f"struct {op_prefix(ri, direction, deref=deref)}"
+    if ri.op_mode == 'dump' and not ri.dump_consistent and deref:
+        name += '_dump'
+    return name
 
 
 def nest_op_prefix(ri, attr_space):
@@ -607,7 +610,10 @@ def print_free_prototype(ri, direction, suffix=';'):
 
 def _print_type(ri, direction, type_list, inherited_list={}):
     suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
-    
+
+    if ri.op_mode == 'dump':
+        suffix += '_dump'
+
     ri.cw.block_start(line=f"struct {ri.family['name']}{suffix}")
     for arg in type_list:
         attribute_pres_member(ri, ri.attr_space, arg, suffix=';')

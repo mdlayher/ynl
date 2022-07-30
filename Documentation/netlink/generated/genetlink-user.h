@@ -110,7 +110,7 @@ void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *rsp);
 struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys);
 
 // CTRL_CMD_GETPOLICY
-struct nlctrl_getpolicy_req {
+struct nlctrl_getpolicy_req_dump {
 	__u32 family_id_present:1;
 	__u32 family_name_present:1;
 	__u32 op_present:1;
@@ -144,7 +144,7 @@ nlctrl_getpolicy_req_dump_set_op(struct nlctrl_getpolicy_req_dump *req,
 	req->op = op;
 }
 
-struct nlctrl_getpolicy_rsp {
+struct nlctrl_getpolicy_rsp_dump {
 	__u32 family_id_present:1;
 	__u32 op_policy_present:1;
 	__u32 policy_present:1;
@@ -156,7 +156,7 @@ struct nlctrl_getpolicy_rsp {
 
 struct nlctrl_getpolicy_rsp_list {
 	struct nlctrl_getpolicy_rsp_list *next;
-	struct nlctrl_getpolicy_rsp obj;
+	struct nlctrl_getpolicy_rsp_dump obj;
 };
 
 void nlctrl_getpolicy_rsp_list_free(struct nlctrl_getpolicy_rsp_list *rsp);
