@@ -32,6 +32,9 @@ attributes:
         ops: &ops
           type: array-nest
           nested-attributes: operation
+        mcast_groups:
+          type: array-nest
+          nested-attributes: mcast-group
         op: &op
           type: u32
         op_policy:
@@ -50,6 +53,15 @@ attributes:
           type: u32
         flags: &op_flags
           type: u32
+
+    mcast-group:
+      name-prefix: CTRL_ATTR_MCAST_GRP_
+      list:
+        id:
+          type: u32
+        name:
+          type: nul-string
+          len: GENL_NAMSIZ - 1
 
     policy:
       name-prefix: CTRL_ATTR_POLICY_
@@ -111,6 +123,7 @@ operations:
             - hdrsize
             - maxattr
             - ops
+            - mcast_groups
       dump:
         reply: *getfamily-do-reply
 

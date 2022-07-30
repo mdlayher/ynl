@@ -32,6 +32,8 @@ struct nlctrl_getfamily_rsp {
 	u32 maxattr;
 	unsigned int n_ops;
 	struct nlctrl_operation *ops;
+	unsigned int n_mcast_groups;
+	struct nlctrl_mcast_group *mcast_groups;
 };
 
 void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *rsp);

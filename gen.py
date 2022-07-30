@@ -197,7 +197,7 @@ def attr_enum_name(ri, attr):
 
 
 def op_prefix(ri, direction, deref=False):
-    suffix = f'_{ri.type_name}'
+    suffix = f"_{ri.type_name.replace('-', '_')}"
 
     if ri.op_mode != 'dump':
         suffix += f"{direction_to_suffix[direction]}"
@@ -266,7 +266,7 @@ def _attribute_member(ri, space, attr, prototype=True, suffix=""):
             t = 'char '
             suffix = f'[{_attribute_member_len(spec)}]{suffix}'
     elif t == 'array-nest':
-        t = f"struct {ri.family['name']}_{spec['nested-attributes']} *"
+        t = f"struct {nest_op_prefix(ri, spec['nested-attributes'])} *"
         if not prototype:
             ri.cw.p(f"unsigned int n_{attr};")
     elif t == 'nest-type-value':
@@ -481,19 +481,18 @@ def parse_rsp_msg(ri, deref=False):
 
     ri.cw.block_end()
 
-    if array_nests:
-        ri.cw.nl()
-        for anest in sorted(array_nests):
-            aspec = op_aspec(ri, anest)
-            ri.cw.block_start(line=f"if (dst->n_{anest})")
-            ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, " +
-                  f"sizeof(struct {ri.family['name']}_{aspec['nested-attributes']}));")
-            ri.cw.p('i = 0;')
-            ri.cw.block_start(line=f"mnl_attr_for_each_nested(attr, attr_{anest})")
-            ri.cw.p(f"{ri.family['name']}_{aspec['nested-attributes']}_parse(&dst->ops[i], attr, i);")
-            ri.cw.p('i++;')
-            ri.cw.block_end()
-            ri.cw.block_end()
+    ri.cw.nl()
+    for anest in sorted(array_nests):
+        aspec = op_aspec(ri, anest)
+        ri.cw.block_start(line=f"if (dst->n_{anest})")
+        ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, sizeof(*dst->{anest}));")
+        ri.cw.p('i = 0;')
+        ri.cw.block_start(line=f"mnl_attr_for_each_nested(attr, attr_{anest})")
+        ri.cw.p(f"{nest_op_prefix(ri, aspec['nested-attributes'])}_parse(&dst->{anest}[i], attr, " +
+                "mnl_attr_get_type(attr));")
+        ri.cw.p('i++;')
+        ri.cw.block_end()
+        ri.cw.block_end()
 
     ri.cw.nl()
     ri.cw.p('return MNL_CB_OK;')

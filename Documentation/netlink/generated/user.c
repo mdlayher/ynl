@@ -287,12 +287,18 @@ int main(int argc, char **argv)
 	fam_id = rsp->family_id;
 
 	if (rsp->family_id_present && rsp->family_name_present) {
-		printf("YS response family id %u name '%s' n_ops %d\n",
-		       rsp->family_id, rsp->family_name, rsp->n_ops);
+		printf("YS response family id %u name '%s' n_ops %d n_mcast: %d\n",
+		       rsp->family_id, rsp->family_name,
+		       rsp->n_ops, rsp->n_mcast_groups);
 		for (i = 0; i < rsp->n_ops; i++)
 			printf("\top[%d]: cmd:%d flags:%x\n",
 			       rsp->ops[i].idx, rsp->ops[i].id,
 			       rsp->ops[i].flags);
+		for (i = 0; i < rsp->n_mcast_groups; i++)
+			printf("\tmcast_grp[%d]: id:%d name:%s\n",
+			       rsp->mcast_groups[i].idx,
+			       rsp->mcast_groups[i].id,
+			       rsp->mcast_groups[i].name);
 	}
 	nlctrl_getfamily_rsp_free(rsp);
 

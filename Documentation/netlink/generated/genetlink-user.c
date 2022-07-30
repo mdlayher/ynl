@@ -14,6 +14,33 @@
 #include "user.h"
 
 // Common nested types
+void nlctrl_mcast_group_free(struct nlctrl_mcast_group *obj)
+{
+	free(obj);
+}
+
+int nlctrl_mcast_group_parse(struct nlctrl_mcast_group *dst,
+			     const struct nlattr *nested, __u32 idx)
+{
+	const struct nlattr *attr;
+
+	dst->idx = idx;
+
+	mnl_attr_for_each_nested(attr, nested) {
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_MCAST_GRP_ID) {
+			dst->id_present = 1;
+			dst->id = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_MCAST_GRP_NAME) {
+			dst->name_present = 1;
+			strncpy(dst->name, mnl_attr_get_str(attr), GENL_NAMSIZ - 1);
+			dst->name[GENL_NAMSIZ - 1] = 0;
+		}
+	}
+
+	return 0;
+}
+
 void nlctrl_nl_policy_free(struct nlctrl_nl_policy *obj)
 {
 	free(obj);
@@ -134,12 +161,14 @@ int nlctrl_policy_parse(struct nlctrl_policy *dst, const struct nlattr *nested,
 void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *rsp)
 {
 	free(rsp->ops);
+	free(rsp->mcast_groups);
 	free(rsp);
 }
 
 int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 {
 	struct nlctrl_getfamily_rsp *dst = data;
+	const struct nlattr *attr_mcast_groups;
 	const struct nlattr *attr_ops;
 	const struct nlattr *attr;
 	int i;
@@ -173,13 +202,28 @@ int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 			mnl_attr_for_each_nested(attr2, attr)
 				dst->n_ops++;
 		}
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_MCAST_GROUPS) {
+			const struct nlattr *attr2;
+
+			attr_mcast_groups = attr;
+			mnl_attr_for_each_nested(attr2, attr)
+				dst->n_mcast_groups++;
+		}
 	}
 
+	if (dst->n_mcast_groups) {
+		dst->mcast_groups = calloc(dst->n_mcast_groups, sizeof(*dst->mcast_groups));
+		i = 0;
+		mnl_attr_for_each_nested(attr, attr_mcast_groups) {
+			nlctrl_mcast_group_parse(&dst->mcast_groups[i], attr, mnl_attr_get_type(attr));
+			i++;
+		}
+	}
 	if (dst->n_ops) {
-		dst->ops = calloc(dst->n_ops, sizeof(struct nlctrl_operation));
+		dst->ops = calloc(dst->n_ops, sizeof(*dst->ops));
 		i = 0;
 		mnl_attr_for_each_nested(attr, attr_ops) {
-			nlctrl_operation_parse(&dst->ops[i], attr, i);
+			nlctrl_operation_parse(&dst->ops[i], attr, mnl_attr_get_type(attr));
 			i++;
 		}
 	}
@@ -236,6 +280,7 @@ void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *rsp)
 		next = rsp->next;
 
 		free(rsp->obj.ops);
+		free(rsp->obj.mcast_groups);
 		free(rsp);
 	}
 }

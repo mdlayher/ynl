@@ -8,6 +8,15 @@
 struct ynl_sock;
 
 // Common nested types
+struct nlctrl_mcast_group {
+	__u32 id_present:1;
+	__u32 name_present:1;
+
+	__u32 idx;
+	__u32 id;
+	char name[GENL_NAMSIZ];
+};
+
 struct nlctrl_nl_policy {
 	__u32 type_present:1;
 	__u32 min_value_u_present:1;
@@ -94,6 +103,8 @@ struct nlctrl_getfamily_rsp {
 	__u32 maxattr;
 	unsigned int n_ops;
 	struct nlctrl_operation *ops;
+	unsigned int n_mcast_groups;
+	struct nlctrl_mcast_group *mcast_groups;
 };
 
 void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *rsp);
