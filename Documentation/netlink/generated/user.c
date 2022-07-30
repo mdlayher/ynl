@@ -316,7 +316,7 @@ int main(int argc, char **argv)
 	memset(&pdr, 0, sizeof(pdr));
 
 	nlctrl_getpolicy_req_dump_set_family_id(&pdr, fam_id);
-	nlctrl_getpolicy_req_dump_set_op(&pdr, 1);
+	nlctrl_getpolicy_req_dump_set_op(&pdr, 10);
 
 	policies = nlctrl_getpolicy_dump(ys, &pdr);
 	if (!policies)
