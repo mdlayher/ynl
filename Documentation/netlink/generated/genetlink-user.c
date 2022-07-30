@@ -157,7 +157,8 @@ int nlctrl_policy_parse(struct nlctrl_policy *dst, const struct nlattr *nested,
 	return 0;
 }
 
-// CTRL_CMD_GETFAMILY
+/* ============== CTRL_CMD_GETFAMILY ============== */
+// CTRL_CMD_GETFAMILY - do
 void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *rsp)
 {
 	free(rsp->ops);
@@ -271,6 +272,7 @@ err_free:
 	return NULL;
 }
 
+// CTRL_CMD_GETFAMILY - dump
 void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *rsp)
 {
 	struct nlctrl_getfamily_list *next = rsp;
@@ -324,6 +326,7 @@ free_list:
 	return NULL;
 }
 
+// CTRL_CMD_GETFAMILY - notify
 void nlctrl_getfamily_ntf_free(struct nlctrl_getfamily_ntf *rsp)
 {
 	free(rsp->obj.ops);
@@ -331,7 +334,8 @@ void nlctrl_getfamily_ntf_free(struct nlctrl_getfamily_ntf *rsp)
 	free(rsp);
 }
 
-// CTRL_CMD_GETPOLICY
+/* ============== CTRL_CMD_GETPOLICY ============== */
+// CTRL_CMD_GETPOLICY - dump
 int nlctrl_getpolicy_rsp_dump_parse(const struct nlmsghdr *nlh, void *data)
 {
 	struct nlctrl_getpolicy_rsp_dump *dst = data;
@@ -427,6 +431,7 @@ free_list:
 	return NULL;
 }
 
+// --------------- Common notification parsing --------------- //
 struct ynl_ntf_base_type *nlctrl_ntf_parse(struct ynl_sock *ys)
 {
 	struct ynl_ntf_base_type *rsp;

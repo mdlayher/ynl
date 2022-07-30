@@ -7,7 +7,8 @@
 
 #include <linux/genetlink.h>
 
-// CTRL_CMD_GETFAMILY
+/* ============== CTRL_CMD_GETFAMILY ============== */
+// CTRL_CMD_GETFAMILY - do
 struct nlctrl_getfamily_req {
 	u32 family_id_present:1;
 	u32 family_name_present:1;
@@ -43,4 +44,7 @@ nlctrl_getfamily_req_parse(const struct nlattr **tb,
 			   struct nlctrl_getfamily_req *req);
 const struct nla_policy nlctrl_getfamily_policy[];
 
-// CTRL_CMD_GETPOLICY
+// CTRL_CMD_GETFAMILY - dump
+// CTRL_CMD_GETFAMILY - notify
+/* ============== CTRL_CMD_GETPOLICY ============== */
+// CTRL_CMD_GETPOLICY - dump

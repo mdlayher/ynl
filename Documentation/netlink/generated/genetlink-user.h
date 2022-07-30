@@ -63,7 +63,8 @@ struct nlctrl_policy {
 	__u32 dump;
 };
 
-// CTRL_CMD_GETFAMILY
+/* ============== CTRL_CMD_GETFAMILY ============== */
+// CTRL_CMD_GETFAMILY - do
 struct nlctrl_getfamily_req {
 	__u32 family_id_present:1;
 	__u32 family_name_present:1;
@@ -112,6 +113,7 @@ void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *rsp);
 struct nlctrl_getfamily_rsp *
 nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req);
 
+// CTRL_CMD_GETFAMILY - dump
 struct nlctrl_getfamily_list {
 	struct nlctrl_getfamily_list *next;
 	struct nlctrl_getfamily_rsp obj;
@@ -121,6 +123,7 @@ void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *rsp);
 
 struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys);
 
+// CTRL_CMD_GETFAMILY - notify
 struct nlctrl_getfamily_ntf {
 	__u16 family;
 	__u8 cmd;
@@ -129,7 +132,8 @@ struct nlctrl_getfamily_ntf {
 
 void nlctrl_getfamily_ntf_free(struct nlctrl_getfamily_ntf *rsp);
 
-// CTRL_CMD_GETPOLICY
+/* ============== CTRL_CMD_GETPOLICY ============== */
+// CTRL_CMD_GETPOLICY - dump
 struct nlctrl_getpolicy_req_dump {
 	__u32 family_id_present:1;
 	__u32 family_name_present:1;
@@ -185,4 +189,5 @@ struct nlctrl_getpolicy_rsp_list *
 nlctrl_getpolicy_dump(struct ynl_sock *ys,
 		      struct nlctrl_getpolicy_req_dump *req);
 
+// --------------- Common notification parsing --------------- //
 struct ynl_ntf_base_type *nlctrl_ntf_parse(struct ynl_sock *ys);

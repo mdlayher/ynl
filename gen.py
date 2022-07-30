@@ -883,9 +883,10 @@ def main():
                 print_type_full(ri, attr_space)
 
         for op_name, op in parsed['operations']['list'].items():
-            cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
+            cw.p(f"/* ============== {parsed['operations']['name-prefix']}{op_name.upper()} ============== */")
 
             if 'do' in op:
+                cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()} - do")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
 
                 print_req_type(ri)
@@ -903,6 +904,7 @@ def main():
                 cw.nl()
 
             if 'dump' in op:
+                cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()} - dump")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'dump')
                 if args.mode == "user":
                     if 'request' in op['dump']:
@@ -915,6 +917,7 @@ def main():
                     cw.nl()
 
             if 'notify' in op:
+                cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()} - notify")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'notify')
                 if args.mode == "user":
                     has_ntf = True
@@ -923,6 +926,7 @@ def main():
                     print_wrapped_type(ri)
 
         if has_ntf:
+            cw.p('// --------------- Common notification parsing --------------- //')
             print_ntf_parse_prototype(parsed, cw)
     else:
         if args.mode == "user":
@@ -933,9 +937,10 @@ def main():
                 parse_rsp_nested(ri, attr_space)
 
         for op_name, op in parsed['operations']['list'].items():
-            cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()}")
+            cw.p(f"/* ============== {parsed['operations']['name-prefix']}{op_name.upper()} ============== */")
 
             if 'do' in op:
+                cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()} - do")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
                 if args.mode == "user":
                     print_rsp_free(ri)
@@ -948,6 +953,7 @@ def main():
                 cw.nl()
 
             if 'dump' in op:
+                cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()} - dump")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "dump")
                 if args.mode == "user":
                     if not ri.type_consistent:
@@ -957,6 +963,7 @@ def main():
                     cw.nl()
 
             if 'notify' in op:
+                cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()} - notify")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'notify')
                 if args.mode == "user":
                     has_ntf = True
@@ -965,7 +972,9 @@ def main():
                     print_ntf_type_free(ri)
 
         if has_ntf:
+            cw.p('// --------------- Common notification parsing --------------- //')
             print_ntf_type_parse(parsed, cw, args.mode)
+
 
 if __name__ == "__main__":
     main()
