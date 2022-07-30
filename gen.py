@@ -71,11 +71,11 @@ class RenderInfo:
         self.op_mode = op_mode
 
         # 'do' and 'dump' response parsing is identical
-        if op_mode == 'dump' and 'do' in op and 'reply' in op['do'] and \
+        if op_mode != 'do' and 'do' in op and 'reply' in op['do'] and \
            op["do"]["reply"] == op["dump"]["reply"]:
-            self.dump_consistent = True
+            self.type_consistent = True
         else:
-            self.dump_consistent = False
+            self.type_consistent = False
 
         self.attr_space = attr_space
         if not self.attr_space:
@@ -170,6 +170,7 @@ scalars = {'u8', 'u16', 'u32', 'u64', 's64'}
 direction_to_suffix = {
     'reply': '_rsp',
     'request': '_req',
+    'notify': '_ntf',
     '': ''
 }
 
@@ -205,7 +206,7 @@ def op_prefix(ri, direction, deref=False):
         if direction == 'request':
             suffix += '_req_dump'
         else:
-            if ri.dump_consistent:
+            if ri.type_consistent:
                 if deref:
                     suffix += f"{direction_to_suffix[direction]}"
                 else:
@@ -830,11 +831,17 @@ def main():
                     if 'request' in op['dump']:
                         print_req_type(ri)
                         print_req_type_helpers(ri)
-                    if not ri.dump_consistent:
+                    if not ri.type_consistent:
                         print_rsp_type(ri)
                     print_dump_type(ri)
                     print_dump_prototype(ri)
                     cw.nl()
+
+            if 'notify' in op:
+                ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'notify')
+                if args.mode == "user":
+                    if not ri.type_consistent:
+                        raise Exception('Only notifications with consistent types supported')
     else:
         if args.mode == "user":
             cw.p('// Common nested types')
@@ -861,7 +868,7 @@ def main():
             if 'dump' in op:
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "dump")
                 if args.mode == "user":
-                    if not ri.dump_consistent:
+                    if not ri.type_consistent:
                         parse_rsp_msg(ri, deref=True)
                     print_dump_type_free(ri)
                     print_dump(ri)
