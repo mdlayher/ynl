@@ -309,8 +309,8 @@ def attribute_setter(ri, space, attr, direction, deref=False):
         return
 
     ri.cw.write_func_prot('static inline void',
-                          f'{op_prefix(ri, direction, deref=True)}_set_{attr}',
-                          [f'{type_name(ri, direction, deref=True)} *{var}'] +
+                          f'{op_prefix(ri, direction, deref=deref)}_set_{attr}',
+                          [f'{type_name(ri, direction, deref=deref)} *{var}'] +
                           _attribute_member(ri, space, attr, prototype=True))
     ri.cw.block_start()
     ri.cw.p(f'{var}->{attr}_present = 1;')
