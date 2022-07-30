@@ -281,7 +281,7 @@ free_list:
 // CTRL_CMD_GETPOLICY
 int nlctrl_getpolicy_rsp_list_parse(const struct nlmsghdr *nlh, void *data)
 {
-	struct nlctrl_getpolicy_rsp_list *dst = data;
+	struct nlctrl_getpolicy_rsp_dump *dst = data;
 	const struct nlattr *attr;
 
 	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {

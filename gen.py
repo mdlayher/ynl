@@ -446,7 +446,8 @@ def parse_rsp_nested(ri, attr_space):
 
 
 def parse_rsp_msg(ri):
-    struct_type = type_name(ri, "reply")
+    deref = ri.op_mode == 'dump' and not ri.dump_consistent
+    struct_type = type_name(ri, "reply", deref=deref)
 
     func_args = ['const struct nlmsghdr *nlh',
                  'void *data']
