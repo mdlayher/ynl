@@ -25,6 +25,11 @@ ynl_gemsg_start_req(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version);
 struct nlmsghdr *
 ynl_gemsg_start_dump(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version);
 
+struct ynl_ntf_base_type {
+	__u16 family;
+	__u8 cmd;
+	unsigned char data[];
+};
 
 struct ynl_dump_list_type {
 	struct ynl_dump_list_type *next;

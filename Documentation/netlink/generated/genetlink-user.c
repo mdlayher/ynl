@@ -426,3 +426,42 @@ free_list:
 	}
 	return NULL;
 }
+
+struct ynl_ntf_base_type *nlctrl_ntf_parse(struct ynl_sock *ys)
+{
+	struct ynl_ntf_base_type *rsp;
+	struct genlmsghdr *genlh;
+	struct nlmsghdr *nlh;
+	mnl_cb_t parse;
+	int len, err;
+
+	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	if (len < (ssize_t)(sizeof(*nlh) + sizeof(*genlh)))
+		return NULL;
+
+	nlh = (void *)ys->buf;
+	genlh = mnl_nlmsg_get_payload(nlh);
+
+	switch (genlh->cmd) {
+	case CTRL_CMD_NEWFAMILY:
+	case CTRL_CMD_DELFAMILY:
+	case CTRL_CMD_NEWMCAST_GRP:
+	case CTRL_CMD_DELMCAST_GRP:
+		rsp = calloc(1, sizeof(struct nlctrl_getfamily_ntf));
+		parse = nlctrl_getfamily_rsp_parse;
+		break;
+	default:
+		return NULL;
+	}
+	err = mnl_cb_run(ys->buf, len, 0, 0, parse, rsp);
+	if (err)
+		goto err_free;
+
+	rsp->family = nlh->nlmsg_type;
+	rsp->cmd = genlh->cmd;
+	return rsp;
+
+err_free:
+	free(rsp);
+	return NULL;
+}

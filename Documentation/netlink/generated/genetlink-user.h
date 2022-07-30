@@ -184,3 +184,5 @@ void nlctrl_getpolicy_rsp_list_free(struct nlctrl_getpolicy_rsp_list *rsp);
 struct nlctrl_getpolicy_rsp_list *
 nlctrl_getpolicy_dump(struct ynl_sock *ys,
 		      struct nlctrl_getpolicy_req_dump *req);
+
+struct ynl_ntf_base_type *nlctrl_ntf_parse(struct ynl_sock *ys);

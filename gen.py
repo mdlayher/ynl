@@ -21,10 +21,12 @@ class Family:
         self.root_spaces = set()
         self.pure_nested_spaces = set()
         self.inherited_members = dict()
+        self.all_notify = dict()
 
         self._compute_members()
         self._load_root_spaces()
         self._load_nested_spaces()
+        self._load_all_notify()
 
     def __getitem__(self, key):
         return self.yaml[key]
@@ -59,6 +61,11 @@ class Family:
                         self.inherited_members[nested] = {'idx'}
                     else:
                         self.inherited_members[nested] = set()
+
+    def _load_all_notify(self):
+        for op_name, op in self.yaml['operations']['list'].items():
+            if 'notify' in op:
+                self.all_notify[op_name] = op['notify']['cmds']
 
 
 class RenderInfo:
@@ -100,7 +107,10 @@ class CodeWriter:
         if self._nl:
             print()
             self._nl = False
-        print('\t' * self._ind + line)
+        ind = self._ind
+        if line[-1] == ':':
+            ind -= 1
+        print('\t' * ind + line)
 
     def nl(self):
         self._nl = True
@@ -753,13 +763,59 @@ def print_dump_type_free(ri):
 
 
 def print_ntf_type_free(ri):
-    sub_type = type_name(ri, 'reply')
-
     print_free_prototype(ri, 'reply', suffix='')
     ri.cw.block_start()
     _free_type_members(ri, 'rsp', ri.op[ri.op_mode]['reply']['attributes'], ref='obj.')
     ri.cw.block_end()
     ri.cw.nl()
+
+
+def print_ntf_parse_prototype(family, cw, suffix=';'):
+    cw.write_func_prot('struct ynl_ntf_base_type *', f"{family['name']}_ntf_parse",
+                       ['struct ynl_sock *ys'], suffix=suffix)
+
+
+def print_ntf_type_parse(family, cw, ku_mode):
+    print_ntf_parse_prototype(family, cw, suffix='')
+    cw.block_start()
+    cw.write_func_lvar(['struct genlmsghdr *genlh;',
+                        'struct nlmsghdr *nlh;',
+                        'struct ynl_ntf_base_type *rsp;',
+                        'int len, err;',
+                        'mnl_cb_t parse;'])
+    cw.p('len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);')
+    cw.p('if (len < (ssize_t)(sizeof(*nlh) + sizeof(*genlh)))')
+    cw.p('\treturn NULL;')
+    cw.nl()
+    cw.p('nlh = (void *)ys->buf;')
+    cw.p('genlh = mnl_nlmsg_get_payload(nlh);')
+    cw.nl()
+    cw.block_start(line='switch (genlh->cmd)')
+    for ntf_op in sorted(family.all_notify.keys()):
+        op = family['operations']['list'][ntf_op]
+        ri = RenderInfo(cw, family, ku_mode, op, ntf_op, "notify")
+        for ntf in op['notify']['cmds']:
+            cw.p(f"case {family['operations']['name-prefix']}{ntf.upper()}:")
+        cw.p(f"rsp = calloc(1, sizeof({type_name(ri, 'notify')}));")
+        cw.p(f"parse = {op_prefix(ri, 'reply', deref=True)}_parse;")
+        cw.p('break;')
+    cw.p('default:')
+    cw.p('return NULL;')
+    cw.block_end()
+    cw.nl()
+    print("""	err = mnl_cb_run(ys->buf, len, 0, 0, parse, rsp);
+	if (err)
+		goto err_free;""")
+    cw.nl()
+    cw.p('rsp->family = nlh->nlmsg_type;')
+    cw.p('rsp->cmd = genlh->cmd;')
+    cw.p('return rsp;')
+    cw.nl()
+    cw.p('err_free:')
+    cw.p('free(rsp);')
+    cw.p('return NULL;')
+    cw.block_end()
+    cw.nl()
 
 
 def print_req_policy_fwd(ri, terminate=True):
@@ -818,6 +874,7 @@ def main():
             cw.p('struct ynl_sock;')
         cw.nl()
 
+    has_ntf = False
     if args.header:
         if args.mode == "user":
             cw.p('// Common nested types')
@@ -860,9 +917,13 @@ def main():
             if 'notify' in op:
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'notify')
                 if args.mode == "user":
+                    has_ntf = True
                     if not ri.type_consistent:
                         raise Exception('Only notifications with consistent types supported')
                     print_wrapped_type(ri)
+
+        if has_ntf:
+            print_ntf_parse_prototype(parsed, cw)
     else:
         if args.mode == "user":
             cw.p('// Common nested types')
@@ -898,9 +959,13 @@ def main():
             if 'notify' in op:
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'notify')
                 if args.mode == "user":
+                    has_ntf = True
                     if not ri.type_consistent:
                         raise Exception('Only notifications with consistent types supported')
                     print_ntf_type_free(ri)
+
+        if has_ntf:
+            print_ntf_type_parse(parsed, cw, args.mode)
 
 if __name__ == "__main__":
     main()
