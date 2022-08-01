@@ -128,7 +128,6 @@ operations:
       dump:
         reply: *getfamily-do-reply
 
-      # TODO
       notify:
         reply: *getfamily-do-reply
         cmds:
