@@ -105,3 +105,94 @@ ethtool_channels_get(struct ynl_sock *ys, struct ethtool_channels_get_req *req)
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, ETHTOOL_MSG_CHANNELS_GET, 1);
+
+	if (req->header_present)
+		ethtool_header_put(nlh, ETHTOOL_A_CHANNELS_HEADER, &req->header);
+
+	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+	if (err < 0)
+		return NULL;
+
+	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	if (len < 0)
+		return NULL;
+
+	rsp = calloc(1, sizeof(*rsp));
+
+	err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+			 ethtool_channels_get_rsp_parse, rsp);
+	if (err < 0)
+		goto err_free;
+
+	err = ynl_recv_ack(ys, err);
+	if (err)
+		goto err_free;
+
+	return rsp;
+
+err_free:
+	ethtool_channels_get_rsp_free(rsp);
+	return NULL;
+}
+
+// ETHTOOL_MSG_CHANNELS_GET - dump
+void ethtool_channels_get_list_free(struct ethtool_channels_get_list *rsp)
+{
+	struct ethtool_channels_get_list *next = rsp;
+
+	while (next) {
+		rsp = next;
+		next = rsp->next;
+
+		free(rsp);
+	}
+}
+
+struct ethtool_channels_get_list *
+ethtool_channels_get_dump(struct ynl_sock *ys)
+{
+	struct ethtool_channels_get_list *rsp, *cur;
+	struct ynl_dump_state yds = {};
+	struct nlmsghdr *nlh;
+	int len, err;
+
+	yds.alloc_sz = sizeof(*rsp);
+	yds.cb = ethtool_channels_get_rsp_parse;
+
+	nlh = ynl_gemsg_start_dump(ys, ys->family_id, ETHTOOL_MSG_CHANNELS_GET, 1);
+
+	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+	if (err < 0)
+		return NULL;
+
+	do {
+		len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+		if (len < 0)
+			goto free_list;
+
+		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+				 ynl_dump_trampoline, &yds);
+		if (err < 0)
+			goto free_list;
+	} while (err > 0);
+
+	return yds.first;
+
+free_list:
+	rsp = yds.first;
+	while (rsp) {
+		cur = rsp;
+		rsp = rsp->next;
+		ethtool_channels_get_list_free(cur);
+	}
+	return NULL;
+}
+
+// ETHTOOL_MSG_CHANNELS_GET - notify
+void ethtool_channels_get_ntf_free(struct ethtool_channels_get_ntf *rsp)
+{
+	free(rsp);
+}
+
+/* ============== ETHTOOL_MSG_CHANNELS_SET ============== */
+// ETHTOOL_MSG_CHANNELS_SET - do

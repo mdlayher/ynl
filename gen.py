@@ -341,6 +341,7 @@ def attribute_setter(ri, space, attr, direction, deref=False):
 def attribute_put(ri, attr, var):
     spec = ri.family["attributes"]["spaces"][ri.attr_space]["list"][attr]
 
+    t = None
     if spec['type'] in scalars:
         t = spec['type']
         # mnl does not have a helper for signed types
@@ -348,11 +349,17 @@ def attribute_put(ri, attr, var):
             t = 'u' + t[1:]
     elif spec['type'] == 'nul-string':
         t = 'strz'
+    elif spec['type'] == 'nest':
+        complex = f"{nest_op_prefix(ri, spec['nested-attributes'])}_put(nlh, {attr_enum_name(ri, attr)}," +\
+                  f" &{var}->{attr})"
     else:
         raise Exception(f"Type {spec['type']} not supported yet")
 
     ri.cw.p(f"if ({var}->{attr}_present)")
-    ri.cw.p(f"\tmnl_attr_put_{t}(nlh, {attr_enum_name(ri, attr)}, {var}->{attr});")
+    if t:
+        ri.cw.p(f"\tmnl_attr_put_{t}(nlh, {attr_enum_name(ri, attr)}, {var}->{attr});")
+    else:
+        ri.cw.p(f"\t{complex};")
 
 
 def attribute_get(ri, attr, var):
