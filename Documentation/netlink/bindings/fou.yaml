@@ -83,7 +83,7 @@ operations:
       do:
         request:  &select_attrs
           attributes:
-          - family
+          - af
           - ifindex
           - port
           - peer_port

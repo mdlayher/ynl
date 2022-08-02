@@ -46,6 +46,7 @@ void fou_add_req_parse(const struct nlattr **tb, struct fou_add_req *req)
 	}
 	if (tb[FOU_ATTR_IFINDEX]) {
 		req->ifindex_present = 1;
+		req->ifindex = nla_get_s32(tb[FOU_ATTR_IFINDEX]);
 	}
 }
 

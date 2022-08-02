@@ -199,7 +199,7 @@ class CodeWriter:
         self.nl()
 
 
-scalars = {'u8', 'u16', 'u32', 'u64', 's64'}
+scalars = {'u8', 'u16', 'u32', 'u64', 's32', 's64'}
 
 direction_to_suffix = {
     'reply': '_rsp',
@@ -299,7 +299,16 @@ def _attribute_member(ri, space, attr, prototype=True, suffix=""):
     spec = ri.family["attributes"]["spaces"][space]["list"][attr]
 
     t = spec['type']
-    if t == "nul-string":
+    if t == 'flag':
+        # Nothing, presence is enough for a flag
+        return []
+    elif t == "binary":
+        if prototype:
+            t = 'const void *'
+        else:
+            t = 'unsigned char '
+            suffix = f"[{spec['len']}]{suffix}"
+    elif t == "nul-string":
         if prototype:
             t = 'const char *'
         else:
@@ -366,7 +375,11 @@ def attribute_put(ri, attr, var):
     spec = ri.family["attributes"]["spaces"][ri.attr_space]["list"][attr]
 
     t = None
-    if spec['type'] in scalars:
+    if spec['type'] == 'flag':
+        complex = f"mnl_attr_put(nlh, {attr_enum_name(ri, attr)}, 0, NULL)"
+    elif spec['type'] == 'binary':
+        complex = f"mnl_attr_put(nlh, {attr_enum_name(ri, attr)}, {spec['len']}, {var}->{attr})"
+    elif spec['type'] in scalars:
         t = spec['type']
         # mnl does not have a helper for signed types
         if t[0] == 's':
@@ -382,7 +395,7 @@ def attribute_put(ri, attr, var):
     ri.cw.p(f"if ({var}->{attr}_present)")
     if t:
         ri.cw.p(f"\tmnl_attr_put_{t}(nlh, {attr_enum_name(ri, attr)}, {var}->{attr});")
-    else:
+    elif complex:
         ri.cw.p(f"\t{complex};")
 
 
@@ -391,7 +404,11 @@ def attribute_get(ri, attr, var):
     local_vars = []
     get_lines = []
 
-    if spec['type'] in scalars:
+    if spec['type'] == 'flag':
+        pass
+    elif spec['type'] == 'binary':
+        get_lines += [f"memcpy({var}->{attr}, mnl_attr_get_payload(attr), {spec['len']});"]
+    elif spec['type'] in scalars:
         # mnl does not have a helper for signed types
         t = spec['type']
         if t[0] == 's':

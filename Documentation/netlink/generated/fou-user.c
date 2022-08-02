@@ -29,3 +29,239 @@ int fou_add(struct ynl_sock *ys, struct fou_add_req *req)
 		mnl_attr_put_u8(nlh, FOU_ATTR_IPPROTO, req->ipproto);
 	if (req->type_present)
 		mnl_attr_put_u8(nlh, FOU_ATTR_TYPE, req->type);
+	if (req->remcsum_nopartial_present)
+		mnl_attr_put(nlh, FOU_ATTR_REMCSUM_NOPARTIAL, 0, NULL);
+	if (req->local_v4_present)
+		mnl_attr_put_u32(nlh, FOU_ATTR_LOCAL_V4, req->local_v4);
+	if (req->peer_v4_present)
+		mnl_attr_put_u32(nlh, FOU_ATTR_PEER_V4, req->peer_v4);
+	if (req->local_v6_present)
+		mnl_attr_put(nlh, FOU_ATTR_LOCAL_V6, 16, req->local_v6);
+	if (req->peer_v6_present)
+		mnl_attr_put(nlh, FOU_ATTR_PEER_V6, 16, req->peer_v6);
+	if (req->peer_port_present)
+		mnl_attr_put_u16(nlh, FOU_ATTR_PEER_PORT, req->peer_port);
+	if (req->ifindex_present)
+		mnl_attr_put_u32(nlh, FOU_ATTR_IFINDEX, req->ifindex);
+
+	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+	if (err < 0)
+		return -1;
+
+	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	if (len < 0)
+		return -1;
+
+	err = ynl_recv_ack(ys, err);
+	if (err)
+		goto err_free;
+
+	return 0;
+
+err_free:
+	return -1;
+}
+
+/* ============== FOU_CMD_DEL ============== */
+// FOU_CMD_DEL - do
+int fou_del(struct ynl_sock *ys, struct fou_del_req *req)
+{
+	struct nlmsghdr *nlh;
+	int len, err;
+
+	nlh = ynl_gemsg_start_req(ys, ys->family_id, FOU_CMD_DEL, 1);
+
+	if (req->af_present)
+		mnl_attr_put_u8(nlh, FOU_ATTR_AF, req->af);
+	if (req->ifindex_present)
+		mnl_attr_put_u32(nlh, FOU_ATTR_IFINDEX, req->ifindex);
+	if (req->port_present)
+		mnl_attr_put_u16(nlh, FOU_ATTR_PORT, req->port);
+	if (req->peer_port_present)
+		mnl_attr_put_u16(nlh, FOU_ATTR_PEER_PORT, req->peer_port);
+	if (req->local_v4_present)
+		mnl_attr_put_u32(nlh, FOU_ATTR_LOCAL_V4, req->local_v4);
+	if (req->peer_v4_present)
+		mnl_attr_put_u32(nlh, FOU_ATTR_PEER_V4, req->peer_v4);
+	if (req->local_v6_present)
+		mnl_attr_put(nlh, FOU_ATTR_LOCAL_V6, 16, req->local_v6);
+	if (req->peer_v6_present)
+		mnl_attr_put(nlh, FOU_ATTR_PEER_V6, 16, req->peer_v6);
+
+	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+	if (err < 0)
+		return -1;
+
+	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	if (len < 0)
+		return -1;
+
+	err = ynl_recv_ack(ys, err);
+	if (err)
+		goto err_free;
+
+	return 0;
+
+err_free:
+	return -1;
+}
+
+/* ============== FOU_CMD_GET ============== */
+// FOU_CMD_GET - do
+void fou_get_rsp_free(struct fou_get_rsp *rsp)
+{
+	free(rsp);
+}
+
+int fou_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
+{
+	struct fou_get_rsp *dst = data;
+	const struct nlattr *attr;
+
+	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
+		if (mnl_attr_get_type(attr) == FOU_ATTR_PORT) {
+			dst->port_present = 1;
+			dst->port = mnl_attr_get_u16(attr);
+		}
+		if (mnl_attr_get_type(attr) == FOU_ATTR_IPPROTO) {
+			dst->ipproto_present = 1;
+			dst->ipproto = mnl_attr_get_u8(attr);
+		}
+		if (mnl_attr_get_type(attr) == FOU_ATTR_TYPE) {
+			dst->type_present = 1;
+			dst->type = mnl_attr_get_u8(attr);
+		}
+		if (mnl_attr_get_type(attr) == FOU_ATTR_REMCSUM_NOPARTIAL) {
+			dst->remcsum_nopartial_present = 1;
+		}
+		if (mnl_attr_get_type(attr) == FOU_ATTR_LOCAL_V4) {
+			dst->local_v4_present = 1;
+			dst->local_v4 = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == FOU_ATTR_PEER_V4) {
+			dst->peer_v4_present = 1;
+			dst->peer_v4 = mnl_attr_get_u32(attr);
+		}
+		if (mnl_attr_get_type(attr) == FOU_ATTR_LOCAL_V6) {
+			dst->local_v6_present = 1;
+			memcpy(dst->local_v6, mnl_attr_get_payload(attr), 16);
+		}
+		if (mnl_attr_get_type(attr) == FOU_ATTR_PEER_V6) {
+			dst->peer_v6_present = 1;
+			memcpy(dst->peer_v6, mnl_attr_get_payload(attr), 16);
+		}
+		if (mnl_attr_get_type(attr) == FOU_ATTR_PEER_PORT) {
+			dst->peer_port_present = 1;
+			dst->peer_port = mnl_attr_get_u16(attr);
+		}
+		if (mnl_attr_get_type(attr) == FOU_ATTR_IFINDEX) {
+			dst->ifindex_present = 1;
+			dst->ifindex = mnl_attr_get_u32(attr);
+		}
+	}
+
+	return MNL_CB_OK;
+}
+
+struct fou_get_rsp *fou_get(struct ynl_sock *ys, struct fou_get_req *req)
+{
+	struct fou_get_rsp *rsp;
+	struct nlmsghdr *nlh;
+	int len, err;
+
+	nlh = ynl_gemsg_start_req(ys, ys->family_id, FOU_CMD_GET, 1);
+
+	if (req->af_present)
+		mnl_attr_put_u8(nlh, FOU_ATTR_AF, req->af);
+	if (req->ifindex_present)
+		mnl_attr_put_u32(nlh, FOU_ATTR_IFINDEX, req->ifindex);
+	if (req->port_present)
+		mnl_attr_put_u16(nlh, FOU_ATTR_PORT, req->port);
+	if (req->peer_port_present)
+		mnl_attr_put_u16(nlh, FOU_ATTR_PEER_PORT, req->peer_port);
+	if (req->local_v4_present)
+		mnl_attr_put_u32(nlh, FOU_ATTR_LOCAL_V4, req->local_v4);
+	if (req->peer_v4_present)
+		mnl_attr_put_u32(nlh, FOU_ATTR_PEER_V4, req->peer_v4);
+	if (req->local_v6_present)
+		mnl_attr_put(nlh, FOU_ATTR_LOCAL_V6, 16, req->local_v6);
+	if (req->peer_v6_present)
+		mnl_attr_put(nlh, FOU_ATTR_PEER_V6, 16, req->peer_v6);
+
+	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+	if (err < 0)
+		return NULL;
+
+	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	if (len < 0)
+		return NULL;
+
+	rsp = calloc(1, sizeof(*rsp));
+
+	err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+			 fou_get_rsp_parse, rsp);
+	if (err < 0)
+		goto err_free;
+
+	err = ynl_recv_ack(ys, err);
+	if (err)
+		goto err_free;
+
+	return rsp;
+
+err_free:
+	fou_get_rsp_free(rsp);
+	return NULL;
+}
+
+// FOU_CMD_GET - dump
+void fou_get_list_free(struct fou_get_list *rsp)
+{
+	struct fou_get_list *next = rsp;
+
+	while (next) {
+		rsp = next;
+		next = rsp->next;
+
+		free(rsp);
+	}
+}
+
+struct fou_get_list *fou_get_dump(struct ynl_sock *ys)
+{
+	struct fou_get_list *rsp, *cur;
+	struct ynl_dump_state yds = {};
+	struct nlmsghdr *nlh;
+	int len, err;
+
+	yds.alloc_sz = sizeof(*rsp);
+	yds.cb = fou_get_rsp_parse;
+
+	nlh = ynl_gemsg_start_dump(ys, ys->family_id, FOU_CMD_GET, 1);
+
+	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+	if (err < 0)
+		return NULL;
+
+	do {
+		len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+		if (len < 0)
+			goto free_list;
+
+		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+				 ynl_dump_trampoline, &yds);
+		if (err < 0)
+			goto free_list;
+	} while (err > 0);
+
+	return yds.first;
+
+free_list:
+	rsp = yds.first;
+	while (rsp) {
+		cur = rsp;
+		rsp = rsp->next;
+		fou_get_list_free(cur);
+	}
+	return NULL;
+}
