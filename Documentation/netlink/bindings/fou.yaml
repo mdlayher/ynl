@@ -22,32 +22,32 @@ attributes:
     main:
       name-prefix: FOU_ATTR_
       list:
-        - unspec:
-            type: skip
-        - port:
-            type: u16
-        - af:
-            type: u8
-        - ipproto:
-            type: u8
-        - type:
-            type: u8
-        - remcsum_nopartial:
-            type: flag
-        - local_v4:
-            type: u32
-        - local_v6:
-            type: binary
-            len: 16
-        - peer_v4:
-            type: u32
-        - peer_v6:
-            type: binary
-            len: 16
-        - peer_port:
-            type: u16
-        - ifindex:
-            type: s32
+        unspec:
+          type: skip
+        port:
+          type: u16
+        af:
+          type: u8
+        ipproto:
+          type: u8
+        type:
+          type: u8
+        remcsum_nopartial:
+          type: flag
+        local_v4:
+          type: u32
+        local_v6:
+          type: binary
+          len: 16
+        peer_v4:
+          type: u32
+        peer_v6:
+          type: binary
+          len: 16
+        peer_port:
+          type: u16
+        ifindex:
+          type: s32
 
 operations:
   name-prefix: FOU_CMD_
@@ -62,16 +62,17 @@ operations:
 
       do:
         request: &all_attrs
-          - port
-          - ipproto
-          - type
-          - remcsum_nopartial
-          - local_v4
-          - peer_v4
-          - local_v6
-          - peer_v6
-          - peer_port
-          - ifindex
+          attributes:
+            - port
+            - ipproto
+            - type
+            - remcsum_nopartial
+            - local_v4
+            - peer_v4
+            - local_v6
+            - peer_v6
+            - peer_port
+            - ifindex
 
     del:
       attribute-space: main
@@ -80,7 +81,8 @@ operations:
       flags: [ admin_perm ]
 
       do:
-        request: &select_attrs
+        request:  &select_attrs
+          attributes:
           - family
           - ifindex
           - port

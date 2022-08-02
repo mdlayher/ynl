@@ -43,6 +43,9 @@ class Family:
 
     def _load_root_spaces(self):
         for op_name, op in self.yaml['operations']['list'].items():
+            if not op:
+                continue
+
             req_attrs = set()
             rsp_attrs = set()
             for op_mode in ['do', 'dump']:
@@ -82,6 +85,9 @@ class Family:
 
     def _load_all_notify(self):
         for op_name, op in self.yaml['operations']['list'].items():
+            if not op:
+                continue
+
             if 'notify' in op:
                 self.all_notify[op_name] = op['notify']['cmds']
 
@@ -956,6 +962,9 @@ def main():
                 print_type_full(ri, attr_space)
 
         for op_name, op in parsed['operations']['list'].items():
+            if not op:
+                continue
+
             cw.p(f"/* ============== {parsed['operations']['name-prefix']}{op_name.upper()} ============== */")
 
             if 'do' in op:
@@ -1014,6 +1023,9 @@ def main():
                     parse_rsp_nested(ri, attr_space)
 
         for op_name, op in parsed['operations']['list'].items():
+            if not op:
+                continue
+
             cw.p(f"/* ============== {parsed['operations']['name-prefix']}{op_name.upper()} ============== */")
 
             if 'do' in op:
