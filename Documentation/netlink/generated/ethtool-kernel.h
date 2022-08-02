@@ -65,3 +65,8 @@ struct ethtool_channels_set_req {
 };
 
 void ethtool_channels_set_req_free(struct ethtool_channels_set_req *req);
+
+void
+ethtool_channels_set_req_parse(const struct nlattr **tb,
+			       struct ethtool_channels_set_req *req);
+const struct nla_policy ethtool_channels_set_policy[];

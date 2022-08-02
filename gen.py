@@ -428,7 +428,11 @@ def print_prototype(ri, direction, terminate=True):
     if 'request' in ri.op[ri.op_mode]:
         args.append(f"{type_name(ri, direction)} *" + f"{direction_to_suffix[direction][1:]}")
 
-    ri.cw.write_func_prot(f"{type_name(ri, rdir(direction))} *", fname, args, suffix)
+    ret = 'int'
+    if 'reply' in ri.op[ri.op_mode]:
+        ret = f"{type_name(ri, rdir(direction))} *"
+
+    ri.cw.write_func_prot(ret, fname, args, suffix)
 
 
 def print_req_prototype(ri):
@@ -892,9 +896,10 @@ def main():
                 print_req_type(ri)
                 print_req_type_helpers(ri)
                 cw.nl()
-                print_rsp_type(ri)
-                print_rsp_type_helpers(ri)
-                cw.nl()
+                if 'reply' in op['do']:
+                    print_rsp_type(ri)
+                    print_rsp_type_helpers(ri)
+                    cw.nl()
 
                 if args.mode == "user":
                     print_req_prototype(ri)

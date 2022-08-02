@@ -118,3 +118,9 @@ ethtool_channels_set_req_set_combined(struct ethtool_channels_set_req *req,
 	req->combined_present = 1;
 	req->combined = combined;
 }
+
+int ethtool_channels_set(struct ynl_sock *ys,
+			 struct ethtool_channels_set_req *req);
+
+// --------------- Common notification parsing --------------- //
+struct ynl_ntf_base_type *ethtool_ntf_parse(struct ynl_sock *ys);
