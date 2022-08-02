@@ -533,10 +533,16 @@ def parse_rsp_msg(ri, deref=False):
 
 
 def print_req(ri):
+    ret_ok = '0'
+    ret_err = '-1'
     direction = "request"
-    local_vars = [f'{type_name(ri, rdir(direction))} *rsp;',
-                  'struct nlmsghdr *nlh;',
+    local_vars = ['struct nlmsghdr *nlh;',
                   'int len, err;']
+
+    if 'reply' in ri.op[ri.op_mode]:
+        ret_ok = 'rsp'
+        ret_err = 'NULL'
+        local_vars += [f'{type_name(ri, rdir(direction))} *rsp;']
 
     print_prototype(ri, direction, terminate=False)
     ri.cw.block_start()
@@ -549,13 +555,13 @@ def print_req(ri):
         attribute_put(ri, arg, "req")
     ri.cw.nl()
 
-    ri.cw.p("""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+    ri.cw.p(f"""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
 	if (err < 0)
-		return NULL;
+		return {ret_err};
 
 	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
 	if (len < 0)
-		return NULL;""")
+		return {ret_err};""")
     ri.cw.nl()
 
     if 'reply' in ri.op[ri.op_mode]:
@@ -571,11 +577,11 @@ def print_req(ri):
 	if (err)
 		goto err_free;
 
-	return rsp;
+	return {ret_ok};
 
 err_free:
 	{call_free(ri, rdir(direction), 'rsp')}
-	return NULL;""")
+	return {ret_err};""")
     ri.cw.block_end()
 
 

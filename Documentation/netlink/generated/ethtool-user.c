@@ -199,7 +199,6 @@ void ethtool_channels_get_ntf_free(struct ethtool_channels_get_ntf *rsp)
 int ethtool_channels_set(struct ynl_sock *ys,
 			 struct ethtool_channels_set_req *req)
 {
-	struct ethtool_channels_set_rsp *rsp;
 	struct nlmsghdr *nlh;
 	int len, err;
 
@@ -218,21 +217,21 @@ int ethtool_channels_set(struct ynl_sock *ys,
 
 	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
 	if (err < 0)
-		return NULL;
+		return -1;
 
 	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
 	if (len < 0)
-		return NULL;
+		return -1;
 
 	err = ynl_recv_ack(ys, err);
 	if (err)
 		goto err_free;
 
-	return rsp;
+	return 0;
 
 err_free:
 	ethtool_channels_set_rsp_free(rsp);
-	return NULL;
+	return -1;
 }
 
 // --------------- Common notification parsing --------------- //
