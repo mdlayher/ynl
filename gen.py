@@ -18,8 +18,10 @@ class Family:
         with open(file_name, "r") as stream:
             self.yaml = yaml.safe_load(stream)
 
-        self.root_spaces = set()
-        self.pure_nested_spaces = set()
+        # dict space-name -> 'request': set(attrs), 'reply': set(attrs)
+        self.root_spaces = dict()
+        # dict space-name -> set('request', 'reply')
+        self.pure_nested_spaces = dict()
         self.inherited_members = dict()
         self.all_notify = dict()
 
@@ -41,15 +43,31 @@ class Family:
 
     def _load_root_spaces(self):
         for op_name, op in self.yaml['operations']['list'].items():
-            self.root_spaces.add(op['attribute-space'])
+            req_attrs = set()
+            rsp_attrs = set()
+            for op_mode in ['do', 'dump']:
+                if op_mode in op and 'request' in op[op_mode]:
+                    req_attrs.update(set(op[op_mode]['request']['attributes']))
+                if op_mode in op and 'reply' in op[op_mode]:
+                    rsp_attrs.update(set(op[op_mode]['reply']['attributes']))
+
+            if op['attribute-space'] not in self.root_spaces:
+                self.root_spaces[op['attribute-space']] = {'request': req_attrs, 'reply': rsp_attrs}
+            else:
+                self.root_spaces[op['attribute-space']]['request'].update(req_attrs)
+                self.root_spaces[op['attribute-space']]['reply'].update(rsp_attrs)
 
     def _load_nested_spaces(self):
-        for root_space in self.root_spaces:
+        for root_space, rs_members in self.root_spaces.items():
             for attr, spec in self.yaml['attributes']['spaces'][root_space]['list'].items():
                 if 'nested-attributes' in spec:
                     nested = spec['nested-attributes']
                     if nested not in self.root_spaces:
-                        self.pure_nested_spaces.add(nested)
+                        self.pure_nested_spaces[nested] = set()
+                    if nested in rs_members['request']:
+                        self.pure_nested_spaces[nested].add('request')
+                    if nested in rs_members['reply']:
+                        self.pure_nested_spaces[nested].add('reply')
                     if 'type-value' in spec:
                         tv_set = set(spec['type-value'])
                         if nested in self.root_spaces:
@@ -909,7 +927,7 @@ def main():
     if args.header:
         if args.mode == "user":
             cw.p('// Common nested types')
-            for attr_space in sorted(parsed.pure_nested_spaces):
+            for attr_space in sorted(parsed.pure_nested_spaces.keys()):
                 ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
                 print_type_full(ri, attr_space)
 
@@ -962,8 +980,9 @@ def main():
     else:
         if args.mode == "user":
             cw.p('// Common nested types')
-            for attr_space in sorted(parsed.pure_nested_spaces):
+            for attr_space in sorted(parsed.pure_nested_spaces.keys()):
                 ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
+
                 free_rsp_nested(ri, attr_space)
                 parse_rsp_nested(ri, attr_space)
 
