@@ -609,15 +609,16 @@ def print_req(ri):
 		goto err_free;""")
     ri.cw.nl()
 
-    ri.cw.p(f"""err = ynl_recv_ack(ys, err);
+    ri.cw.p(f"""\terr = ynl_recv_ack(ys, err);
 	if (err)
 		goto err_free;
 
 	return {ret_ok};
 
-err_free:
-	{call_free(ri, rdir(direction), 'rsp')}
-	return {ret_err};""")
+err_free:""")
+    if 'reply' in ri.op[ri.op_mode]:
+        ri.cw.p(f"{call_free(ri, rdir(direction), 'rsp')}")
+    ri.cw.p(f"return {ret_err};")
     ri.cw.block_end()
 
 

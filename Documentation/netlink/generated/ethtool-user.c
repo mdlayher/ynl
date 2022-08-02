@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
 //	Documentation/netlink/bindings/ethtool.yaml
-// ./gen.py --mode user --user-header ethtool-user.h genetlink-user.h user.h --source --spec Documentation/netlink/bindings/ethtool.yaml
+// ./gen.py --mode user --user-header ethtool-user.h genetlink-user.h user.h linux/if.h --source --spec Documentation/netlink/bindings/ethtool.yaml
 
 #include <linux/ethtool_netlink.h>
 #include <linux/if.h>
@@ -14,6 +14,7 @@
 #include "ethtool-user.h"
 #include "genetlink-user.h"
 #include "user.h"
+#include "linux/if.h"
 
 // Common nested types
 void ethtool_header_free(struct ethtool_header *obj)
@@ -245,7 +246,6 @@ int ethtool_channels_set(struct ynl_sock *ys,
 	return 0;
 
 err_free:
-	ethtool_channels_set_rsp_free(rsp);
 	return -1;
 }
 
