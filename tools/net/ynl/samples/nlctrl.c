@@ -3,7 +3,6 @@
 
 #include <ynl.h>
 
-#include "fou-user.h"
 #include "genetlink-user.h"
 
 int main(int argc, char **argv)
