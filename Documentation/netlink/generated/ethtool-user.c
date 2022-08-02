@@ -19,6 +19,19 @@ void ethtool_header_free(struct ethtool_header *obj)
 	free(obj);
 }
 
+int ethtool_header_put(struct nlmsghdr *nlh, unsigned int attr_type,
+		       struct ethtool_header *obj)
+{
+	if (obj->dev_index_present)
+		mnl_attr_put_u32(nlh, ETHTOOL_A_HEADER_DEV_INDEX, obj->dev_index);
+	if (obj->dev_name_present)
+		mnl_attr_put_strz(nlh, ETHTOOL_A_HEADER_DEV_NAME, obj->dev_name);
+	if (obj->flags_present)
+		mnl_attr_put_u32(nlh, ETHTOOL_A_HEADER_FLAGS, obj->flags);
+
+	return 0;
+}
+
 int ethtool_header_parse(struct ethtool_header *dst,
 			 const struct nlattr *nested)
 {

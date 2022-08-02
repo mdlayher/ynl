@@ -64,9 +64,9 @@ class Family:
                     nested = spec['nested-attributes']
                     if nested not in self.root_spaces:
                         self.pure_nested_spaces[nested] = set()
-                    if nested in rs_members['request']:
+                    if attr in rs_members['request']:
                         self.pure_nested_spaces[nested].add('request')
-                    if nested in rs_members['reply']:
+                    if attr in rs_members['reply']:
                         self.pure_nested_spaces[nested].add('reply')
                     if 'type-value' in spec:
                         tv_set = set(spec['type-value'])
@@ -469,6 +469,24 @@ def print_req_prototype(ri):
 
 def print_dump_prototype(ri):
     print_prototype(ri, "request")
+
+
+def put_req_nested(ri, attr_space):
+    struct_type = nest_type_name(ri, attr_space)
+    func_args = ['struct nlmsghdr *nlh',
+                 'unsigned int attr_type',
+                 f'{struct_type} *obj']
+
+    ri.cw.write_func_prot('int', f'{nest_op_prefix(ri, attr_space)}_put', func_args)
+    ri.cw.block_start()
+
+    for arg in ri.family['attributes']['spaces'][attr_space]['list']:
+        attribute_put(ri, arg, "obj")
+
+    ri.cw.nl()
+    ri.cw.p('return 0;')
+    ri.cw.block_end()
+    ri.cw.nl()
 
 
 def parse_rsp_nested(ri, attr_space):
@@ -984,7 +1002,10 @@ def main():
                 ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
 
                 free_rsp_nested(ri, attr_space)
-                parse_rsp_nested(ri, attr_space)
+                if 'request' in parsed.pure_nested_spaces[attr_space]:
+                    put_req_nested(ri, attr_space)
+                if 'reply' in parsed.pure_nested_spaces[attr_space]:
+                    parse_rsp_nested(ri, attr_space)
 
         for op_name, op in parsed['operations']['list'].items():
             cw.p(f"/* ============== {parsed['operations']['name-prefix']}{op_name.upper()} ============== */")
