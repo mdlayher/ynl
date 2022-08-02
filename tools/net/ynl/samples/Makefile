@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-std=gnu99 -O2 -W -Wall -Wextra -Wno-unused-parameter -Wshadow -g \
-	-I../lib/ -I../generated/
+	-I../lib/ -I../generated/ -fsanitize=address -static-libasan
 LDLIBS=-lmnl ../lib/ynl.a ../generated/protos.a
 
 SRCS=$(wildcard *.c)

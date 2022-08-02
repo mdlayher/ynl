@@ -1,5 +1,6 @@
 CC=gcc
-CFLAGS=-std=gnu99 -O2 -W -Wall -Wextra -Wno-unused-parameter -Wshadow -g
+CFLAGS=-std=gnu99 -O2 -W -Wall -Wextra -Wno-unused-parameter -Wshadow -g \
+	-fsanitize=address -static-libasan
 
 SRCS=$(wildcard *.c)
 OBJS=$(patsubst %.c,%.o,${SRCS})

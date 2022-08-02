@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=gnu99 -O2 -W -Wall -Wextra -Wno-unused-parameter -Wshadow -g -I../lib/
+CFLAGS=-std=gnu99 -O2 -W -Wall -Wextra -Wno-unused-parameter -Wshadow -g -I../lib/ -fsanitize=address -static-libasan
 
 TOOL:=/home/kicinski/devel/linux/gen.py
 
