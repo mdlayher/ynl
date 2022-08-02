@@ -285,7 +285,7 @@ def _attribute_member(ri, space, attr, prototype=True, suffix=""):
         t = f"struct {nest_op_prefix(ri, spec['nested-attributes'])} *"
         if not prototype:
             ri.cw.p(f"unsigned int n_{attr};")
-    elif t == 'nest-type-value':
+    elif t == 'nest' or t == 'nest-type-value':
         t = f"struct {nest_op_prefix(ri, spec['nested-attributes'])} "
     elif t in scalars:
         pfx = '__' if ri.ku_space == 'user' else ''
