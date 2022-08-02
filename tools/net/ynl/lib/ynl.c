@@ -6,7 +6,14 @@
 #include <libmnl/libmnl.h>
 #include <linux/genetlink.h>
 
-#include "user.h"
+#include "ynl.h"
+
+#define ARRAY_SIZE(arr)		(sizeof(arr) / sizeof(*arr))
+
+#define err(msg...)		fprintf(stderr, msg)
+#define err_ret(ret, msg...)	({ err(msg); ret; })
+#define perr(msg)		fprintf(stderr, "%s: %s\n", (msg), strerror(errno))
+#define perr_ret(ret, msg)	({ perr(msg); ret; })
 
 /* -- Netlink bolier plate */
 
@@ -98,7 +105,7 @@ struct nlmsghdr *ynl_msg_start(struct ynl_sock *ys, __u32 id, __u16 flags)
 {
 	struct nlmsghdr *nlh;
 
-	nlh = ys->nlh = mnl_nlmsg_put_header(ys->buf);
+	nlh = ys->nlh = mnl_nlmsg_put_header(ys->tx_buf);
 	nlh->nlmsg_type	= id;
 	nlh->nlmsg_flags = flags;
 	nlh->nlmsg_seq = ++ys->seq;
@@ -156,10 +163,13 @@ struct ynl_sock *ynl_sock_create(const char *family_name)
 	int one = 1;
 	int err;
 
-	ys = malloc(sizeof(*ys) + MNL_SOCKET_BUFFER_SIZE);
+	ys = malloc(sizeof(*ys) + 2 * MNL_SOCKET_BUFFER_SIZE);
 	if (!ys)
 		return NULL;
 	memset(ys, 0, sizeof(*ys));
+
+	ys->tx_buf = &ys->raw_buf[0];
+	ys->rx_buf = &ys->raw_buf[MNL_SOCKET_BUFFER_SIZE];
 
 	ys->sock = mnl_socket_open(NETLINK_GENERIC);
 	if (!ys->sock) {
@@ -191,13 +201,13 @@ struct ynl_sock *ynl_sock_create(const char *family_name)
 	}
 
 	do {
-		err = mnl_socket_recvfrom(ys->sock, ys->buf,
+		err = mnl_socket_recvfrom(ys->sock, ys->rx_buf,
 					  MNL_SOCKET_BUFFER_SIZE);
 		if (err <= 0) {
 			perr("failed to receive the socket family info");
 			goto err_close_sock;
 		}
-		err = mnl_cb_run2(ys->buf, err, ys->seq, ys->portid,
+		err = mnl_cb_run2(ys->rx_buf, err, ys->seq, ys->portid,
 				  get_family_id_cb, ys,
 				  mnlg_cb_array, ARRAY_SIZE(mnlg_cb_array));
 		if (err < 0) {
@@ -227,10 +237,11 @@ int ynl_recv_ack(struct ynl_sock *ys, int ret)
 	if (!ret)
 		return 0;
 
-	ret = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	ret = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
 	if (ret < 0)
 		return ret;
-	return mnl_cb_run(ys->buf, ret, ys->seq, ys->portid, ynl_cb_null, NULL);
+	return mnl_cb_run(ys->rx_buf, ret, ys->seq, ys->portid,
+			  ynl_cb_null, NULL);
 }
 
 int ynl_cb_null(const struct nlmsghdr *nlh, void *data)
@@ -254,95 +265,4 @@ int ynl_dump_trampoline(const struct nlmsghdr *nlh, void *data)
 	ds->last = obj;
 
 	return ds->cb(nlh, obj->data);
-}
-
-/* -- sample main -- */
-
-#include "fou-user.h"
-#include "genetlink-user.h"
-
-int main(int argc, char **argv)
-{
-	struct nlctrl_getfamily_list *families, *f;
-	struct nlctrl_getfamily_rsp *rsp;
-	struct nlctrl_getfamily_req req;
-	struct nlctrl_getpolicy_req_dump pdr;
-	struct nlctrl_getpolicy_rsp_list *policies, *p;
-	unsigned int i, fam_id;
-	struct ynl_sock *ys;
-
-	if (argc < 2)
-		return err_ret(1, "Usage: %s <family_name>\n", argv[0]);
-
-	ys = ynl_sock_create("nlctrl");
-	if (!ys)
-		return 1;
-
-	memset(&req, 0, sizeof(req));
-	nlctrl_getfamily_req_set_family_name(&req, argv[1]);
-
-	rsp = nlctrl_getfamily(ys, &req);
-	if (!rsp || !rsp->family_id_present)
-		goto out;
-
-	fam_id = rsp->family_id;
-
-	if (rsp->family_id_present && rsp->family_name_present) {
-		printf("YS response family id %u name '%s' n_ops %d n_mcast: %d\n",
-		       rsp->family_id, rsp->family_name,
-		       rsp->n_ops, rsp->n_mcast_groups);
-		for (i = 0; i < rsp->n_ops; i++)
-			printf("\top[%d]: cmd:%d flags:%x\n",
-			       rsp->ops[i].idx, rsp->ops[i].id,
-			       rsp->ops[i].flags);
-		for (i = 0; i < rsp->n_mcast_groups; i++)
-			printf("\tmcast_grp[%d]: id:%d name:%s\n",
-			       rsp->mcast_groups[i].idx,
-			       rsp->mcast_groups[i].id,
-			       rsp->mcast_groups[i].name);
-	}
-	nlctrl_getfamily_rsp_free(rsp);
-
-	families = nlctrl_getfamily_dump(ys);
-	if (!families)
-		goto out;
-
-	printf("\nFAMILIES:\n");
-	for (f = families; f; f = f->next) {
-		rsp = &f->obj;
-
-		if (rsp->family_id_present && rsp->family_name_present)
-			printf("\t[%u] '%s' (%d)\n",
-			       rsp->family_id, rsp->family_name, rsp->n_ops);
-		else
-			printf("\tSKIP\n");
-	}
-	nlctrl_getfamily_list_free(families);
-
-	printf("\nPOLICY");
-	memset(&pdr, 0, sizeof(pdr));
-
-	nlctrl_getpolicy_req_dump_set_family_id(&pdr, fam_id);
-
-	policies = nlctrl_getpolicy_dump(ys, &pdr);
-	if (!policies)
-		goto out;
-
-	for (p = policies; p; p = p->next) {
-		if (!p->obj.policy_present)
-			continue;
-		if (!p->obj.policy.type_present) {
-			printf("\t[%d, %d] -- no type\n",
-			       p->obj.policy.attr_idx,
-			       p->obj.policy.current_policy_idx);
-			continue;
-		}
-		printf("\t[%d, %d] %d\n", p->obj.policy.attr_idx,
-		       p->obj.policy.current_policy_idx, p->obj.policy.type);
-	}
-	nlctrl_getpolicy_rsp_list_free(policies);
-out:
-	ynl_sock_destroy(ys);
-
-	return 0;
 }

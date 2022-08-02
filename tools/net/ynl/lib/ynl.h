@@ -1,15 +1,10 @@
 #ifndef __USER_MY_H
 #define __USER_MY_H 1
 
-#define ARRAY_SIZE(arr)		(sizeof(arr) / sizeof(*arr))
-
-#define err(msg...)		fprintf(stderr, msg)
-#define err_ret(ret, msg...)	({ err(msg); ret; })
-#define perr(msg)		fprintf(stderr, "%s: %s\n", (msg), strerror(errno))
-#define perr_ret(ret, msg)	({ perr(msg); ret; })
-
 struct mnl_socket;
 struct nlmsghdr;
+
+/* Generic mnl helper code */
 
 struct ynl_sock {
 	struct mnl_socket *sock;
@@ -17,13 +12,20 @@ struct ynl_sock {
 	__u32 portid;
 	__u16 family_id;
 	struct nlmsghdr *nlh;
-	unsigned char buf[];
+	unsigned char *tx_buf;
+	unsigned char *rx_buf;
+	unsigned char raw_buf[];
 };
 
 struct nlmsghdr *
 ynl_gemsg_start_req(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version);
 struct nlmsghdr *
 ynl_gemsg_start_dump(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version);
+
+int ynl_recv_ack(struct ynl_sock *ys, int ret);
+int ynl_cb_null(const struct nlmsghdr *nlh, void *data);
+
+/* YNL specific helpers used by the auto-generated code */
 
 struct ynl_ntf_base_type {
 	__u16 family;
@@ -43,8 +45,6 @@ struct ynl_dump_state {
 	mnl_cb_t cb;
 };
 
-int ynl_recv_ack(struct ynl_sock *ys, int ret);
-int ynl_cb_null(const struct nlmsghdr *nlh, void *data);
 int ynl_dump_trampoline(const struct nlmsghdr *nlh, void *data);
 
 #endif
