@@ -258,6 +258,7 @@ int ynl_dump_trampoline(const struct nlmsghdr *nlh, void *data)
 
 /* -- sample main -- */
 
+#include "fou-user.h"
 #include "genetlink-user.h"
 
 int main(int argc, char **argv)

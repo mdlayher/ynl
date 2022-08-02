@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
 //	Documentation/netlink/bindings/fou.yaml
-// ./gen.py --mode user --user-header genetlink-user.h user.h --source --spec Documentation/netlink/bindings/fou.yaml
+// ./gen.py --mode user --user-header fou-user.h user.h --source --spec Documentation/netlink/bindings/fou.yaml
 
 #include <linux/fou.h>
 
@@ -9,8 +9,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <libmnl/libmnl.h>
+#include <linux/genetlink.h>
 
-#include "genetlink-user.h"
+#include "fou-user.h"
 #include "user.h"
 
 // Common nested types

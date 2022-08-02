@@ -963,6 +963,7 @@ def main():
             cw.p("#include <stdio.h>")
             cw.p("#include <string.h>")
             cw.p("#include <libmnl/libmnl.h>")
+            cw.p("#include <linux/genetlink.h>")
             cw.nl()
             for h in args.user_header:
                 cw.p(f'#include "{h}"')
