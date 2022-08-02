@@ -1,6 +1,9 @@
 #ifndef __USER_MY_H
 #define __USER_MY_H 1
 
+#include <libmnl/libmnl.h>
+#include <linux/types.h>
+
 struct mnl_socket;
 struct nlmsghdr;
 
@@ -16,6 +19,9 @@ struct ynl_sock {
 	unsigned char *rx_buf;
 	unsigned char raw_buf[];
 };
+
+struct ynl_sock *ynl_sock_create(const char *family_name);
+void ynl_sock_destroy(struct ynl_sock *ys);
 
 struct nlmsghdr *
 ynl_gemsg_start_req(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version);

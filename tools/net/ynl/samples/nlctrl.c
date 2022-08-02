@@ -1,4 +1,7 @@
-#include "ynl.h"
+#include <stdio.h>
+#include <string.h>
+
+#include <ynl.h>
 
 #include "fou-user.h"
 #include "genetlink-user.h"
@@ -13,8 +16,10 @@ int main(int argc, char **argv)
 	unsigned int i, fam_id;
 	struct ynl_sock *ys;
 
-	if (argc < 2)
-		return err_ret(1, "Usage: %s <family_name>\n", argv[0]);
+	if (argc < 2) {
+		fprintf(stderr, "Usage: %s <family_name>\n", argv[0]);
+		return 1;
+	}
 
 	ys = ynl_sock_create("nlctrl");
 	if (!ys)

@@ -11,7 +11,10 @@ all: ynl.a
 ynl.a: $(OBJS)
 	ar rcs $@ $(OBJS)
 clean:
-	rm -rf *.o *.d *~
+	rm -f *.o *.d *~
+
+hardclean: clean
+	rm -f *.a
 
 %.o: %.c
 	$(COMPILE.c) -MMD -c -o $@ $<
