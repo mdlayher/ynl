@@ -1,0 +1,80 @@
+name: ethtool
+
+attributes:
+  spaces:
+    header:
+      name-prefix: ETHTOOL_A_HEADER_
+      list:
+        dev_index:
+          type: u32
+        dev_name:
+          type: nul-string
+          len: ALTIFNAMSIZ - 1
+        flags:
+          type: u32
+
+    channels:
+      name-prefix: ETHTOOL_A_CHANNELS_
+      list:
+        header:
+          type: nest
+          nested-attributes: header
+        rx_max:
+          type: u32
+        tx_max:
+          type: u32
+        other_max:
+          type: u32
+        combined_max:
+          type: u32
+        rx:
+          type: u32
+        tx:
+          type: u32
+        other:
+          type: u32
+        combined:
+          type: u32
+
+headers:
+  user: linux/ethtool_netlink.h
+  kernel: linux/ethtool_netlink.h
+
+operations:
+  name-prefix: ETHTOOL_MSG_
+  list:
+    channels_get:
+      attribute-space: channels
+      do:
+        request:
+          attributes:
+            - header
+        reply: &channel_reply
+          attributes:
+            - header
+            - rx_max
+            - tx_max
+            - other_max
+            - combined_max
+            - rx
+            - tx
+            - other
+            - combined
+      dump:
+        reply: *channel_reply
+
+      notify:
+        reply: *channel_reply
+        cmds:
+          - channels_ntf
+
+    channels_set:
+      attribute-space: channels
+      do:
+        request:
+          attributes:
+            - header
+            - rx
+            - tx
+            - other
+            - combined
