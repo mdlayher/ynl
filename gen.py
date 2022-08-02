@@ -374,8 +374,9 @@ def attribute_get(ri, attr, var):
         get_lines += [f'attr_{attr} = attr;',
                       'mnl_attr_for_each_nested(attr2, attr)',
                       f'\t{var}->n_{attr}++;']
-    elif spec['type'] == 'nest-type-value':
+    elif spec['type'] == 'nest' or spec['type'] == 'nest-type-value':
         prev = 'attr'
+        tv_args = ''
         if 'type-value' in spec:
             local_vars += [f'const struct nlattr *attr_{", *attr_".join(spec["type-value"])};']
             local_vars += [f'__u32 {", ".join(spec["type-value"])};']
@@ -384,8 +385,10 @@ def attribute_get(ri, attr, var):
                 get_lines += [f'{level} = mnl_attr_get_type(attr_{level});']
                 prev = 'attr_' + level
 
+            tv_args = f", {', '.join(spec['type-value'])}"
+
         get_lines += [f"{nest_op_prefix(ri, spec['nested-attributes'])}_parse(&{var}->{attr}, " +
-                      f"{prev}, {', '.join(spec['type-value'])});"]
+                      f"{prev}{tv_args});"]
     else:
         raise Exception(f"Type {spec['type']} not supported yet")
 
