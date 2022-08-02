@@ -483,6 +483,8 @@ def parse_rsp_nested(ri, attr_space):
 
 
 def parse_rsp_msg(ri, deref=False):
+    if 'reply' not in ri.op[ri.op_mode]:
+        return
     struct_type = type_name(ri, "reply", deref=deref)
 
     func_args = ['const struct nlmsghdr *nlh',
@@ -547,22 +549,25 @@ def print_req(ri):
         attribute_put(ri, arg, "req")
     ri.cw.nl()
 
-    ri.cw.p(f"""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+    ri.cw.p("""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
 	if (err < 0)
 		return NULL;
 
 	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
 	if (len < 0)
-		return NULL;
+		return NULL;""")
+    ri.cw.nl()
 
-	rsp = calloc(1, sizeof(*rsp));
+    if 'reply' in ri.op[ri.op_mode]:
+        ri.cw.p(f"""rsp = calloc(1, sizeof(*rsp));
 
 	err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
 			 {op_prefix(ri, "reply")}_parse, rsp);
 	if (err < 0)
-		goto err_free;
+		goto err_free;""")
+    ri.cw.nl()
 
-	err = ynl_recv_ack(ys, err);
+    ri.cw.p(f"""err = ynl_recv_ack(ys, err);
 	if (err)
 		goto err_free;
 
@@ -688,6 +693,8 @@ def print_req_type_helpers(ri):
 
 
 def print_rsp_type_helpers(ri):
+    if 'reply' not in ri.op[ri.op_mode]:
+        return
     print_type_helpers(ri, "reply")
 
 
@@ -714,6 +721,8 @@ def print_req_type(ri):
 
 
 def print_rsp_type(ri):
+    if 'reply' not in ri.op[ri.op_mode]:
+        return
     print_type(ri, "reply")
 
 
@@ -755,6 +764,8 @@ def free_rsp_nested(ri, attr_space):
 
 
 def print_rsp_free(ri):
+    if 'reply' not in ri.op[ri.op_mode]:
+        return
     _free_type(ri, 'reply', ri.op[ri.op_mode]['reply']['attributes'])
 
 
@@ -906,10 +917,9 @@ def main():
                 print_req_type(ri)
                 print_req_type_helpers(ri)
                 cw.nl()
-                if 'reply' in op['do']:
-                    print_rsp_type(ri)
-                    print_rsp_type_helpers(ri)
-                    cw.nl()
+                print_rsp_type(ri)
+                print_rsp_type_helpers(ri)
+                cw.nl()
 
                 if args.mode == "user":
                     print_req_prototype(ri)

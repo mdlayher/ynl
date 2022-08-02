@@ -196,3 +196,78 @@ void ethtool_channels_get_ntf_free(struct ethtool_channels_get_ntf *rsp)
 
 /* ============== ETHTOOL_MSG_CHANNELS_SET ============== */
 // ETHTOOL_MSG_CHANNELS_SET - do
+int ethtool_channels_set(struct ynl_sock *ys,
+			 struct ethtool_channels_set_req *req)
+{
+	struct ethtool_channels_set_rsp *rsp;
+	struct nlmsghdr *nlh;
+	int len, err;
+
+	nlh = ynl_gemsg_start_req(ys, ys->family_id, ETHTOOL_MSG_CHANNELS_SET, 1);
+
+	if (req->header_present)
+		ethtool_header_put(nlh, ETHTOOL_A_CHANNELS_HEADER, &req->header);
+	if (req->rx_present)
+		mnl_attr_put_u32(nlh, ETHTOOL_A_CHANNELS_RX, req->rx);
+	if (req->tx_present)
+		mnl_attr_put_u32(nlh, ETHTOOL_A_CHANNELS_TX, req->tx);
+	if (req->other_present)
+		mnl_attr_put_u32(nlh, ETHTOOL_A_CHANNELS_OTHER, req->other);
+	if (req->combined_present)
+		mnl_attr_put_u32(nlh, ETHTOOL_A_CHANNELS_COMBINED, req->combined);
+
+	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+	if (err < 0)
+		return NULL;
+
+	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	if (len < 0)
+		return NULL;
+
+	err = ynl_recv_ack(ys, err);
+	if (err)
+		goto err_free;
+
+	return rsp;
+
+err_free:
+	ethtool_channels_set_rsp_free(rsp);
+	return NULL;
+}
+
+// --------------- Common notification parsing --------------- //
+struct ynl_ntf_base_type *ethtool_ntf_parse(struct ynl_sock *ys)
+{
+	struct ynl_ntf_base_type *rsp;
+	struct genlmsghdr *genlh;
+	struct nlmsghdr *nlh;
+	mnl_cb_t parse;
+	int len, err;
+
+	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	if (len < (ssize_t)(sizeof(*nlh) + sizeof(*genlh)))
+		return NULL;
+
+	nlh = (void *)ys->buf;
+	genlh = mnl_nlmsg_get_payload(nlh);
+
+	switch (genlh->cmd) {
+	case ETHTOOL_MSG_CHANNELS_NTF:
+		rsp = calloc(1, sizeof(struct ethtool_channels_get_ntf));
+		parse = ethtool_channels_get_rsp_parse;
+		break;
+	default:
+		return NULL;
+	}
+	err = mnl_cb_run(ys->buf, len, 0, 0, parse, rsp);
+	if (err)
+		goto err_free;
+
+	rsp->family = nlh->nlmsg_type;
+	rsp->cmd = genlh->cmd;
+	return rsp;
+
+err_free:
+	free(rsp);
+	return NULL;
+}
