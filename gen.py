@@ -852,7 +852,7 @@ def print_ntf_type_parse(family, cw, ku_mode):
     cw.p('return NULL;')
     cw.block_end()
     cw.nl()
-    print("""	err = mnl_cb_run(ys->buf, len, 0, 0, parse, rsp);
+    cw.p("""err = mnl_cb_run(ys->buf, len, 0, 0, parse, rsp);
 	if (err)
 		goto err_free;""")
     cw.nl()

@@ -258,6 +258,7 @@ struct ynl_ntf_base_type *ethtool_ntf_parse(struct ynl_sock *ys)
 	default:
 		return NULL;
 	}
+
 	err = mnl_cb_run(ys->buf, len, 0, 0, parse, rsp);
 	if (err)
 		goto err_free;
