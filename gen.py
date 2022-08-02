@@ -282,7 +282,7 @@ def attribute_policy(ri, attr, prototype=True, suffix=""):
 
     mem = '{ .type = ' + policy
     if 'len' in spec:
-        mem += ', .len = ' + spec['len']
+        mem += ', .len = ' + str(spec['len'])
     mem += ' }'
 
     ri.cw.p(f"\t[{aspace['name-prefix']}{attr.upper()}] = {mem},")
