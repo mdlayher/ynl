@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
-//	Documentation/netlink/bindings/genetlink.yaml
-// ./gen.py --mode user --user-header genetlink-user.h user.h --source --spec Documentation/netlink/bindings/genetlink.yaml
+//	../../../../Documentation/netlink/bindings/genetlink.yaml
+// /home/kicinski/devel/linux/gen.py --mode user --user-header genetlink-user.h ynl.h --source --spec ../../../../Documentation/netlink/bindings/genetlink.yaml
 
 #include <linux/genetlink.h>
 
@@ -9,9 +9,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <libmnl/libmnl.h>
+#include <linux/genetlink.h>
 
 #include "genetlink-user.h"
-#include "user.h"
+#include "ynl.h"
 
 // Common nested types
 void nlctrl_mcast_group_free(struct nlctrl_mcast_group *obj)
@@ -250,13 +251,13 @@ nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req)
 	if (err < 0)
 		return NULL;
 
-	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
 	if (len < 0)
 		return NULL;
 
 	rsp = calloc(1, sizeof(*rsp));
 
-	err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+	err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
 			 nlctrl_getfamily_rsp_parse, rsp);
 	if (err < 0)
 		goto err_free;
@@ -304,11 +305,11 @@ struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys)
 		return NULL;
 
 	do {
-		len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+		len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
 		if (len < 0)
 			goto free_list;
 
-		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+		err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
 				 ynl_dump_trampoline, &yds);
 		if (err < 0)
 			goto free_list;
@@ -409,11 +410,11 @@ nlctrl_getpolicy_dump(struct ynl_sock *ys,
 		return NULL;
 
 	do {
-		len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+		len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
 		if (len < 0)
 			goto free_list;
 
-		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+		err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
 				 ynl_dump_trampoline, &yds);
 		if (err < 0)
 			goto free_list;
@@ -440,11 +441,11 @@ struct ynl_ntf_base_type *nlctrl_ntf_parse(struct ynl_sock *ys)
 	mnl_cb_t parse;
 	int len, err;
 
-	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
 	if (len < (ssize_t)(sizeof(*nlh) + sizeof(*genlh)))
 		return NULL;
 
-	nlh = (void *)ys->buf;
+	nlh = (void *)ys->rx_buf;
 	genlh = mnl_nlmsg_get_payload(nlh);
 
 	switch (genlh->cmd) {
@@ -459,7 +460,7 @@ struct ynl_ntf_base_type *nlctrl_ntf_parse(struct ynl_sock *ys)
 		return NULL;
 	}
 
-	err = mnl_cb_run(ys->buf, len, 0, 0, parse, rsp);
+	err = mnl_cb_run(ys->rx_buf, len, 0, 0, parse, rsp);
 	if (err)
 		goto err_free;
 

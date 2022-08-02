@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
-//	Documentation/netlink/bindings/fou.yaml
-// ./gen.py --mode user --user-header fou-user.h user.h --source --spec Documentation/netlink/bindings/fou.yaml
+//	../../../../Documentation/netlink/bindings/fou.yaml
+// /home/kicinski/devel/linux/gen.py --mode user --user-header fou-user.h ynl.h --source --spec ../../../../Documentation/netlink/bindings/fou.yaml
 
 #include <linux/fou.h>
 
@@ -12,7 +12,7 @@
 #include <linux/genetlink.h>
 
 #include "fou-user.h"
-#include "user.h"
+#include "ynl.h"
 
 // Common nested types
 /* ============== FOU_CMD_ADD ============== */
@@ -49,7 +49,7 @@ int fou_add(struct ynl_sock *ys, struct fou_add_req *req)
 	if (err < 0)
 		return -1;
 
-	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
 	if (len < 0)
 		return -1;
 
@@ -93,7 +93,7 @@ int fou_del(struct ynl_sock *ys, struct fou_del_req *req)
 	if (err < 0)
 		return -1;
 
-	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
 	if (len < 0)
 		return -1;
 
@@ -193,13 +193,13 @@ struct fou_get_rsp *fou_get(struct ynl_sock *ys, struct fou_get_req *req)
 	if (err < 0)
 		return NULL;
 
-	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
 	if (len < 0)
 		return NULL;
 
 	rsp = calloc(1, sizeof(*rsp));
 
-	err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+	err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
 			 fou_get_rsp_parse, rsp);
 	if (err < 0)
 		goto err_free;
@@ -245,11 +245,11 @@ struct fou_get_list *fou_get_dump(struct ynl_sock *ys)
 		return NULL;
 
 	do {
-		len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+		len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
 		if (len < 0)
 			goto free_list;
 
-		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+		err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
 				 ynl_dump_trampoline, &yds);
 		if (err < 0)
 			goto free_list;

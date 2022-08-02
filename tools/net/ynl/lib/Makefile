@@ -1,6 +1,5 @@
 CC=gcc
 CFLAGS=-std=gnu99 -O2 -W -Wall -Wextra -Wno-unused-parameter -Wshadow -g
-LIBS=-lmnl
 
 SRCS=$(wildcard *.c)
 OBJS=$(patsubst %.c,%.o,${SRCS})

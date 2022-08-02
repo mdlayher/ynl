@@ -618,7 +618,7 @@ def print_req(ri):
 	if (err < 0)
 		return {ret_err};
 
-	len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+	len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
 	if (len < 0)
 		return {ret_err};""")
     ri.cw.nl()
@@ -626,7 +626,7 @@ def print_req(ri):
     if 'reply' in ri.op[ri.op_mode]:
         ri.cw.p(f"""rsp = calloc(1, sizeof(*rsp));
 
-	err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+	err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
 			 {op_prefix(ri, "reply")}_parse, rsp);
 	if (err < 0)
 		goto err_free;""")
@@ -674,11 +674,11 @@ def print_dump(ri):
 		return NULL;
 
 	do {'{'}
-		len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);
+		len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
 		if (len < 0)
 			goto free_list;
 
-		err = mnl_cb_run(ys->buf, len, ys->seq, ys->portid,
+		err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
 				 ynl_dump_trampoline, &yds);
 		if (err < 0)
 			goto free_list;
@@ -874,11 +874,11 @@ def print_ntf_type_parse(family, cw, ku_mode):
                         'struct ynl_ntf_base_type *rsp;',
                         'int len, err;',
                         'mnl_cb_t parse;'])
-    cw.p('len = mnl_socket_recvfrom(ys->sock, ys->buf, MNL_SOCKET_BUFFER_SIZE);')
+    cw.p('len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);')
     cw.p('if (len < (ssize_t)(sizeof(*nlh) + sizeof(*genlh)))')
     cw.p('\treturn NULL;')
     cw.nl()
-    cw.p('nlh = (void *)ys->buf;')
+    cw.p('nlh = (void *)ys->rx_buf;')
     cw.p('genlh = mnl_nlmsg_get_payload(nlh);')
     cw.nl()
     cw.block_start(line='switch (genlh->cmd)')
@@ -894,7 +894,7 @@ def print_ntf_type_parse(family, cw, ku_mode):
     cw.p('return NULL;')
     cw.block_end()
     cw.nl()
-    cw.p("""err = mnl_cb_run(ys->buf, len, 0, 0, parse, rsp);
+    cw.p("""err = mnl_cb_run(ys->rx_buf, len, 0, 0, parse, rsp);
 	if (err)
 		goto err_free;""")
     cw.nl()
