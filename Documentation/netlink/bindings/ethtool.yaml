@@ -27,17 +27,17 @@ attributes:
           type: u32
         combined_max:
           type: u32
-        rx:
+        rx_count:
           type: u32
-        tx:
+        tx_count:
           type: u32
-        other:
+        other_count:
           type: u32
-        combined:
+        combined_count:
           type: u32
 
 headers:
-  user: linux/ethtool_netlink.h
+  user: [ linux/ethtool_netlink.h, linux/if.h ]
   kernel: linux/ethtool_netlink.h
 
 operations:
@@ -56,10 +56,10 @@ operations:
             - tx_max
             - other_max
             - combined_max
-            - rx
-            - tx
-            - other
-            - combined
+            - rx_count
+            - tx_count
+            - other_count
+            - combined_count
       dump:
         reply: *channel_reply
 
@@ -74,7 +74,7 @@ operations:
         request:
           attributes:
             - header
-            - rx
-            - tx
-            - other
-            - combined
+            - rx_count
+            - tx_count
+            - other_count
+            - combined_count

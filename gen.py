@@ -926,7 +926,12 @@ def main():
     if args.mode == 'kernel':
         cw.p(f'#include <net/netlink.h>')
         cw.nl()
-    cw.p(f"#include <{parsed['headers'][args.mode]}>\n")
+    headers = parsed['headers'][args.mode]
+    if type(headers) is str:
+        headers = [headers]
+    for h in headers:
+        cw.p(f"#include <{h}>")
+    cw.nl()
 
     if args.mode == "user":
         if not args.header:

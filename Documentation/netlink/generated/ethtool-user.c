@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
 //	Documentation/netlink/bindings/ethtool.yaml
-// ./gen.py --mode user --user-header genetlink-user.h user.h --source --spec Documentation/netlink/bindings/ethtool.yaml
+// ./gen.py --mode user --user-header ethtool-user.h genetlink-user.h user.h --source --spec Documentation/netlink/bindings/ethtool.yaml
 
 #include <linux/ethtool_netlink.h>
+#include <linux/if.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <libmnl/libmnl.h>
 
+#include "ethtool-user.h"
 #include "genetlink-user.h"
 #include "user.h"
 
@@ -89,21 +91,21 @@ int ethtool_channels_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 			dst->combined_max_present = 1;
 			dst->combined_max = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_RX) {
-			dst->rx_present = 1;
-			dst->rx = mnl_attr_get_u32(attr);
+		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_RX_COUNT) {
+			dst->rx_count_present = 1;
+			dst->rx_count = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_TX) {
-			dst->tx_present = 1;
-			dst->tx = mnl_attr_get_u32(attr);
+		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_TX_COUNT) {
+			dst->tx_count_present = 1;
+			dst->tx_count = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_OTHER) {
-			dst->other_present = 1;
-			dst->other = mnl_attr_get_u32(attr);
+		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_OTHER_COUNT) {
+			dst->other_count_present = 1;
+			dst->other_count = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_COMBINED) {
-			dst->combined_present = 1;
-			dst->combined = mnl_attr_get_u32(attr);
+		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_COMBINED_COUNT) {
+			dst->combined_count_present = 1;
+			dst->combined_count = mnl_attr_get_u32(attr);
 		}
 	}
 
@@ -219,14 +221,14 @@ int ethtool_channels_set(struct ynl_sock *ys,
 
 	if (req->header_present)
 		ethtool_header_put(nlh, ETHTOOL_A_CHANNELS_HEADER, &req->header);
-	if (req->rx_present)
-		mnl_attr_put_u32(nlh, ETHTOOL_A_CHANNELS_RX, req->rx);
-	if (req->tx_present)
-		mnl_attr_put_u32(nlh, ETHTOOL_A_CHANNELS_TX, req->tx);
-	if (req->other_present)
-		mnl_attr_put_u32(nlh, ETHTOOL_A_CHANNELS_OTHER, req->other);
-	if (req->combined_present)
-		mnl_attr_put_u32(nlh, ETHTOOL_A_CHANNELS_COMBINED, req->combined);
+	if (req->rx_count_present)
+		mnl_attr_put_u32(nlh, ETHTOOL_A_CHANNELS_RX_COUNT, req->rx_count);
+	if (req->tx_count_present)
+		mnl_attr_put_u32(nlh, ETHTOOL_A_CHANNELS_TX_COUNT, req->tx_count);
+	if (req->other_count_present)
+		mnl_attr_put_u32(nlh, ETHTOOL_A_CHANNELS_OTHER_COUNT, req->other_count);
+	if (req->combined_count_present)
+		mnl_attr_put_u32(nlh, ETHTOOL_A_CHANNELS_COMBINED_COUNT, req->combined_count);
 
 	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
 	if (err < 0)

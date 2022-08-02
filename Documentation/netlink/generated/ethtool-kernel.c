@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
 //	Documentation/netlink/bindings/ethtool.yaml
-// ./gen.py --mode kernel --user-header genetlink-user.h user.h --source --spec Documentation/netlink/bindings/ethtool.yaml
+// ./gen.py --mode kernel --user-header ethtool-user.h genetlink-user.h user.h --source --spec Documentation/netlink/bindings/ethtool.yaml
 
 #include <net/netlink.h>
 
@@ -33,28 +33,28 @@ ethtool_channels_set_req_parse(const struct nlattr **tb,
 	if (tb[ETHTOOL_A_CHANNELS_HEADER]) {
 		req->header_present = 1;
 	}
-	if (tb[ETHTOOL_A_CHANNELS_RX]) {
-		req->rx_present = 1;
-		req->rx = nla_get_u32(tb[ETHTOOL_A_CHANNELS_RX]);
+	if (tb[ETHTOOL_A_CHANNELS_RX_COUNT]) {
+		req->rx_count_present = 1;
+		req->rx_count = nla_get_u32(tb[ETHTOOL_A_CHANNELS_RX_COUNT]);
 	}
-	if (tb[ETHTOOL_A_CHANNELS_TX]) {
-		req->tx_present = 1;
-		req->tx = nla_get_u32(tb[ETHTOOL_A_CHANNELS_TX]);
+	if (tb[ETHTOOL_A_CHANNELS_TX_COUNT]) {
+		req->tx_count_present = 1;
+		req->tx_count = nla_get_u32(tb[ETHTOOL_A_CHANNELS_TX_COUNT]);
 	}
-	if (tb[ETHTOOL_A_CHANNELS_OTHER]) {
-		req->other_present = 1;
-		req->other = nla_get_u32(tb[ETHTOOL_A_CHANNELS_OTHER]);
+	if (tb[ETHTOOL_A_CHANNELS_OTHER_COUNT]) {
+		req->other_count_present = 1;
+		req->other_count = nla_get_u32(tb[ETHTOOL_A_CHANNELS_OTHER_COUNT]);
 	}
-	if (tb[ETHTOOL_A_CHANNELS_COMBINED]) {
-		req->combined_present = 1;
-		req->combined = nla_get_u32(tb[ETHTOOL_A_CHANNELS_COMBINED]);
+	if (tb[ETHTOOL_A_CHANNELS_COMBINED_COUNT]) {
+		req->combined_count_present = 1;
+		req->combined_count = nla_get_u32(tb[ETHTOOL_A_CHANNELS_COMBINED_COUNT]);
 	}
 }
 
 const struct nla_policy ethtool_channels_set_policy[] = {
 	[ETHTOOL_A_CHANNELS_HEADER] = { .type = NLA_NEST },
-	[ETHTOOL_A_CHANNELS_RX] = { .type = NLA_U32 },
-	[ETHTOOL_A_CHANNELS_TX] = { .type = NLA_U32 },
-	[ETHTOOL_A_CHANNELS_OTHER] = { .type = NLA_U32 },
-	[ETHTOOL_A_CHANNELS_COMBINED] = { .type = NLA_U32 },
+	[ETHTOOL_A_CHANNELS_RX_COUNT] = { .type = NLA_U32 },
+	[ETHTOOL_A_CHANNELS_TX_COUNT] = { .type = NLA_U32 },
+	[ETHTOOL_A_CHANNELS_OTHER_COUNT] = { .type = NLA_U32 },
+	[ETHTOOL_A_CHANNELS_COMBINED_COUNT] = { .type = NLA_U32 },
 };

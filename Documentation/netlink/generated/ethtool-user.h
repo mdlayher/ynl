@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
 //	Documentation/netlink/bindings/ethtool.yaml
-// ./gen.py --mode user --user-header genetlink-user.h user.h --header --spec Documentation/netlink/bindings/ethtool.yaml
+// ./gen.py --mode user --user-header ethtool-user.h genetlink-user.h user.h --header --spec Documentation/netlink/bindings/ethtool.yaml
 
 #include <linux/ethtool_netlink.h>
+#include <linux/if.h>
 
 struct ynl_sock;
 
@@ -34,20 +35,20 @@ struct ethtool_channels_get_rsp {
 	__u32 tx_max_present:1;
 	__u32 other_max_present:1;
 	__u32 combined_max_present:1;
-	__u32 rx_present:1;
-	__u32 tx_present:1;
-	__u32 other_present:1;
-	__u32 combined_present:1;
+	__u32 rx_count_present:1;
+	__u32 tx_count_present:1;
+	__u32 other_count_present:1;
+	__u32 combined_count_present:1;
 
 	struct ethtool_header header;
 	__u32 rx_max;
 	__u32 tx_max;
 	__u32 other_max;
 	__u32 combined_max;
-	__u32 rx;
-	__u32 tx;
-	__u32 other;
-	__u32 combined;
+	__u32 rx_count;
+	__u32 tx_count;
+	__u32 other_count;
+	__u32 combined_count;
 };
 
 void ethtool_channels_get_rsp_free(struct ethtool_channels_get_rsp *rsp);
@@ -79,44 +80,46 @@ void ethtool_channels_get_ntf_free(struct ethtool_channels_get_ntf *rsp);
 // ETHTOOL_MSG_CHANNELS_SET - do
 struct ethtool_channels_set_req {
 	__u32 header_present:1;
-	__u32 rx_present:1;
-	__u32 tx_present:1;
-	__u32 other_present:1;
-	__u32 combined_present:1;
+	__u32 rx_count_present:1;
+	__u32 tx_count_present:1;
+	__u32 other_count_present:1;
+	__u32 combined_count_present:1;
 
 	struct ethtool_header header;
-	__u32 rx;
-	__u32 tx;
-	__u32 other;
-	__u32 combined;
+	__u32 rx_count;
+	__u32 tx_count;
+	__u32 other_count;
+	__u32 combined_count;
 };
 
 void ethtool_channels_set_req_free(struct ethtool_channels_set_req *req);
 static inline void
-ethtool_channels_set_req_set_rx(struct ethtool_channels_set_req *req, __u32 rx)
+ethtool_channels_set_req_set_rx_count(struct ethtool_channels_set_req *req,
+				      __u32 rx_count)
 {
-	req->rx_present = 1;
-	req->rx = rx;
+	req->rx_count_present = 1;
+	req->rx_count = rx_count;
 }
 static inline void
-ethtool_channels_set_req_set_tx(struct ethtool_channels_set_req *req, __u32 tx)
+ethtool_channels_set_req_set_tx_count(struct ethtool_channels_set_req *req,
+				      __u32 tx_count)
 {
-	req->tx_present = 1;
-	req->tx = tx;
+	req->tx_count_present = 1;
+	req->tx_count = tx_count;
 }
 static inline void
-ethtool_channels_set_req_set_other(struct ethtool_channels_set_req *req,
-				   __u32 other)
+ethtool_channels_set_req_set_other_count(struct ethtool_channels_set_req *req,
+					 __u32 other_count)
 {
-	req->other_present = 1;
-	req->other = other;
+	req->other_count_present = 1;
+	req->other_count = other_count;
 }
 static inline void
-ethtool_channels_set_req_set_combined(struct ethtool_channels_set_req *req,
-				      __u32 combined)
+ethtool_channels_set_req_set_combined_count(struct ethtool_channels_set_req *req,
+					    __u32 combined_count)
 {
-	req->combined_present = 1;
-	req->combined = combined;
+	req->combined_count_present = 1;
+	req->combined_count = combined_count;
 }
 
 int ethtool_channels_set(struct ynl_sock *ys,
