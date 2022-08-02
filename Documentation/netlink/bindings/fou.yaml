@@ -1,59 +1,102 @@
-
 name: fou
 
 description: |
   Foo-over-UDP.
 
-attribute_prefix: "FOU_ATTR_"
+headers:
+  user: linux/fou.h
+  kernel: linux/fou.h
 
-attributes: &all_attrs
-  - port: &port
-      type: u16
-  - af: &af
-      type: u8
-  - ipproto: &ipproto
-      type: u8
-  - type: &type
-      type: u8
-  - remcsum_nopartial: &remcsum_nopartial
-      type: flag
-  - local_v4: &local_v4
-      type: u32
-  - peer_v4: &peer_v4
-      type: u32
-  - local_v6: &local_v6
-      type: binary
-      len: 16
-  - peer_v6: &peer_v6
-      type: binary
-      len: 16
-  - peer_port: &peer_port
-      type: u16
-  - ifindex: &ifindex
-      type: s32
+constants:
+  -
+    type: family-name
+  -
+    type: version
+  -
+    type: enum
+    name: encap_type
+    value: [ UNSPEC, DIRECT, GUE ]
 
-operation_prefix: "FOU_CMD_"
+attributes:
+  spaces:
+    main:
+      name-prefix: FOU_ATTR_
+      list:
+        - unspec:
+            type: skip
+        - port:
+            type: u16
+        - af:
+            type: u8
+        - ipproto:
+            type: u8
+        - type:
+            type: u8
+        - remcsum_nopartial:
+            type: flag
+        - local_v4:
+            type: u32
+        - local_v6:
+            type: binary
+            len: 16
+        - peer_v4:
+            type: u32
+        - peer_v6:
+            type: binary
+            len: 16
+        - peer_port:
+            type: u16
+        - ifindex:
+            type: s32
 
 operations:
-  - add:
-      dont_validate: [ strict ]
+  name-prefix: FOU_CMD_
+  list:
+    unspec:
+
+    add:
+      attribute-space: main
+
+      dont-validate: [ strict, dump ]
       flags: [ admin_perm ]
 
-      request: *all_attrs
+      do:
+        request: &all_attrs
+          - port
+          - ipproto
+          - type
+          - remcsum_nopartial
+          - local_v4
+          - peer_v4
+          - local_v6
+          - peer_v6
+          - peer_port
+          - ifindex
 
-  - del:
-      dont_validate: [ strict ]
+    del:
+      attribute-space: main
+
+      dont-validate: [ strict, dump ]
       flags: [ admin_perm ]
 
-      request: *all_attrs
+      do:
+        request: &select_attrs
+          - family
+          - ifindex
+          - port
+          - peer_port
+          - local_v4
+          - peer_v4
+          - local_v6
+          - peer_v6
 
-  - get:
-      dont_validate: [ strict, dump ]
+    get:
+      attribute-space: main
+      dont-validate: [ strict, dump ]
 
-      request: *all_attrs
-
-      reply: *all_attrs
+      do:
+        request: *select_attrs
+        reply: *all_attrs
 
       dump:
-
-      dump-reply: *all_attrs
+        reply: *all_attrs
