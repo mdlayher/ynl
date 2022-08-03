@@ -21,6 +21,7 @@ int main(int argc, char **argv)
 		return 1;
 
 	memset(&req, 0, sizeof(req));
+	req.header_present = 1;
 	req.header.dev_name_present = 1;
 	strcpy(req.header.dev_name, argv[1]);
 
@@ -38,8 +39,11 @@ int main(int argc, char **argv)
 	printf("\n");
 
 	ethtool_channels_get_rsp_free(rsp);
-out:
 	ynl_sock_destroy(ys);
-
 	return 0;
+
+out:
+	perror("can't get the channels");
+	ynl_sock_destroy(ys);
+	return 2;
 }
