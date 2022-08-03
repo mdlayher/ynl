@@ -221,9 +221,10 @@ out_cancel_nest:
 	return ret;
 }
 
-static int
-dpll_genl_cmd_set_source(struct dpll_device *dpll, struct nlattr **attrs)
+static int dpll_genl_cmd_set_source(struct sk_buff *skb, struct genl_info *info)
 {
+	struct dpll_device *dpll = info->user_ptr[0];
+	struct nlattr **attrs = info->attrs;
 	int ret = 0, src_id, type;
 
 	if (!attrs[DPLLA_SOURCE_ID] ||
@@ -245,9 +246,10 @@ dpll_genl_cmd_set_source(struct dpll_device *dpll, struct nlattr **attrs)
 	return ret;
 }
 
-static int
-dpll_genl_cmd_set_output(struct dpll_device *dpll, struct nlattr **attrs)
+static int dpll_genl_cmd_set_output(struct sk_buff *skb, struct genl_info *info)
 {
+	struct dpll_device *dpll = info->user_ptr[0];
+	struct nlattr **attrs = info->attrs;
 	int ret = 0, out_id, type;
 
 	if (!attrs[DPLLA_OUTPUT_ID] ||
@@ -289,9 +291,10 @@ static int dpll_cmd_device_dump(struct param *p)
 }
 
 static int
-dpll_genl_cmd_device_get_id(struct dpll_device *dpll, struct genl_info *info,
-			    struct nlattr **attrs)
+dpll_genl_cmd_device_get_id(struct sk_buff *skb, struct genl_info *info)
 {
+	struct dpll_device *dpll = info->user_ptr[0];
+	struct nlattr **attrs = info->attrs;
 	struct sk_buff *msg;
 	int flags = 0;
 	void *hdr;
@@ -374,24 +377,6 @@ out_cancel_msg:
 	return ret;
 }
 
-static int dpll_genl_cmd_doit(struct sk_buff *skb,
-				 struct genl_info *info)
-{
-	struct dpll_device *dpll = info->user_ptr[0];
-	int cmd = info->genlhdr->cmd;
-
-	switch (cmd) {
-	case DPLL_CMD_DEVICE_GET:
-		return dpll_genl_cmd_device_get_id(dpll, info, info->attrs);
-	case DPLL_CMD_SET_SOURCE_TYPE:
-		return dpll_genl_cmd_set_source(dpll, info->attrs);
-	case DPLL_CMD_SET_OUTPUT_TYPE:
-		return dpll_genl_cmd_set_output(dpll, info->attrs);
-	default:
-		return -EINVAL;
-	}
-}
-
 static int dpll_pre_doit(const struct genl_ops *ops, struct sk_buff *skb,
 						 struct genl_info *info)
 {
@@ -415,21 +400,21 @@ static const struct genl_ops dpll_genl_ops[] = {
 		.cmd	= DPLL_CMD_DEVICE_GET,
 		.start	= dpll_genl_cmd_start,
 		.dumpit	= dpll_genl_cmd_dumpit,
-		.doit	= dpll_genl_cmd_doit,
+		.doit	= dpll_genl_cmd_device_get_id,
 		.policy	= dpll_genl_get_policy,
 		.maxattr = ARRAY_SIZE(dpll_genl_get_policy) - 1,
 	},
 	{
 		.cmd	= DPLL_CMD_SET_SOURCE_TYPE,
 		.flags	= GENL_UNS_ADMIN_PERM,
-		.doit	= dpll_genl_cmd_doit,
+		.doit	= dpll_genl_cmd_set_source,
 		.policy	= dpll_genl_set_source_policy,
 		.maxattr = ARRAY_SIZE(dpll_genl_set_source_policy) - 1,
 	},
 	{
 		.cmd	= DPLL_CMD_SET_OUTPUT_TYPE,
 		.flags	= GENL_UNS_ADMIN_PERM,
-		.doit	= dpll_genl_cmd_doit,
+		.doit	= dpll_genl_cmd_set_output,
 		.policy	= dpll_genl_set_output_policy,
 		.maxattr = ARRAY_SIZE(dpll_genl_set_output_policy) - 1,
 	},
