@@ -502,9 +502,14 @@ def put_req_nested(ri, attr_space):
 
     ri.cw.write_func_prot('int', f'{nest_op_prefix(ri, attr_space)}_put', func_args)
     ri.cw.block_start()
+    ri.cw.write_func_lvar('struct nlattr *nest;')
+
+    ri.cw.p("nest = mnl_attr_nest_start(nlh, attr_type);")
 
     for arg in ri.family['attributes']['spaces'][attr_space]['list']:
         attribute_put(ri, arg, "obj")
+
+    ri.cw.p("mnl_attr_nest_end(nlh, nest);")
 
     ri.cw.nl()
     ri.cw.p('return 0;')

@@ -24,12 +24,16 @@ void ethtool_header_free(struct ethtool_header *obj)
 int ethtool_header_put(struct nlmsghdr *nlh, unsigned int attr_type,
 		       struct ethtool_header *obj)
 {
+	struct nlattr *nest;
+
+	nest = mnl_attr_nest_start(nlh, attr_type);
 	if (obj->dev_index_present)
 		mnl_attr_put_u32(nlh, ETHTOOL_A_HEADER_DEV_INDEX, obj->dev_index);
 	if (obj->dev_name_present)
 		mnl_attr_put_strz(nlh, ETHTOOL_A_HEADER_DEV_NAME, obj->dev_name);
 	if (obj->flags_present)
 		mnl_attr_put_u32(nlh, ETHTOOL_A_HEADER_FLAGS, obj->flags);
+	mnl_attr_nest_end(nlh, nest);
 
 	return 0;
 }
