@@ -596,6 +596,7 @@ def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
         ri.cw.block_end()
     ri.cw.nl()
 
+
 def parse_rsp_nested(ri, attr_space):
     struct_type = nest_type_name(ri, attr_space)
 
@@ -888,7 +889,7 @@ def print_wrapped_type(ri):
 def _free_type_members(ri, var, type_list, ref=''):
     for arg in type_list:
         spec = ri.family["attributes"]["spaces"][ri.attr_space]["list"][arg]
-        if spec['type'] == 'array-nest':
+        if spec['type'] in attr_types_multi:
             ri.cw.p(f'free({var}->{ref}{arg});')
     ri.cw.p(f'free({var});')
 

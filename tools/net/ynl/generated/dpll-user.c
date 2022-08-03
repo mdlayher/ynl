@@ -17,6 +17,7 @@
 // Common nested types
 void dpll_output_free(struct dpll_output *obj)
 {
+	free(obj->source_supported);
 	free(obj);
 }
 
@@ -55,6 +56,7 @@ int dpll_output_parse(struct dpll_output *dst, const struct nlattr *nested)
 
 void dpll_source_free(struct dpll_source *obj)
 {
+	free(obj->output_supported);
 	free(obj);
 }
 
@@ -95,6 +97,8 @@ int dpll_source_parse(struct dpll_source *dst, const struct nlattr *nested)
 // DPLL_CMD_DEVICE_GET - do
 void dpll_device_get_rsp_free(struct dpll_device_get_rsp *rsp)
 {
+	free(rsp->source);
+	free(rsp->output);
 	free(rsp);
 }
 
