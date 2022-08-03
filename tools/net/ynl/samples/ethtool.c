@@ -21,9 +21,7 @@ int main(int argc, char **argv)
 		return 1;
 
 	memset(&req, 0, sizeof(req));
-	req.header_present = 1;
-	req.header.dev_name_present = 1;
-	strcpy(req.header.dev_name, argv[1]);
+	ethtool_channels_get_req_set_header_dev_name(&req, argv[1]);
 
 	rsp = ethtool_channels_get(ys, &req);
 	if (!rsp)

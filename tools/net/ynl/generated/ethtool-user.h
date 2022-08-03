@@ -28,9 +28,31 @@ struct ethtool_channels_get_req {
 };
 
 void ethtool_channels_get_req_free(struct ethtool_channels_get_req *req);
-// setter for header (header =>) dev_index
-// setter for header (header =>) dev_name
-// setter for header (header =>) flags
+static inline void
+ethtool_channels_get_req_set_header_dev_index(struct ethtool_channels_get_req *req,
+					      __u32 dev_index)
+{
+	req->header_present = 1;
+	req->header.dev_index_present = 1;
+	req->header.dev_index = dev_index;
+}
+static inline void
+ethtool_channels_get_req_set_header_dev_name(struct ethtool_channels_get_req *req,
+					     const char *dev_name)
+{
+	req->header_present = 1;
+	req->header.dev_name_present = 1;
+	strncpy(req->header.dev_name, dev_name, sizeof(req->header.dev_name));
+	req->header.dev_name[ALTIFNAMSIZ - 1] = 0;
+}
+static inline void
+ethtool_channels_get_req_set_header_flags(struct ethtool_channels_get_req *req,
+					  __u32 flags)
+{
+	req->header_present = 1;
+	req->header.flags_present = 1;
+	req->header.flags = flags;
+}
 
 struct ethtool_channels_get_rsp {
 	__u32 header_present:1;
@@ -96,9 +118,31 @@ struct ethtool_channels_set_req {
 };
 
 void ethtool_channels_set_req_free(struct ethtool_channels_set_req *req);
-// setter for header (header =>) dev_index
-// setter for header (header =>) dev_name
-// setter for header (header =>) flags
+static inline void
+ethtool_channels_set_req_set_header_dev_index(struct ethtool_channels_set_req *req,
+					      __u32 dev_index)
+{
+	req->header_present = 1;
+	req->header.dev_index_present = 1;
+	req->header.dev_index = dev_index;
+}
+static inline void
+ethtool_channels_set_req_set_header_dev_name(struct ethtool_channels_set_req *req,
+					     const char *dev_name)
+{
+	req->header_present = 1;
+	req->header.dev_name_present = 1;
+	strncpy(req->header.dev_name, dev_name, sizeof(req->header.dev_name));
+	req->header.dev_name[ALTIFNAMSIZ - 1] = 0;
+}
+static inline void
+ethtool_channels_set_req_set_header_flags(struct ethtool_channels_set_req *req,
+					  __u32 flags)
+{
+	req->header_present = 1;
+	req->header.flags_present = 1;
+	req->header.flags = flags;
+}
 static inline void
 ethtool_channels_set_req_set_rx_count(struct ethtool_channels_set_req *req,
 				      __u32 rx_count)

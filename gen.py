@@ -347,36 +347,36 @@ def attribute_pres_member(ri, space, attr, suffix=""):
 
 
 def attribute_setter(ri, space, attr, direction, deref=False, ref=None):
-    ref = ref if ref else []
+    ref = (ref if ref else []) + [attr]
     spec = ri.family["attributes"]["spaces"][space]["list"][attr]
     var = "req"
+    member = f"{var}->{'.'.join(ref)}"
 
     code = []
     if spec['type'] == 'flag':
         pass
     elif spec['type'] == 'binary':
-        code += [f"memcpy({var}->{attr}, {attr}, {spec['len']});"]
+        code += [f"memcpy({member}, {attr}, {spec['len']});"]
     elif spec['type'] in scalars:
-        code += [f"{var}->{attr} = {attr};"]
+        code += [f"{member} = {attr};"]
     elif spec['type'] == 'nul-string':
-        code += [f'strncpy({var}->{attr}, {attr}, sizeof({var}->{attr}));',
-                 f'{var}->{attr}[{spec["len"]}] = 0;']
+        code += [f'strncpy({member}, {attr}, sizeof({member}));',
+                 f'{member}[{spec["len"]}] = 0;']
     elif spec['type'] == 'nest':
         nested_space = spec['nested-attributes']
-        ref.append(attr)
         for nested in ri.family["attributes"]["spaces"][nested_space]['list']:
-            ri.cw.p(f'// setter for {attr} ({nested_space} =>) {nested}')
-            # attribute_setter(ri, , attr, direction, deref=deref, ref=ref)
+            attribute_setter(ri, nested_space, nested, direction, deref=deref, ref=ref)
         return
     else:
         raise Exception(f'Type {spec["type"]} not supported yet - setter')
 
     ri.cw.write_func_prot('static inline void',
-                          f'{op_prefix(ri, direction, deref=deref)}_set_{attr}',
+                          f"{op_prefix(ri, direction, deref=deref)}_set_{'_'.join(ref)}",
                           [f'{type_name(ri, direction, deref=deref)} *{var}'] +
                           _attribute_member(ri, space, attr, prototype=True))
     ri.cw.block_start()
-    ri.cw.p(f'{var}->{attr}_present = 1;')
+    for i in range(0, len(ref)):
+        ri.cw.p(f"{var}->{'.'.join(ref[:i + 1])}_present = 1;")
     for line in code:
         ri.cw.p(line)
     ri.cw.block_end()
