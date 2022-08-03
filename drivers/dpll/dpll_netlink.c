@@ -289,15 +289,42 @@ static int dpll_cmd_device_dump(struct param *p)
 }
 
 static int
-dpll_genl_cmd_device_get_id(struct dpll_device *dpll, struct nlattr **attrs,
-			    struct sk_buff *skb)
+dpll_genl_cmd_device_get_id(struct dpll_device *dpll, struct genl_info *info,
+			    struct nlattr **attrs)
 {
+	struct sk_buff *msg;
 	int flags = 0;
+	void *hdr;
+	int ret;
 
 	if (attrs[DPLLA_FLAGS])
 		flags = nla_get_u32(attrs[DPLLA_FLAGS]);
 
-	return dpll_device_dump_one(dpll, skb, flags);
+	msg = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
+	if (!msg)
+		return -ENOMEM;
+
+	hdr = genlmsg_put_reply(msg, info, &dpll_gnl_family, 0,
+				DPLL_CMD_DEVICE_GET);
+	if (!hdr) {
+		ret = -EMSGSIZE;
+		goto out_free_msg;
+	}
+
+	ret = dpll_device_dump_one(dpll, msg, flags);
+	if (ret)
+		goto out_cancel_msg;
+
+	genlmsg_end(msg, hdr);
+
+	return genlmsg_reply(msg, info);
+
+out_cancel_msg:
+	genlmsg_cancel(msg, hdr);
+out_free_msg:
+	nlmsg_free(msg);
+	return ret;
+
 }
 
 static cb_t cmd_dump_cb[] = {
@@ -352,44 +379,17 @@ static int dpll_genl_cmd_doit(struct sk_buff *skb,
 {
 	struct dpll_device *dpll = info->user_ptr[0];
 	int cmd = info->genlhdr->cmd;
-	struct sk_buff *msg;
-	void *hdr;
-	int ret;
-
-	msg = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
-	if (!msg)
-		return -ENOMEM;
-
-	hdr = genlmsg_put_reply(msg, info, &dpll_gnl_family, 0, cmd);
-	if (!hdr) {
-		ret = -EMSGSIZE;
-		goto out_free_msg;
-	}
 
 	switch (cmd) {
 	case DPLL_CMD_DEVICE_GET:
-		ret = dpll_genl_cmd_device_get_id(dpll, info->attrs, msg);
-		break;
+		return dpll_genl_cmd_device_get_id(dpll, info, info->attrs);
 	case DPLL_CMD_SET_SOURCE_TYPE:
-		ret = dpll_genl_cmd_set_source(dpll, info->attrs);
-		break;
+		return dpll_genl_cmd_set_source(dpll, info->attrs);
 	case DPLL_CMD_SET_OUTPUT_TYPE:
-		ret = dpll_genl_cmd_set_output(dpll, info->attrs);
-		break;
+		return dpll_genl_cmd_set_output(dpll, info->attrs);
+	default:
+		return -EINVAL;
 	}
-	if (ret)
-		goto out_cancel_msg;
-
-	genlmsg_end(msg, hdr);
-
-	return genlmsg_reply(msg, info);
-
-out_cancel_msg:
-	genlmsg_cancel(msg, hdr);
-out_free_msg:
-	nlmsg_free(msg);
-
-	return ret;
 }
 
 static int dpll_pre_doit(const struct genl_ops *ops, struct sk_buff *skb,
