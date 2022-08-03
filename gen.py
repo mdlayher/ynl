@@ -200,6 +200,7 @@ class CodeWriter:
 
 
 scalars = {'u8', 'u16', 'u32', 'u64', 's32', 's64'}
+attr_types_no_pres = {'array-nest', 'multi-attr'}
 
 direction_to_suffix = {
     'reply': '_rsp',
@@ -297,6 +298,7 @@ def _attribute_member_len(spec):
 
 def _attribute_member(ri, space, attr, prototype=True, suffix=""):
     spec = ri.family["attributes"]["spaces"][space]["list"][attr]
+    scalar_pfx = '__' if ri.ku_space == 'user' else ''
 
     t = spec['type']
     if t == 'flag':
@@ -314,15 +316,20 @@ def _attribute_member(ri, space, attr, prototype=True, suffix=""):
         else:
             t = 'char '
             suffix = f'[{_attribute_member_len(spec)}]{suffix}'
-    elif t == 'array-nest':
-        t = f"struct {nest_op_prefix(ri, spec['nested-attributes'])} *"
+    elif t == 'array-nest' or t == 'multi-attr':
+        if 'sub-type' not in spec or spec['sub-type'] == 'nest':
+            t = f"struct {nest_op_prefix(ri, spec['nested-attributes'])} *"
+        elif spec['sub-type'] in scalars:
+            t = scalar_pfx + t + ' *'
+        else:
+            raise Exception(f"Sub-type {spec} not supported yet")
+
         if not prototype:
             ri.cw.p(f"unsigned int n_{attr};")
     elif t == 'nest' or t == 'nest-type-value':
         t = f"struct {nest_op_prefix(ri, spec['nested-attributes'])} "
     elif t in scalars:
-        pfx = '__' if ri.ku_space == 'user' else ''
-        t = pfx + t + ' '
+        t = scalar_pfx + t + ' '
     else:
         raise Exception(f'Type {t} not supported yet')
 
@@ -339,7 +346,7 @@ def attribute_pres_member(ri, space, attr, suffix=""):
     spec = ri.family["attributes"]["spaces"][space]["list"][attr]
     pfx = '__' if ri.ku_space == 'user' else ''
 
-    if spec['type'] == 'array-nest':
+    if spec['type'] in attr_types_no_pres:
         return False
 
     ri.cw.p(f"{pfx}u32 {attr}_present:1{suffix}")
@@ -428,11 +435,6 @@ def attribute_get(ri, attr, var):
     elif spec['type'] == 'nul-string':
         get_lines = [f"strncpy({var}->{spec['c_name']}, mnl_attr_get_str(attr), {spec['len']});",
                      f"{var}->{spec['c_name']}[{spec['len']}] = 0;"]
-    elif spec['type'] == 'array-nest':
-        local_vars += ['const struct nlattr *attr2;']
-        get_lines += [f'attr_{attr} = attr;',
-                      'mnl_attr_for_each_nested(attr2, attr)',
-                      f'\t{var}->n_{attr}++;']
     elif spec['type'] == 'nest' or spec['type'] == 'nest-type-value':
         prev = 'attr'
         tv_args = ''
@@ -448,6 +450,13 @@ def attribute_get(ri, attr, var):
 
         get_lines += [f"{nest_op_prefix(ri, spec['nested-attributes'])}_parse(&{var}->{attr}, " +
                       f"{prev}{tv_args});"]
+    elif spec['type'] == 'array-nest':
+        local_vars += ['const struct nlattr *attr2;']
+        get_lines += [f'attr_{attr} = attr;',
+                      'mnl_attr_for_each_nested(attr2, attr)',
+                      f'\t{var}->n_{attr}++;']
+    elif spec['type'] == 'multi-attr':
+        get_lines += [f'{var}->n_{attr}++;']
     else:
         raise Exception(f"Type {spec['type']} not supported yet")
 
@@ -457,11 +466,11 @@ def attribute_get(ri, attr, var):
             ri.cw.p(l)
         ri.cw.nl()
 
-    if spec['type'] != 'array-nest':
+    if spec['type'] not in attr_types_no_pres:
         ri.cw.p(f"{var}->{attr}_present = 1;")
 
-    for l in get_lines:
-        ri.cw.p(l)
+    for line in get_lines:
+        ri.cw.p(line)
     ri.cw.block_end()
 
 
