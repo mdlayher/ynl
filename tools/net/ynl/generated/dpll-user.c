@@ -78,6 +78,7 @@ int dpll_device_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 {
 	struct dpll_device_get_rsp *dst = data;
 	const struct nlattr *attr;
+	int i;
 
 	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 		if (mnl_attr_get_type(attr) == DPLLA_DEVICE_ID) {
@@ -106,6 +107,27 @@ int dpll_device_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 		if (mnl_attr_get_type(attr) == DPLLA_LOCK_STATUS) {
 			dst->lock_status_present = 1;
 			dst->lock_status = mnl_attr_get_u32(attr);
+		}
+	}
+
+	if (dst->n_output) {
+		dst->output = calloc(dst->n_output, sizeof(*dst->output));
+		i = 0;
+		mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
+			if (mnl_attr_get_type(attr) == DPLLA_OUTPUT) {
+				dpll_output_parse(&dst->output[i], attr);
+				i++;
+			}
+		}
+	}
+	if (dst->n_source) {
+		dst->source = calloc(dst->n_source, sizeof(*dst->source));
+		i = 0;
+		mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
+			if (mnl_attr_get_type(attr) == DPLLA_SOURCE) {
+				dpll_source_parse(&dst->source[i], attr);
+				i++;
+			}
 		}
 	}
 
