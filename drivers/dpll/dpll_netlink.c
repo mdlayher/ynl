@@ -41,7 +41,6 @@ static const struct nla_policy dpll_genl_set_output_policy[] = {
 struct param {
 	struct netlink_callback *cb;
 	struct dpll_device *dpll;
-	struct nlattr **attrs;
 	struct sk_buff *msg;
 	int dpll_id;
 	int dpll_source_id;
@@ -222,10 +221,9 @@ out_cancel_nest:
 	return ret;
 }
 
-static int dpll_genl_cmd_set_source(struct param *p)
+static int
+dpll_genl_cmd_set_source(struct dpll_device *dpll, struct nlattr **attrs)
 {
-	const struct nlattr **attrs = p->attrs;
-	struct dpll_device *dpll = p->dpll;
 	int ret = 0, src_id, type;
 
 	if (!attrs[DPLLA_SOURCE_ID] ||
@@ -247,10 +245,9 @@ static int dpll_genl_cmd_set_source(struct param *p)
 	return ret;
 }
 
-static int dpll_genl_cmd_set_output(struct param *p)
+static int
+dpll_genl_cmd_set_output(struct dpll_device *dpll, struct nlattr **attrs)
 {
-	const struct nlattr **attrs = p->attrs;
-	struct dpll_device *dpll = p->dpll;
 	int ret = 0, out_id, type;
 
 	if (!attrs[DPLLA_OUTPUT_ID] ||
@@ -291,22 +288,17 @@ static int dpll_cmd_device_dump(struct param *p)
 	return for_each_dpll_device(ctx->pos_idx, dpll_device_loop_cb, p);
 }
 
-static int dpll_genl_cmd_device_get_id(struct param *p)
+static int
+dpll_genl_cmd_device_get_id(struct dpll_device *dpll, struct nlattr **attrs,
+			    struct sk_buff *skb)
 {
-	struct dpll_device *dpll = p->dpll;
 	int flags = 0;
 
-	if (p->attrs[DPLLA_FLAGS])
-		flags = nla_get_u32(p->attrs[DPLLA_FLAGS]);
+	if (attrs[DPLLA_FLAGS])
+		flags = nla_get_u32(attrs[DPLLA_FLAGS]);
 
-	return dpll_device_dump_one(dpll, p->msg, flags);
+	return dpll_device_dump_one(dpll, skb, flags);
 }
-
-static cb_t cmd_doit_cb[] = {
-	[DPLL_CMD_DEVICE_GET]		= dpll_genl_cmd_device_get_id,
-	[DPLL_CMD_SET_SOURCE_TYPE]	= dpll_genl_cmd_set_source,
-	[DPLL_CMD_SET_OUTPUT_TYPE]	= dpll_genl_cmd_set_output,
-};
 
 static cb_t cmd_dump_cb[] = {
 	[DPLL_CMD_DEVICE_GET]		= dpll_cmd_device_dump,
@@ -358,7 +350,7 @@ out_cancel_msg:
 static int dpll_genl_cmd_doit(struct sk_buff *skb,
 				 struct genl_info *info)
 {
-	struct param p = { .attrs = info->attrs, .dpll = info->user_ptr[0] };
+	struct dpll_device *dpll = info->user_ptr[0];
 	int cmd = info->genlhdr->cmd;
 	struct sk_buff *msg;
 	void *hdr;
@@ -367,7 +359,6 @@ static int dpll_genl_cmd_doit(struct sk_buff *skb,
 	msg = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
 	if (!msg)
 		return -ENOMEM;
-	p.msg = msg;
 
 	hdr = genlmsg_put_reply(msg, info, &dpll_gnl_family, 0, cmd);
 	if (!hdr) {
@@ -375,7 +366,17 @@ static int dpll_genl_cmd_doit(struct sk_buff *skb,
 		goto out_free_msg;
 	}
 
-	ret = cmd_doit_cb[cmd](&p);
+	switch (cmd) {
+	case DPLL_CMD_DEVICE_GET:
+		ret = dpll_genl_cmd_device_get_id(dpll, info->attrs, msg);
+		break;
+	case DPLL_CMD_SET_SOURCE_TYPE:
+		ret = dpll_genl_cmd_set_source(dpll, info->attrs);
+		break;
+	case DPLL_CMD_SET_OUTPUT_TYPE:
+		ret = dpll_genl_cmd_set_output(dpll, info->attrs);
+		break;
+	}
 	if (ret)
 		goto out_cancel_msg;
 
