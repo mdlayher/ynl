@@ -537,6 +537,65 @@ def put_req_nested(ri, attr_space):
     ri.cw.nl()
 
 
+def prep_multi_parse(ri, type_list, array_nests, multi_attrs, local_vars, attr_space=None):
+    if attr_space is None:
+        attr_space = ri.attr_space
+
+    for arg in type_list:
+        aspec = ri.family["attributes"]["spaces"][attr_space]["list"][arg]
+        if aspec['type'] == 'array-nest':
+            local_vars.append(f'const struct nlattr *attr_{arg};')
+            array_nests.add(arg)
+        if aspec['type'] == 'multi-attr':
+            multi_attrs.add(arg)
+    if array_nests or multi_attrs:
+        local_vars.append('int i;')
+
+
+def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
+    if attr_space is None:
+        attr_space = ri.attr_space
+
+    if nested:
+        iter_line = "mnl_attr_for_each_nested(attr, nested)"
+    else:
+        iter_line = "mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr))"
+
+    for anest in sorted(array_nests):
+        aspec = ri.family["attributes"]["spaces"][attr_space]["list"][anest]
+        ri.cw.block_start(line=f"if (dst->n_{anest})")
+        ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, sizeof(*dst->{anest}));")
+        ri.cw.p('i = 0;')
+        ri.cw.block_start(line=f"mnl_attr_for_each_nested(attr, attr_{anest})")
+        ri.cw.p(f"{nest_op_prefix(ri, aspec['nested-attributes'])}_parse(&dst->{anest}[i], attr, " +
+                "mnl_attr_get_type(attr));")
+        ri.cw.p('i++;')
+        ri.cw.block_end()
+        ri.cw.block_end()
+    ri.cw.nl()
+
+    for anest in sorted(multi_attrs):
+        aspec = ri.family["attributes"]["spaces"][attr_space]["list"][anest]
+        ri.cw.block_start(line=f"if (dst->n_{anest})")
+        ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, sizeof(*dst->{anest}));")
+        ri.cw.p('i = 0;')
+        ri.cw.block_start(line=iter_line)
+        ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {attr_enum_name(ri, anest)})")
+        if 'nested-attributes' in aspec:
+            ri.cw.p(f"{nest_op_prefix(ri, aspec['nested-attributes'])}_parse(&dst->{anest}[i], attr);")
+        elif aspec['sub-type'] in scalars:
+            t = aspec['sub-type']
+            if t[0] == 's':
+                t = 'u' + t[1:]
+            ri.cw.p(f"dst->{aspec['c_name']}[i] = mnl_attr_get_{t}(attr);")
+        else:
+            raise Exception('Nest parsing type not supported yet')
+        ri.cw.p('i++;')
+        ri.cw.block_end()
+        ri.cw.block_end()
+        ri.cw.block_end()
+    ri.cw.nl()
+
 def parse_rsp_nested(ri, attr_space):
     struct_type = nest_type_name(ri, attr_space)
 
@@ -545,9 +604,16 @@ def parse_rsp_nested(ri, attr_space):
     for arg in sorted(ri.family.inherited_members[attr_space]):
         func_args.append('__u32 ' + arg)
 
+    local_vars = ['const struct nlattr *attr;']
+
+    array_nests = set()
+    multi_attrs = set()
+    prep_multi_parse(ri, ri.family['attributes']['spaces'][attr_space]['list'],
+                     array_nests, multi_attrs, local_vars, attr_space=attr_space)
+
     ri.cw.write_func_prot('int', f'{nest_op_prefix(ri, attr_space)}_parse', func_args)
     ri.cw.block_start()
-    ri.cw.write_func_lvar('const struct nlattr *attr;')
+    ri.cw.write_func_lvar(local_vars)
 
     for arg in sorted(ri.family.inherited_members[attr_space]):
         ri.cw.p(f'dst->{arg} = {arg};')
@@ -561,6 +627,9 @@ def parse_rsp_nested(ri, attr_space):
 
     ri.cw.block_end()
     ri.cw.nl()
+
+    finalize_multi_parse(ri, True, array_nests, multi_attrs, attr_space)
+
     ri.cw.p('return 0;')
     ri.cw.block_end()
     ri.cw.nl()
@@ -579,15 +648,8 @@ def parse_rsp_msg(ri, deref=False):
 
     array_nests = set()
     multi_attrs = set()
-    for arg in ri.op[ri.op_mode]["reply"]['attributes']:
-        aspec = op_aspec(ri, arg)
-        if aspec['type'] == 'array-nest':
-            local_vars.append(f'const struct nlattr *attr_{arg};')
-            array_nests.add(arg)
-        if aspec['type'] == 'multi-attr':
-            multi_attrs.add(arg)
-    if array_nests or multi_attrs:
-        local_vars.append('int i;')
+    prep_multi_parse(ri, ri.op[ri.op_mode]["reply"]['attributes'],
+                     array_nests, multi_attrs, local_vars)
 
     ri.cw.write_func_prot('int', f'{op_prefix(ri, "reply", deref=deref)}_parse', func_args)
     ri.cw.block_start()
@@ -601,35 +663,7 @@ def parse_rsp_msg(ri, deref=False):
     ri.cw.block_end()
     ri.cw.nl()
 
-    for anest in sorted(array_nests):
-        aspec = op_aspec(ri, anest)
-        ri.cw.block_start(line=f"if (dst->n_{anest})")
-        ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, sizeof(*dst->{anest}));")
-        ri.cw.p('i = 0;')
-        ri.cw.block_start(line=f"mnl_attr_for_each_nested(attr, attr_{anest})")
-        ri.cw.p(f"{nest_op_prefix(ri, aspec['nested-attributes'])}_parse(&dst->{anest}[i], attr, " +
-                "mnl_attr_get_type(attr));")
-        ri.cw.p('i++;')
-        ri.cw.block_end()
-        ri.cw.block_end()
-    ri.cw.nl()
-
-    for anest in sorted(multi_attrs):
-        aspec = op_aspec(ri, anest)
-        ri.cw.block_start(line=f"if (dst->n_{anest})")
-        ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, sizeof(*dst->{anest}));")
-        ri.cw.p('i = 0;')
-        ri.cw.block_start(line="mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr))")
-        ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {attr_enum_name(ri, anest)})")
-        if 'nested-attributes' in aspec:
-            ri.cw.p(f"{nest_op_prefix(ri, aspec['nested-attributes'])}_parse(&dst->{anest}[i], attr);")
-        else:
-            raise Exception('Multi-attr scalars not supported yet')
-        ri.cw.p('i++;')
-        ri.cw.block_end()
-        ri.cw.block_end()
-        ri.cw.block_end()
-    ri.cw.nl()
+    finalize_multi_parse(ri, False, array_nests, multi_attrs)
 
     ri.cw.p('return MNL_CB_OK;')
     ri.cw.block_end()

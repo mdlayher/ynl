@@ -23,6 +23,7 @@ void dpll_output_free(struct dpll_output *obj)
 int dpll_output_parse(struct dpll_output *dst, const struct nlattr *nested)
 {
 	const struct nlattr *attr;
+	int i;
 
 	mnl_attr_for_each_nested(attr, nested) {
 		if (mnl_attr_get_type(attr) == DPLLA_SOURCE_ID) {
@@ -38,6 +39,17 @@ int dpll_output_parse(struct dpll_output *dst, const struct nlattr *nested)
 		}
 	}
 
+	if (dst->n_source_supported) {
+		dst->source_supported = calloc(dst->n_source_supported, sizeof(*dst->source_supported));
+		i = 0;
+		mnl_attr_for_each_nested(attr, nested) {
+			if (mnl_attr_get_type(attr) == DPLLA_SOURCE_SUPPORTED) {
+				dst->source_supported[i] = mnl_attr_get_u32(attr);
+				i++;
+			}
+		}
+	}
+
 	return 0;
 }
 
@@ -49,6 +61,7 @@ void dpll_source_free(struct dpll_source *obj)
 int dpll_source_parse(struct dpll_source *dst, const struct nlattr *nested)
 {
 	const struct nlattr *attr;
+	int i;
 
 	mnl_attr_for_each_nested(attr, nested) {
 		if (mnl_attr_get_type(attr) == DPLLA_OUTPUT_ID) {
@@ -61,6 +74,17 @@ int dpll_source_parse(struct dpll_source *dst, const struct nlattr *nested)
 		}
 		if (mnl_attr_get_type(attr) == DPLLA_OUTPUT_SUPPORTED) {
 			dst->n_output_supported++;
+		}
+	}
+
+	if (dst->n_output_supported) {
+		dst->output_supported = calloc(dst->n_output_supported, sizeof(*dst->output_supported));
+		i = 0;
+		mnl_attr_for_each_nested(attr, nested) {
+			if (mnl_attr_get_type(attr) == DPLLA_OUTPUT_SUPPORTED) {
+				dst->output_supported[i] = mnl_attr_get_u32(attr);
+				i++;
+			}
 		}
 	}
 
