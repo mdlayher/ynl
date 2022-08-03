@@ -50,6 +50,10 @@ static inline void fou_add_req_set_type(struct fou_add_req *req, __u8 type)
 	req->type_present = 1;
 	req->type = type;
 }
+static inline void fou_add_req_set_remcsum_nopartial(struct fou_add_req *req)
+{
+	req->remcsum_nopartial_present = 1;
+}
 static inline void
 fou_add_req_set_local_v4(struct fou_add_req *req, __u32 local_v4)
 {
@@ -61,6 +65,18 @@ fou_add_req_set_peer_v4(struct fou_add_req *req, __u32 peer_v4)
 {
 	req->peer_v4_present = 1;
 	req->peer_v4 = peer_v4;
+}
+static inline void
+fou_add_req_set_local_v6(struct fou_add_req *req, const void *local_v6)
+{
+	req->local_v6_present = 1;
+	memcpy(req->local_v6, local_v6, 16);
+}
+static inline void
+fou_add_req_set_peer_v6(struct fou_add_req *req, const void *peer_v6)
+{
+	req->peer_v6_present = 1;
+	memcpy(req->peer_v6, peer_v6, 16);
 }
 static inline void
 fou_add_req_set_peer_port(struct fou_add_req *req, __u16 peer_port)
@@ -134,6 +150,18 @@ fou_del_req_set_peer_v4(struct fou_del_req *req, __u32 peer_v4)
 	req->peer_v4_present = 1;
 	req->peer_v4 = peer_v4;
 }
+static inline void
+fou_del_req_set_local_v6(struct fou_del_req *req, const void *local_v6)
+{
+	req->local_v6_present = 1;
+	memcpy(req->local_v6, local_v6, 16);
+}
+static inline void
+fou_del_req_set_peer_v6(struct fou_del_req *req, const void *peer_v6)
+{
+	req->peer_v6_present = 1;
+	memcpy(req->peer_v6, peer_v6, 16);
+}
 
 int fou_del(struct ynl_sock *ys, struct fou_del_req *req);
 
@@ -193,6 +221,18 @@ fou_get_req_set_peer_v4(struct fou_get_req *req, __u32 peer_v4)
 {
 	req->peer_v4_present = 1;
 	req->peer_v4 = peer_v4;
+}
+static inline void
+fou_get_req_set_local_v6(struct fou_get_req *req, const void *local_v6)
+{
+	req->local_v6_present = 1;
+	memcpy(req->local_v6, local_v6, 16);
+}
+static inline void
+fou_get_req_set_peer_v6(struct fou_get_req *req, const void *peer_v6)
+{
+	req->peer_v6_present = 1;
+	memcpy(req->peer_v6, peer_v6, 16);
 }
 
 struct fou_get_rsp {

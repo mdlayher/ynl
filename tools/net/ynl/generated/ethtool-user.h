@@ -28,6 +28,9 @@ struct ethtool_channels_get_req {
 };
 
 void ethtool_channels_get_req_free(struct ethtool_channels_get_req *req);
+// setter for header (header =>) dev_index
+// setter for header (header =>) dev_name
+// setter for header (header =>) flags
 
 struct ethtool_channels_get_rsp {
 	__u32 header_present:1;
@@ -93,6 +96,9 @@ struct ethtool_channels_set_req {
 };
 
 void ethtool_channels_set_req_free(struct ethtool_channels_set_req *req);
+// setter for header (header =>) dev_index
+// setter for header (header =>) dev_name
+// setter for header (header =>) flags
 static inline void
 ethtool_channels_set_req_set_rx_count(struct ethtool_channels_set_req *req,
 				      __u32 rx_count)

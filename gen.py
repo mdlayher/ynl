@@ -346,16 +346,30 @@ def attribute_pres_member(ri, space, attr, suffix=""):
     return True
 
 
-def attribute_setter(ri, space, attr, direction, deref=False):
+def attribute_setter(ri, space, attr, direction, deref=False, ref=None):
+    ref = ref if ref else []
     spec = ri.family["attributes"]["spaces"][space]["list"][attr]
     var = "req"
 
-    if spec['type'] in scalars:
+    code = []
+    if spec['type'] == 'flag':
         pass
+    elif spec['type'] == 'binary':
+        code += [f"memcpy({var}->{attr}, {attr}, {spec['len']});"]
+    elif spec['type'] in scalars:
+        code += [f"{var}->{attr} = {attr};"]
     elif spec['type'] == 'nul-string':
-        pass
-    else:
+        code += [f'strncpy({var}->{attr}, {attr}, sizeof({var}->{attr}));',
+                 f'{var}->{attr}[{spec["len"]}] = 0;']
+    elif spec['type'] == 'nest':
+        nested_space = spec['nested-attributes']
+        ref.append(attr)
+        for nested in ri.family["attributes"]["spaces"][nested_space]['list']:
+            ri.cw.p(f'// setter for {attr} ({nested_space} =>) {nested}')
+            # attribute_setter(ri, , attr, direction, deref=deref, ref=ref)
         return
+    else:
+        raise Exception(f'Type {spec["type"]} not supported yet - setter')
 
     ri.cw.write_func_prot('static inline void',
                           f'{op_prefix(ri, direction, deref=deref)}_set_{attr}',
@@ -363,11 +377,8 @@ def attribute_setter(ri, space, attr, direction, deref=False):
                           _attribute_member(ri, space, attr, prototype=True))
     ri.cw.block_start()
     ri.cw.p(f'{var}->{attr}_present = 1;')
-    if spec['type'] in scalars:
-        ri.cw.p(f'{var}->{attr} = {attr};')
-    elif spec['type'] == 'nul-string':
-        ri.cw.p(f'strncpy({var}->{attr}, {attr}, sizeof({var}->{attr}));')
-        ri.cw.p(f'{var}->{attr}[{spec["len"]}] = 0;')
+    for line in code:
+        ri.cw.p(line)
     ri.cw.block_end()
 
 
