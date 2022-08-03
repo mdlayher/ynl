@@ -177,44 +177,46 @@ static int __dpll_cmd_dump_status(struct dpll_device *dpll,
 	return 0;
 }
 
-static int dpll_device_dump_one(struct dpll_device *dpll, struct sk_buff *msg, int flags)
+static int
+dpll_device_dump_one(struct dpll_device *dpll, struct sk_buff *msg,
+		     u32 portid, u32 seq, int flags)
 {
 	struct nlattr *hdr;
 	int ret;
 
-	hdr = nla_nest_start(msg, DPLLA_DEVICE);
+	hdr = genlmsg_put(msg, portid, seq, &dpll_gnl_family, 0,
+			  DPLL_CMD_DEVICE_GET);
 	if (!hdr)
 		return -EMSGSIZE;
 
 	mutex_lock(&dpll->lock);
 	ret = __dpll_cmd_device_dump_one(dpll, msg);
 	if (ret)
-		goto out_cancel_nest;
+		goto out_unlock;
 
 	if (flags & DPLL_FLAG_SOURCES && dpll->ops->get_source_type) {
 		ret = __dpll_cmd_dump_sources(dpll, msg);
 		if (ret)
-			goto out_cancel_nest;
+			goto out_unlock;
 	}
 
 	if (flags & DPLL_FLAG_OUTPUTS && dpll->ops->get_output_type) {
 		ret = __dpll_cmd_dump_outputs(dpll, msg);
 		if (ret)
-			goto out_cancel_nest;
+			goto out_unlock;
 	}
 
 	if (flags & DPLL_FLAG_STATUS) {
 		ret = __dpll_cmd_dump_status(dpll, msg);
 		if (ret)
-			goto out_cancel_nest;
+			goto out_unlock;
 	}
-
 	mutex_unlock(&dpll->lock);
-	nla_nest_end(msg, hdr);
+	genlmsg_end(msg, hdr);
 
 	return 0;
 
-out_cancel_nest:
+out_unlock:
 	mutex_unlock(&dpll->lock);
 	nla_nest_cancel(msg, hdr);
 
@@ -280,14 +282,16 @@ static int dpll_device_loop_cb(struct dpll_device *dpll, void *data)
 
 	ctx->pos_idx = dpll->id;
 
-	return dpll_device_dump_one(dpll, p->msg, ctx->flags);
+	return dpll_device_dump_one(dpll, p->msg, 0, 0, ctx->flags);
 }
 
-static int dpll_cmd_device_dump(struct param *p)
+static int
+dpll_cmd_device_dump(struct sk_buff *skb, struct netlink_callback *cb)
 {
-	struct dpll_dump_ctx *ctx = dpll_dump_context(p->cb);
+	struct dpll_dump_ctx *ctx = dpll_dump_context(cb);
+	struct param p = { .cb = cb, .msg = skb };
 
-	return for_each_dpll_device(ctx->pos_idx, dpll_device_loop_cb, p);
+	return for_each_dpll_device(ctx->pos_idx, dpll_device_loop_cb, &p);
 }
 
 static int
@@ -297,7 +301,6 @@ dpll_genl_cmd_device_get_id(struct sk_buff *skb, struct genl_info *info)
 	struct nlattr **attrs = info->attrs;
 	struct sk_buff *msg;
 	int flags = 0;
-	void *hdr;
 	int ret;
 
 	if (attrs[DPLLA_FLAGS])
@@ -307,32 +310,18 @@ dpll_genl_cmd_device_get_id(struct sk_buff *skb, struct genl_info *info)
 	if (!msg)
 		return -ENOMEM;
 
-	hdr = genlmsg_put_reply(msg, info, &dpll_gnl_family, 0,
-				DPLL_CMD_DEVICE_GET);
-	if (!hdr) {
-		ret = -EMSGSIZE;
-		goto out_free_msg;
-	}
-
-	ret = dpll_device_dump_one(dpll, msg, flags);
+	ret = dpll_device_dump_one(dpll, msg, info->snd_portid, info->snd_seq,
+				   flags);
 	if (ret)
-		goto out_cancel_msg;
-
-	genlmsg_end(msg, hdr);
+		goto out_free_msg;
 
 	return genlmsg_reply(msg, info);
 
-out_cancel_msg:
-	genlmsg_cancel(msg, hdr);
 out_free_msg:
 	nlmsg_free(msg);
 	return ret;
 
 }
-
-static cb_t cmd_dump_cb[] = {
-	[DPLL_CMD_DEVICE_GET]		= dpll_cmd_device_dump,
-};
 
 static int dpll_genl_cmd_start(struct netlink_callback *cb)
 {
@@ -348,33 +337,6 @@ static int dpll_genl_cmd_start(struct netlink_callback *cb)
 	ctx->pos_src_idx = 0;
 	ctx->pos_out_idx = 0;
 	return 0;
-}
-
-static int dpll_genl_cmd_dumpit(struct sk_buff *skb,
-				   struct netlink_callback *cb)
-{
-	struct param p = { .cb = cb, .msg = skb };
-	const struct genl_dumpit_info *info = genl_dumpit_info(cb);
-	int cmd = info->op.cmd;
-	int ret;
-	void *hdr;
-
-	hdr = genlmsg_put(skb, 0, 0, &dpll_gnl_family, 0, cmd);
-	if (!hdr)
-		return -EMSGSIZE;
-
-	ret = cmd_dump_cb[cmd](&p);
-	if (ret)
-		goto out_cancel_msg;
-
-	genlmsg_end(skb, hdr);
-
-	return 0;
-
-out_cancel_msg:
-	genlmsg_cancel(skb, hdr);
-
-	return ret;
 }
 
 static int dpll_pre_doit(const struct genl_ops *ops, struct sk_buff *skb,
@@ -399,7 +361,7 @@ static const struct genl_ops dpll_genl_ops[] = {
 	{
 		.cmd	= DPLL_CMD_DEVICE_GET,
 		.start	= dpll_genl_cmd_start,
-		.dumpit	= dpll_genl_cmd_dumpit,
+		.dumpit	= dpll_cmd_device_dump,
 		.doit	= dpll_genl_cmd_device_get_id,
 		.policy	= dpll_genl_get_policy,
 		.maxattr = ARRAY_SIZE(dpll_genl_get_policy) - 1,
