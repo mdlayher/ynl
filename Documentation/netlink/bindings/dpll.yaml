@@ -1,0 +1,124 @@
+name: dpll
+
+description: |
+  DPLL subsystem.
+
+headers:
+  user: linux/dpll.h
+  kernel: linux/dpll.h
+
+constants:
+  -
+    type: family-name
+  -
+    type: version
+
+attributes:
+  spaces:
+    main:
+      name-prefix: DPLLA_
+      list:
+        unspec:
+          type: skip
+        device_id:
+          type: u32
+        device_name:
+          type: nul-string
+          len: DPLL_NAME_LENGTH - 1
+        source:
+          type: multi-nest
+          nested-attributes: source
+        source_id:
+          type: u32
+        source_type:
+          type: u32
+        source_supported:
+          type: u32
+        output:
+          type: multi-nest
+          nexted-attributes: output
+        output_id:
+          type: u32
+        output_type:
+          type: u32
+        output_supported:
+          type: u32
+        status:
+          type: u32
+        temp:
+          type: u32
+        lock_status:
+          type: u32
+        flags:
+          type: u32
+
+    source:
+      subspace-of: main
+      name-prefix: DPLLA_
+      list:
+        output_id:
+          type: u32
+        output_type:
+          type: u32
+        output_supported:
+          type: multi-u32
+
+    output:
+      subspace-of: main
+      name-prefix: DPLLA_
+      list:
+        source_id:
+          type: u32
+        source_type:
+          type: u32
+        source_supported:
+          type: multi-u32
+
+operations:
+  name-prefix: DPLL_CMD_
+  list:
+    unspec:
+
+    device_get:
+      attribute-space: main
+
+      do:
+        request:
+          attributes:
+            - device_id
+            - device_name
+            - flags
+
+        reply:
+          attributes:
+            - device_id
+            - device_name
+            - source
+            - output
+            - status
+            - temp
+            - lock_status
+
+    set_source_type:
+      attribute-space: main
+      flags: [ admin_perm ]
+
+      do:
+        request:
+          attributes:
+            - device_id
+            - device_name
+            - source_id
+            - source_type
+
+    set_output_type:
+      attribute-space: main
+      flags: [ admin_perm ]
+
+      do:
+        request:
+          attributes:
+            - device_id
+            - device_name
+            - output_id
+            - output_type
