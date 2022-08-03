@@ -320,7 +320,7 @@ def _attribute_member(ri, space, attr, prototype=True, suffix=""):
         if 'sub-type' not in spec or spec['sub-type'] == 'nest':
             t = f"struct {nest_op_prefix(ri, spec['nested-attributes'])} *"
         elif spec['sub-type'] in scalars:
-            t = scalar_pfx + t + ' *'
+            t = scalar_pfx + spec['sub-type'] + ' *'
         else:
             raise Exception(f"Sub-type {spec} not supported yet")
 

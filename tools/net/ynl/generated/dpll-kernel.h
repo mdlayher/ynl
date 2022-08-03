@@ -1,0 +1,89 @@
+// SPDX-License-Identifier: MIT
+// Do not edit directly, auto-generated from:
+//	../../../../Documentation/netlink/bindings/dpll.yaml
+// /home/kicinski/devel/linux/gen.py --mode kernel --header --spec ../../../../Documentation/netlink/bindings/dpll.yaml
+
+#include <net/netlink.h>
+
+#include <linux/dpll.h>
+
+/* ============== DPLL_CMD_DEVICE_GET ============== */
+// DPLL_CMD_DEVICE_GET - do
+struct dpll_device_get_req {
+	u32 device_id_present:1;
+	u32 device_name_present:1;
+	u32 flags_present:1;
+
+	u32 device_id;
+	char device_name[DPLL_NAME_LENGTH];
+	u32 flags;
+};
+
+void dpll_device_get_req_free(struct dpll_device_get_req *req);
+
+struct dpll_device_get_rsp {
+	u32 device_id_present:1;
+	u32 device_name_present:1;
+	u32 status_present:1;
+	u32 temp_present:1;
+	u32 lock_status_present:1;
+
+	u32 device_id;
+	char device_name[DPLL_NAME_LENGTH];
+	unsigned int n_source;
+	struct dpll_source *source;
+	unsigned int n_output;
+	struct dpll_output *output;
+	u32 status;
+	u32 temp;
+	u32 lock_status;
+};
+
+void dpll_device_get_rsp_free(struct dpll_device_get_rsp *rsp);
+
+void
+dpll_device_get_req_parse(const struct nlattr **tb,
+			  struct dpll_device_get_req *req);
+const struct nla_policy dpll_device_get_policy[];
+
+/* ============== DPLL_CMD_SET_SOURCE_TYPE ============== */
+// DPLL_CMD_SET_SOURCE_TYPE - do
+struct dpll_set_source_type_req {
+	u32 device_id_present:1;
+	u32 device_name_present:1;
+	u32 source_id_present:1;
+	u32 source_type_present:1;
+
+	u32 device_id;
+	char device_name[DPLL_NAME_LENGTH];
+	u32 source_id;
+	u32 source_type;
+};
+
+void dpll_set_source_type_req_free(struct dpll_set_source_type_req *req);
+
+void
+dpll_set_source_type_req_parse(const struct nlattr **tb,
+			       struct dpll_set_source_type_req *req);
+const struct nla_policy dpll_set_source_type_policy[];
+
+/* ============== DPLL_CMD_SET_OUTPUT_TYPE ============== */
+// DPLL_CMD_SET_OUTPUT_TYPE - do
+struct dpll_set_output_type_req {
+	u32 device_id_present:1;
+	u32 device_name_present:1;
+	u32 output_id_present:1;
+	u32 output_type_present:1;
+
+	u32 device_id;
+	char device_name[DPLL_NAME_LENGTH];
+	u32 output_id;
+	u32 output_type;
+};
+
+void dpll_set_output_type_req_free(struct dpll_set_output_type_req *req);
+
+void
+dpll_set_output_type_req_parse(const struct nlattr **tb,
+			       struct dpll_set_output_type_req *req);
+const struct nla_policy dpll_set_output_type_policy[];
