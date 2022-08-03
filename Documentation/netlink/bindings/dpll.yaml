@@ -26,7 +26,8 @@ attributes:
           type: nul-string
           len: DPLL_NAME_LENGTH - 1
         source:
-          type: multi-nest
+          type: multi-attr
+          multi-type: nest
           nested-attributes: source
         source_id:
           type: u32
@@ -35,7 +36,8 @@ attributes:
         source_supported:
           type: u32
         output:
-          type: multi-nest
+          type: multi-attr
+          multi-type: nest
           nexted-attributes: output
         output_id:
           type: u32
@@ -61,7 +63,8 @@ attributes:
         output_type:
           type: u32
         output_supported:
-          type: multi-u32
+          type: multi-attr
+          multi-type: u32
 
     output:
       subspace-of: main
@@ -72,7 +75,8 @@ attributes:
         source_type:
           type: u32
         source_supported:
-          type: multi-u32
+          type: multi-attr
+          multi-type: u32
 
 operations:
   name-prefix: DPLL_CMD_
