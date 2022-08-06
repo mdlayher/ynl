@@ -18,6 +18,7 @@ class Type:
     def __init__(self, attr):
         self.attr = attr
         self.name = attr['name']
+        self.c_name = attr['c_name']
         self.type = attr['type']
         if 'len' in attr:
             self.len = attr['len']
@@ -41,28 +42,62 @@ class Type:
     def attr_put(self, ri, var):
         raise Exception(f"Put not implemented for class type {self.type}")
 
+    def _attr_get(self, ri, var, lines, local_vars=None):
+        if type(lines) is str:
+            lines = [lines]
+
+        ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {attr_enum_name(ri, self.name)})")
+        if local_vars:
+            for local in local_vars:
+                ri.cw.p(local)
+            ri.cw.nl()
+
+        if not self.is_multi_val():
+            ri.cw.p(f"{var}->{self.name}_present = 1;")
+
+        for line in lines:
+            ri.cw.p(line)
+        ri.cw.block_end()
+
+    def attr_get(self, ri, var):
+        raise Exception(f"Put not implemented for class type {self.type}")
+
 
 class TypeUnused(Type):
     pass
 
 
 class TypeScalar(Type):
-    def attr_put(self, ri, var):
+    def _mnl_type(self):
         t = self.type
         # mnl does not have a helper for signed types
         if t[0] == 's':
             t = 'u' + t[1:]
-        self._attr_put_simple(ri, var, t)
+        return t
+
+    def attr_put(self, ri, var):
+        self._attr_put_simple(ri, var, self._mnl_type())
+
+    def attr_get(self, ri, var):
+        self._attr_get(ri, var, f"{var}->{self.c_name} = mnl_attr_get_{self._mnl_type()}(attr);")
 
 
 class TypeFlag(Type):
     def attr_put(self, ri, var):
         self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {attr_enum_name(ri, self.name)}, 0, NULL)")
 
+    def attr_get(self, ri, var):
+        self._attr_get(ri, var, [])
+
 
 class TypeNulString(Type):
     def attr_put(self, ri, var):
         self._attr_put_simple(ri, var, 'strz')
+
+    def attr_get(self, ri, var):
+        self._attr_get(ri, var,
+                       [f"strncpy({var}->{self.c_name}, mnl_attr_get_str(attr), {self.len});",
+                        f"{var}->{self.c_name}[{self.len}] = 0;"])
 
 
 class TypeBinary(Type):
@@ -70,30 +105,69 @@ class TypeBinary(Type):
         self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {attr_enum_name(ri, self.name)}, " +
                             f"{self.len}, {var}->{self.name})")
 
+    def attr_get(self, ri, var):
+        self._attr_get(ri, var, f"memcpy({var}->{self.name}, mnl_attr_get_payload(attr), {self.len});")
+
 
 class TypeNest(Type):
     def attr_put(self, ri, var):
         self._attr_put_line(ri, var, f"{nest_op_prefix(ri, self.nested_attrs)}_put(nlh, " +
                             f"{attr_enum_name(ri, self.name)}, &{var}->{self.name})")
 
+    def attr_get(self, ri, var):
+        self._attr_get(ri, var,
+                       f"{nest_op_prefix(ri, self.nested_attrs)}_parse(&{var}->{self.name}, attr);")
+
 
 class TypeMultiAttr(Type):
     def is_multi_val(self):
         return True
+
+    def attr_get(self, ri, var):
+        self._attr_get(ri, var, f'{var}->n_{self.name}++;')
 
 
 class TypeArrayNest(Type):
     def is_multi_val(self):
         return True
 
+    def attr_get(self, ri, var):
+        local_vars = ['const struct nlattr *attr2;']
+        get_lines = [f'attr_{self.name} = attr;',
+                     'mnl_attr_for_each_nested(attr2, attr)',
+                     f'\t{var}->n_{self.name}++;']
+        self._attr_get(ri, var, get_lines, local_vars)
+
 
 class TypeNestTypeValue(Type):
-    pass
+    def attr_get(self, ri, var):
+        prev = 'attr'
+        tv_args = ''
+        get_lines = []
+        local_vars = []
+        if 'type-value' in self.attr:
+            local_vars += [f'const struct nlattr *attr_{", *attr_".join(self.attr["type-value"])};']
+            local_vars += [f'__u32 {", ".join(self.attr["type-value"])};']
+            for level in self.attr["type-value"]:
+                get_lines += [f'attr_{level} = mnl_attr_get_payload({prev});']
+                get_lines += [f'{level} = mnl_attr_get_type(attr_{level});']
+                prev = 'attr_' + level
+
+            tv_args = f", {', '.join(self.attr['type-value'])}"
+
+        get_lines += [f"{nest_op_prefix(ri, self.nested_attrs)}_parse(&{var}->{self.name}, " +
+                      f"{prev}{tv_args});"]
+        self._attr_get(ri, var, get_lines, local_vars)
 
 
 class Attribute:
     def __init__(self, yaml):
         self.yaml = yaml
+
+        c_name = yaml['name']
+        if c_name in c_kw:
+            c_name += '_'
+        self.yaml['c_name'] = c_name
 
         if yaml['type'] in scalars:
             self.typed = TypeScalar(self)
@@ -115,11 +189,6 @@ class Attribute:
             self.typed = TypeNestTypeValue(self)
         else:
             raise Exception(f"No typed class for type {yaml['type']}")
-
-        c_name = yaml['name']
-        if c_name in c_kw:
-            c_name += '_'
-        self.yaml['c_name'] = c_name
 
     def __getitem__(self, key):
         return self.yaml[key]
@@ -567,63 +636,6 @@ def attribute_setter(ri, space, attr, direction, deref=False, ref=None):
     ri.cw.block_end()
 
 
-def attribute_get(ri, attr, var):
-    spec = ri.family.attr_spaces[ri.attr_space][attr]
-    local_vars = []
-    get_lines = []
-
-    if spec['type'] == 'flag':
-        pass
-    elif spec['type'] == 'binary':
-        get_lines += [f"memcpy({var}->{attr}, mnl_attr_get_payload(attr), {spec['len']});"]
-    elif spec['type'] in scalars:
-        # mnl does not have a helper for signed types
-        t = spec['type']
-        if t[0] == 's':
-            t = 'u' + t[1:]
-        get_lines = [f"{var}->{spec['c_name']} = mnl_attr_get_{t}(attr);"]
-    elif spec['type'] == 'nul-string':
-        get_lines = [f"strncpy({var}->{spec['c_name']}, mnl_attr_get_str(attr), {spec['len']});",
-                     f"{var}->{spec['c_name']}[{spec['len']}] = 0;"]
-    elif spec['type'] == 'nest' or spec['type'] == 'nest-type-value':
-        prev = 'attr'
-        tv_args = ''
-        if 'type-value' in spec:
-            local_vars += [f'const struct nlattr *attr_{", *attr_".join(spec["type-value"])};']
-            local_vars += [f'__u32 {", ".join(spec["type-value"])};']
-            for level in spec["type-value"]:
-                get_lines += [f'attr_{level} = mnl_attr_get_payload({prev});']
-                get_lines += [f'{level} = mnl_attr_get_type(attr_{level});']
-                prev = 'attr_' + level
-
-            tv_args = f", {', '.join(spec['type-value'])}"
-
-        get_lines += [f"{nest_op_prefix(ri, spec['nested-attributes'])}_parse(&{var}->{attr}, " +
-                      f"{prev}{tv_args});"]
-    elif spec['type'] == 'array-nest':
-        local_vars += ['const struct nlattr *attr2;']
-        get_lines += [f'attr_{attr} = attr;',
-                      'mnl_attr_for_each_nested(attr2, attr)',
-                      f'\t{var}->n_{attr}++;']
-    elif spec['type'] == 'multi-attr':
-        get_lines += [f'{var}->n_{attr}++;']
-    else:
-        raise Exception(f"Type {spec['type']} not supported yet")
-
-    ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {attr_enum_name(ri, attr)})")
-    if local_vars:
-        for l in local_vars:
-            ri.cw.p(l)
-        ri.cw.nl()
-
-    if not spec.typed.is_multi_val():
-        ri.cw.p(f"{var}->{attr}_present = 1;")
-
-    for line in get_lines:
-        ri.cw.p(line)
-    ri.cw.block_end()
-
-
 def attribute_parse_kernel(ri, attr, prototype=True, suffix=""):
     aspace = ri.family.attr_spaces[ri.attr_space]
     spec = aspace[attr]
@@ -773,8 +785,8 @@ def parse_rsp_nested(ri, attr_space):
 
     ri.cw.block_start(line="mnl_attr_for_each_nested(attr, nested)")
 
-    for arg in ri.family.attr_spaces[attr_space]:
-        attribute_get(ri, arg, "dst")
+    for _, arg in ri.family.attr_spaces[attr_space].items():
+        arg.typed.attr_get(ri, 'dst')
 
     ri.cw.block_end()
     ri.cw.nl()
@@ -809,7 +821,8 @@ def parse_rsp_msg(ri, deref=False):
     ri.cw.block_start(line="mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr))")
 
     for arg in ri.op[ri.op_mode]["reply"]['attributes']:
-        attribute_get(ri, arg, "dst")
+        attr = ri.family.attr_spaces[ri.attr_space][arg]
+        attr.typed.attr_get(ri, "dst")
 
     ri.cw.block_end()
     ri.cw.nl()
