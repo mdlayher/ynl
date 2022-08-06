@@ -1,0 +1,164 @@
+# SPDX-License-Identifier: GPL-2.0
+%YAML 1.2
+---
+$id: "http://kernel.org/schemas/netlink/schema.yaml#"
+$schema: "http://kernel.org/meta-schemas/core.yaml#"
+
+title: Protocol
+description: Specification of a genetlink protocol
+type: object
+required: [ name, description, attribute-spaces, operations ]
+additionalProperties: False
+properties:
+  name:
+    description: Name of the genetlink family
+    type: string
+  description:
+    description: Description of the family
+    type: string
+  headers:
+    decription: C headers defining the protocol
+    type: object
+    additionalProperties: False
+    properties:
+      uapi:
+        description: Path under include/uapi where protocol definition is placed
+        type: string
+      kernel:
+        description: Additional headers on which the protocol definition depends (kernel side)
+        anyOf: &str-or-arrstr
+          -
+            type: array
+            items:
+              type: string
+          -
+            type: string
+      user:
+        description: Additional headers on which the protocol definition depends (user side)
+        anyOf: *str-or-arrstr
+  constants:
+    decription: bla
+    type: array
+    items:
+      type: object
+  attribute-spaces:
+    description: Definition of attribute spaces for this family.
+    type: array
+    items:
+      description: Definition of a single attribute space.
+      type: object
+      required: [ name, attributes ]
+      additionalProperties: False
+      properties:
+        name:
+          description: |
+            Name used when referring to this space in other definitions, not used outside of YAML.
+          type: string
+        # Strictly speaking 'name-prefix' and 'subspace-of' should be mutually exclusive.
+        name-prefix:
+          description: Prefix for the C enum name of the attributes.
+          type: string
+        description:
+          description: Documentation of the space.
+          type: string
+        subspace-of:
+          description: |
+            Name of another space which this is a logical part of. Sub-spaces can be used to define
+            a limitted group of attributes which are used in a nest.
+          type: string
+        attributes:
+          description: List of attributes in the space.
+          type: array
+          items:
+            type: object
+            required: [ name, type ]
+            additionalProperties: False
+            properties:
+              name:
+                type: string
+              type: &attr-type
+                enum: [ unused, flag, binary, u8, u16, u32, u64, s32, s64,
+                        nul-string, multi-attr, nest, array-nest, nest-type-value ]
+              description:
+                description: Documentation of the attribute.
+                type: string
+              type-value:
+                description: Name of the value extracted from the type of a nest-type-value attribute.
+                type: array
+                items:
+                  type: string
+              len:
+                oneOf:
+                  -
+                    type: string
+                  -
+                    type: integer
+              sub-type: *attr-type
+              nested-attributes:
+                description: Name of the space (sub-space) used inside the attribute.
+                type: string
+  operations:
+    decription: Operations supported by the protocol.
+    type: object
+    required: [ name-prefix, list ]
+    additionalProperties: False
+    properties:
+      name-prefix:
+        description: |
+          Prefix for the C enum name of the command. The name is formed by concatenating
+          the prefix with the upper case name of the command, with dashes replaced by underscores.
+        type: string
+      list:
+        decription: List of commands
+        type: array
+        items:
+          type: object
+          additionalProperties: False
+          required: [ name, description ]
+          properties:
+            name:
+              description: Name of the operation, also defining its C enum value in uAPI.
+              type: string
+            description:
+              description: Documentation for the command.
+              type: string
+            value:
+              description: Value for the enum in the uAPI.
+              type: integer
+            attribute-space:
+              description: |
+                Attribute space from which attributes directly in the requests and replies
+                to this command are defined.
+              type: string
+            flags:
+              description: Command flags.
+              type: array
+              items:
+                enum: [ admin-perm ]
+            dont-validate:
+              description: Kernel attribute validation flags.
+              type: array
+              items:
+                enum: [ strict, dump ]
+            do: &subop-type
+              description: Main command handler.
+              type: object
+              additionalProperties: False
+              properties:
+                request: &subop-attr-list
+                  description: Definition of the request message for a given command.
+                  type: object
+                  additionalProperties: False
+                  properties:
+                    attributes:
+                      description: |
+                        Names of attributes from the attribute-space (not full attribute
+                        definitions, just names).
+                      type: array
+                      items:
+                        type: string
+                reply: *subop-attr-list
+            dump: *subop-type
+            notify:
+              description: Name of the command sharing the reply type with this notification
+              type: string

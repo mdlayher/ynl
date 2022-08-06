@@ -1,40 +1,55 @@
 name: ethtool
 
-attributes:
-  spaces:
-    header:
-      name-prefix: ETHTOOL_A_HEADER_
-      list:
-        dev_index:
-          type: u32
-        dev_name:
-          type: nul-string
-          len: ALTIFNAMSIZ - 1
-        flags:
-          type: u32
+description: |
+  Ethernet device configuration interface.
 
-    channels:
-      name-prefix: ETHTOOL_A_CHANNELS_
-      list:
-        header:
-          type: nest
-          nested-attributes: header
-        rx_max:
-          type: u32
-        tx_max:
-          type: u32
-        other_max:
-          type: u32
-        combined_max:
-          type: u32
-        rx_count:
-          type: u32
-        tx_count:
-          type: u32
-        other_count:
-          type: u32
-        combined_count:
-          type: u32
+attribute-spaces:
+  -
+    name: header
+    name-prefix: ETHTOOL_A_HEADER_
+    attributes:
+      -
+        name: dev_index
+        type: u32
+      -
+        name: dev_name
+        type: nul-string
+        len: ALTIFNAMSIZ - 1
+      -
+        name: flags
+        type: u32
+  -
+    name: channels
+    name-prefix: ETHTOOL_A_CHANNELS_
+    attributes:
+      -
+        name: header
+        type: nest
+        nested-attributes: header
+      -
+        name: rx_max
+        type: u32
+      -
+        name: tx_max
+        type: u32
+      -
+        name: other_max
+        type: u32
+      -
+        name: combined_max
+        type: u32
+      -
+        name: rx_count
+        type: u32
+      -
+        name: tx_count
+        type: u32
+      -
+        name: other_count
+        type: u32
+      -
+        name: combined_count
+        type: u32
 
 headers:
   user: [ linux/ethtool_netlink.h, linux/if.h ]
@@ -43,7 +58,9 @@ headers:
 operations:
   name-prefix: ETHTOOL_MSG_
   list:
-    channels_get:
+    -
+      name: channels_get
+      description: Get current and max supported number of channels.
       attribute-space: channels
       do:
         request:
@@ -63,12 +80,14 @@ operations:
       dump:
         reply: *channel_reply
 
-      notify:
-        reply: *channel_reply
-        cmds:
-          - channels_ntf
+    -
+      name: channels_ntf
+      description: Notification for device changing its number of channels.
+      notify: channels_get
 
-    channels_set:
+    -
+      name: channels_set
+      description: Set number of channels.
       attribute-space: channels
       do:
         request:

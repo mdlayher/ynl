@@ -9,110 +9,132 @@ headers:
   user: linux/genetlink.h
   kernel: linux/genetlink.h
 
-attributes:
-  spaces:
-    main:
-      name-prefix: CTRL_ATTR_
-      list:
-        family_id:
-          type: u16
-          decription: |
+attribute-spaces:
+  -
+    name: main
+    name-prefix: CTRL_ATTR_
+    attributes:
+      -
+        name: family_id
+        type: u16
+        description: |
             Numerical identifier of the family.
-        family_name:
-          type: nul-string
-          len: GENL_NAMSIZ - 1
-          description: |
+      -
+        name: family_name
+        type: nul-string
+        len: GENL_NAMSIZ - 1
+        description: |
             String identifier of the family. Guaranteed to be unique.
-        version:
-          type: u32
-        hdrsize:
-          type: u32
-        maxattr:
-          type: u32
-        ops:
-          type: array-nest
-          nested-attributes: operation
-        mcast_groups:
-          type: array-nest
-          nested-attributes: mcast-group
-        op:
-          type: u32
-        op_policy:
-          type: nest-type-value
-          type-value: [ cmd ]
-          nested-attributes: policy
-        policy:
-          type: nest-type-value
-          type-value: [ current_policy_idx, attr_idx ]
-          nested-attributes: nl-policy
-
-    operation:
-      name-prefix: CTRL_ATTR_OP_
-      list:
-        id:
-          type: u32
-        flags:
-          type: u32
-
-    mcast-group:
-      name-prefix: CTRL_ATTR_MCAST_GRP_
-      list:
-        id:
-          type: u32
-        name:
-          type: nul-string
-          len: GENL_NAMSIZ - 1
-
-    policy:
-      name-prefix: CTRL_ATTR_POLICY_
-      list:
-        do:
-          type: u32
-        dump:
-          type: u32
-
-    nl-policy:
-      name-prefix: NL_POLICY_TYPE_ATTR_
-      list:
-        type:
-          type: u32
-          presence: always
-        min_value_u:
-          type: u64
-        max_value_u:
-          type: u64
-        min_value_s:
-          type: s64
-        max_value_s:
-          type: s64
-        mask:
-          type: u64
-        min_length:
-          type: u32
-        max_length:
-          type: u32
-        policy_idx:
-          type: u32
-        policy_maxtype:
-          type: u32
-        bitfield32_mask:
-          type: u32
+      -
+        name: version
+        type: u32
+      -
+        name: hdrsize
+        type: u32
+      -
+        name: maxattr
+        type: u32
+      -
+        name: ops
+        type: array-nest
+        nested-attributes: operation
+      -
+        name: mcast_groups
+        type: array-nest
+        nested-attributes: mcast-group
+      -
+        name: op
+        type: u32
+      -
+        name: op_policy
+        type: nest-type-value
+        type-value: [ cmd ]
+        nested-attributes: policy
+      -
+        name: policy
+        type: nest-type-value
+        type-value: [ current_policy_idx, attr_idx ]
+        nested-attributes: nl-policy
+  -
+    name: operation
+    name-prefix: CTRL_ATTR_OP_
+    attributes:
+      -
+        name: id
+        type: u32
+      -
+        name: flags
+        type: u32
+  -
+    name: mcast-group
+    name-prefix: CTRL_ATTR_MCAST_GRP_
+    attributes:
+      -
+        name: id
+        type: u32
+      -
+        name: name
+        type: nul-string
+        len: GENL_NAMSIZ - 1
+  -
+    name: policy
+    name-prefix: CTRL_ATTR_POLICY_
+    attributes:
+      -
+        name: do
+        type: u32
+      -
+        name: dump
+        type: u32
+  -
+    name: nl-policy
+    name-prefix: NL_POLICY_TYPE_ATTR_
+    attributes:
+      -
+        name: type
+        type: u32
+      -
+        name: min_value_u
+        type: u64
+      -
+        name: max_value_u
+        type: u64
+      -
+        name: min_value_s
+        type: s64
+      -
+        name: max_value_s
+        type: s64
+      -
+        name: mask
+        type: u64
+      -
+        name: min_length
+        type: u32
+      -
+        name: max_length
+        type: u32
+      -
+        name: policy_idx
+        type: u32
+      -
+        name: policy_maxtype
+        type: u32
+      -
+        name: bitfield32_mask
+        type: u32
 
 operations:
   name-prefix: CTRL_CMD_
   list:
-    getfamily:
+    -
+      name: getfamily
+      description: Get information about genetlink family.
       attribute-space: main
       dont-validate: [ strict, dump ]
 
       do:
         request:
-          # TODO
-          interfaces:
-            by_id:
-              - family_id
-            by_name:
-              - family_name
           attributes:
             - family_id
             - family_name
@@ -127,16 +149,25 @@ operations:
             - mcast_groups
       dump:
         reply: *getfamily-do-reply
-
-      notify:
-        reply: *getfamily-do-reply
-        cmds:
-          - newfamily
-          - delfamily
-          - newmcast_grp
-          - delmcast_grp
-
-    getpolicy:
+    -
+      name: newfamily
+      description: Notification for new families being registered.
+      notify: getfamily
+    -
+      name: delfamily
+      description: Notification for families being unregistered.
+      notify: getfamily
+    -
+      name: newmcast_grp
+      description: Notification for new multicast groups.
+      notify: getfamily
+    -
+      name: delmcast_grp
+      description: Notification for deleted multicast groups.
+      notify: getfamily
+    -
+      name: getpolicy
+      description: Get attribute policy for a genetlink family.
       attribute-space: main
 
       dump:

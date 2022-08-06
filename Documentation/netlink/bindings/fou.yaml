@@ -4,6 +4,7 @@ description: |
   Foo-over-UDP.
 
 headers:
+  uapi: linux/fou.h
   user: linux/fou.h
   kernel: linux/fou.h
 
@@ -17,48 +18,64 @@ constants:
     name: encap_type
     value: [ UNSPEC, DIRECT, GUE ]
 
-attributes:
-  spaces:
-    main:
-      name-prefix: FOU_ATTR_
-      list:
-        unspec:
-          type: skip
-        port:
-          type: u16
-        af:
-          type: u8
-        ipproto:
-          type: u8
-        type:
-          type: u8
-        remcsum_nopartial:
-          type: flag
-        local_v4:
-          type: u32
-        local_v6:
-          type: binary
-          len: 16
-        peer_v4:
-          type: u32
-        peer_v6:
-          type: binary
-          len: 16
-        peer_port:
-          type: u16
-        ifindex:
-          type: s32
+attribute-spaces:
+  -
+    name: main
+    name-prefix: FOU_ATTR_
+    attributes:
+      -
+        name: unspec
+        type: unused
+      -
+        name: port
+        type: u16
+      -
+        name: af
+        type: u8
+      -
+        name: ipproto
+        type: u8
+      -
+        name: type
+        type: u8
+      -
+        name: remcsum_nopartial
+        type: flag
+      -
+        name: local_v4
+        type: u32
+      -
+        name: local_v6
+        type: binary
+        len: 16
+      -
+        name: peer_v4
+        type: u32
+      -
+        name: peer_v6
+        type: binary
+        len: 16
+      -
+        name: peer_port
+        type: u16
+      -
+        name: ifindex
+        type: s32
 
 operations:
   name-prefix: FOU_CMD_
   list:
-    unspec:
+    -
+      name: unspec
+      description: unused
 
-    add:
+    -
+      name: add
+      description: Add port.
       attribute-space: main
 
       dont-validate: [ strict, dump ]
-      flags: [ admin_perm ]
+      flags: [ admin-perm ]
 
       do:
         request: &all_attrs
@@ -74,11 +91,13 @@ operations:
             - peer_port
             - ifindex
 
-    del:
+    -
+      name: del
+      description: Delete port.
       attribute-space: main
 
       dont-validate: [ strict, dump ]
-      flags: [ admin_perm ]
+      flags: [ admin-perm ]
 
       do:
         request:  &select_attrs
@@ -92,7 +111,9 @@ operations:
           - local_v6
           - peer_v6
 
-    get:
+    -
+      name: get
+      description: Get tunnel info.
       attribute-space: main
       dont-validate: [ strict, dump ]
 

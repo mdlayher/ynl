@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import jsonschema
 import os
 import yaml
 
@@ -13,10 +14,78 @@ class BaseNlLib:
         return 'ys->family_id'
 
 
+class Attribute:
+    def __init__(self, yaml):
+        self.yaml = yaml
+
+        c_name = yaml['name']
+        if c_name in c_kw:
+            c_name += '_'
+        self.yaml['c_name'] = c_name
+
+    def __getitem__(self, key):
+        return self.yaml[key]
+
+    def __contains__(self, key):
+        return key in self.yaml
+
+
+class AttrSpace:
+    def __init__(self, yaml):
+        self.yaml = yaml
+
+        self.attrs = dict()
+        self.name = self.yaml['name']
+        self.name_prefix = self.yaml['name-prefix']
+        self.subspace_of = self.yaml['subspace-of'] if 'subspace-of' in self.yaml else None
+
+        for elem in self.yaml['attributes']:
+            self.attrs[elem['name']] = Attribute(elem)
+
+    def __getitem__(self, key):
+        return self.attrs[key]
+
+    def __contains__(self, key):
+        return key in self.yaml
+
+    def __iter__(self):
+        yield from self.attrs
+
+    def items(self):
+        return self.attrs.items()
+
+
+class Operation:
+    def __init__(self, yaml):
+        self.yaml = yaml
+
+        self.name = self.yaml['name']
+
+    def __getitem__(self, key):
+        return self.yaml[key]
+
+    def __contains__(self, key):
+        return key in self.yaml
+
+    def add_notification(self, op_yaml):
+        if 'notify' not in self.yaml:
+            self.yaml['notify'] = dict()
+            self.yaml['notify']['reply'] = self.yaml['do']['reply']
+            self.yaml['notify']['cmds'] = []
+        self.yaml['notify']['cmds'].append(op_yaml['name'])
+
+
 class Family:
     def __init__(self, file_name):
         with open(file_name, "r") as stream:
             self.yaml = yaml.safe_load(stream)
+
+        with open(os.path.dirname(os.path.dirname(file_name)) + '/schema.yaml', "r") as stream:
+            schema = yaml.safe_load(stream)
+
+        jsonschema.validate(self.yaml, schema)
+
+        self.op_prefix = self.yaml['operations']['name-prefix']
 
         # dict space-name -> 'request': set(attrs), 'reply': set(attrs)
         self.root_spaces = dict()
@@ -25,7 +94,10 @@ class Family:
         self.inherited_members = dict()
         self.all_notify = dict()
 
-        self._compute_members()
+        self.ops = dict()
+        self.attr_spaces = dict()
+
+        self._dictify()
         self._load_root_spaces()
         self._load_nested_spaces()
         self._load_all_notify()
@@ -33,17 +105,24 @@ class Family:
     def __getitem__(self, key):
         return self.yaml[key]
 
-    def _compute_members(self):
-        for _, space in self.yaml['attributes']['spaces'].items():
-            for name, attr in space['list'].items():
-                c_name = name
-                if c_name in c_kw:
-                    c_name += '_'
-                attr['c_name'] = c_name
+    def _dictify(self):
+        for elem in self.yaml['attribute-spaces']:
+            self.attr_spaces[elem['name']] = AttrSpace(elem)
+
+        ntf = []
+        for elem in self.yaml['operations']['list']:
+            if 'notify' in elem:
+                ntf.append(elem)
+                continue
+            if 'attribute-space' not in elem:
+                continue
+            self.ops[elem['name']] = Operation(elem)
+        for n in ntf:
+            self.ops[n['notify']].add_notification(n)
 
     def _load_root_spaces(self):
-        for op_name, op in self.yaml['operations']['list'].items():
-            if not op:
+        for op_name, op in self.ops.items():
+            if 'attribute-space' not in op:
                 continue
 
             req_attrs = set()
@@ -62,7 +141,7 @@ class Family:
 
     def _load_nested_spaces(self):
         for root_space, rs_members in self.root_spaces.items():
-            for attr, spec in self.yaml['attributes']['spaces'][root_space]['list'].items():
+            for attr, spec in self.attr_spaces[root_space].items():
                 if 'nested-attributes' in spec:
                     nested = spec['nested-attributes']
                     if nested not in self.root_spaces:
@@ -84,7 +163,7 @@ class Family:
                         self.inherited_members[nested] = set()
 
     def _load_all_notify(self):
-        for op_name, op in self.yaml['operations']['list'].items():
+        for op_name, op in self.ops.items():
             if not op:
                 continue
 
@@ -230,11 +309,11 @@ def rdir(direction):
 
 
 def op_enum_name(ri):
-    return f"{ri.family['operations']['name-prefix']}{ri.op_name.upper()}"
+    return f"{ri.family.op_prefix}{ri.op_name.upper()}"
 
 
 def attr_enum_name(ri, attr):
-    return f"{ri.family['attributes']['spaces'][ri.attr_space]['name-prefix']}{attr.upper()}"
+    return f"{ri.family.attr_spaces[ri.attr_space].name_prefix}{attr.upper()}"
 
 
 def op_prefix(ri, direction, deref=False):
@@ -259,8 +338,8 @@ def op_prefix(ri, direction, deref=False):
 
 
 def op_aspec(ri, attr):
-    aspace = ri.family["attributes"]["spaces"][ri.op['attribute-space']]
-    return aspace["list"][attr]
+    aspace = ri.family.attr_spaces[ri.op['attribute-space']]
+    return aspace[attr]
 
 
 def type_name(ri, direction, deref=False):
@@ -276,8 +355,8 @@ def nest_type_name(ri, attr_space):
 
 
 def attribute_policy(ri, attr, prototype=True, suffix=""):
-    aspace = ri.family["attributes"]["spaces"][ri.attr_space]
-    spec = aspace["list"][attr]
+    aspace = ri.family.attr_spaces[ri.attr_space]
+    spec = aspace[attr]
     policy = 'NLA_' + spec['type'].upper()
     policy = policy.replace('-', '_')
 
@@ -286,7 +365,7 @@ def attribute_policy(ri, attr, prototype=True, suffix=""):
         mem += ', .len = ' + str(spec['len'])
     mem += ' }'
 
-    ri.cw.p(f"\t[{aspace['name-prefix']}{attr.upper()}] = {mem},")
+    ri.cw.p(f"\t[{aspace.name_prefix}{attr.upper()}] = {mem},")
 
 
 def _attribute_member_len(spec):
@@ -297,7 +376,7 @@ def _attribute_member_len(spec):
 
 
 def _attribute_member(ri, space, attr, prototype=True, suffix=""):
-    spec = ri.family["attributes"]["spaces"][space]["list"][attr]
+    spec = ri.family.attr_spaces[space][attr]
     scalar_pfx = '__' if ri.ku_space == 'user' else ''
 
     t = spec['type']
@@ -343,7 +422,7 @@ def attribute_member(ri, space, attr, prototype=True, suffix=""):
 
 
 def attribute_pres_member(ri, space, attr, suffix=""):
-    spec = ri.family["attributes"]["spaces"][space]["list"][attr]
+    spec = ri.family.attr_spaces[space][attr]
     pfx = '__' if ri.ku_space == 'user' else ''
 
     if spec['type'] in attr_types_multi:
@@ -355,7 +434,7 @@ def attribute_pres_member(ri, space, attr, suffix=""):
 
 def attribute_setter(ri, space, attr, direction, deref=False, ref=None):
     ref = (ref if ref else []) + [attr]
-    spec = ri.family["attributes"]["spaces"][space]["list"][attr]
+    spec = ri.family.attr_spaces[space][attr]
     var = "req"
     member = f"{var}->{'.'.join(ref)}"
 
@@ -371,7 +450,7 @@ def attribute_setter(ri, space, attr, direction, deref=False, ref=None):
                  f'{member}[{spec["len"]}] = 0;']
     elif spec['type'] == 'nest':
         nested_space = spec['nested-attributes']
-        for nested in ri.family["attributes"]["spaces"][nested_space]['list']:
+        for nested in ri.family.attr_spaces[nested_space]:
             attribute_setter(ri, nested_space, nested, direction, deref=deref, ref=ref)
         return
     else:
@@ -390,7 +469,7 @@ def attribute_setter(ri, space, attr, direction, deref=False, ref=None):
 
 
 def attribute_put(ri, attr, var):
-    spec = ri.family["attributes"]["spaces"][ri.attr_space]["list"][attr]
+    spec = ri.family.attr_spaces[ri.attr_space][attr]
 
     t = None
     if spec['type'] == 'flag':
@@ -418,7 +497,7 @@ def attribute_put(ri, attr, var):
 
 
 def attribute_get(ri, attr, var):
-    spec = ri.family["attributes"]["spaces"][ri.attr_space]["list"][attr]
+    spec = ri.family.attr_spaces[ri.attr_space][attr]
     local_vars = []
     get_lines = []
 
@@ -475,16 +554,16 @@ def attribute_get(ri, attr, var):
 
 
 def attribute_parse_kernel(ri, attr, prototype=True, suffix=""):
-    aspace = ri.family["attributes"]["spaces"][ri.attr_space]
-    spec = aspace["list"][attr]
+    aspace = ri.family.attr_spaces[ri.attr_space]
+    spec = aspace[attr]
 
     t = spec['type']
-    ri.cw.block_start(line=f"if (tb[{aspace['name-prefix']}{attr.upper()}])")
+    ri.cw.block_start(line=f"if (tb[{aspace.name_prefix}{attr.upper()}])")
     ri.cw.p(f"req->{attr}_present = 1;")
     if t in scalars:
-        ri.cw.p(f"req->{attr} = nla_get_{t}(tb[{aspace['name-prefix']}{attr.upper()}]);")
+        ri.cw.p(f"req->{attr} = nla_get_{t}(tb[{aspace.name_prefix}{attr.upper()}]);")
     elif t == 'nul-string':
-        ri.cw.p(f"strcpy(req->{attr}, nla_data(tb[{aspace['name-prefix']}{attr.upper()}]));")
+        ri.cw.p(f"strcpy(req->{attr}, nla_data(tb[{aspace.name_prefix}{attr.upper()}]));")
     ri.cw.block_end()
 
 
@@ -526,7 +605,7 @@ def put_req_nested(ri, attr_space):
 
     ri.cw.p("nest = mnl_attr_nest_start(nlh, attr_type);")
 
-    for arg in ri.family['attributes']['spaces'][attr_space]['list']:
+    for arg in ri.family.attr_spaces[attr_space]:
         attribute_put(ri, arg, "obj")
 
     ri.cw.p("mnl_attr_nest_end(nlh, nest);")
@@ -542,7 +621,7 @@ def prep_multi_parse(ri, type_list, array_nests, multi_attrs, local_vars, attr_s
         attr_space = ri.attr_space
 
     for arg in type_list:
-        aspec = ri.family["attributes"]["spaces"][attr_space]["list"][arg]
+        aspec = ri.family.attr_spaces[attr_space][arg]
         if aspec['type'] == 'array-nest':
             local_vars.append(f'const struct nlattr *attr_{arg};')
             array_nests.add(arg)
@@ -562,7 +641,7 @@ def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
         iter_line = "mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr))"
 
     for anest in sorted(array_nests):
-        aspec = ri.family["attributes"]["spaces"][attr_space]["list"][anest]
+        aspec = ri.family.attr_spaces[attr_space][anest]
         ri.cw.block_start(line=f"if (dst->n_{anest})")
         ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, sizeof(*dst->{anest}));")
         ri.cw.p('i = 0;')
@@ -575,7 +654,7 @@ def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
     ri.cw.nl()
 
     for anest in sorted(multi_attrs):
-        aspec = ri.family["attributes"]["spaces"][attr_space]["list"][anest]
+        aspec = ri.family.attr_spaces[attr_space][anest]
         ri.cw.block_start(line=f"if (dst->n_{anest})")
         ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, sizeof(*dst->{anest}));")
         ri.cw.p('i = 0;')
@@ -609,7 +688,7 @@ def parse_rsp_nested(ri, attr_space):
 
     array_nests = set()
     multi_attrs = set()
-    prep_multi_parse(ri, ri.family['attributes']['spaces'][attr_space]['list'],
+    prep_multi_parse(ri, ri.family.attr_spaces[attr_space],
                      array_nests, multi_attrs, local_vars, attr_space=attr_space)
 
     ri.cw.write_func_prot('int', f'{nest_op_prefix(ri, attr_space)}_parse', func_args)
@@ -623,7 +702,7 @@ def parse_rsp_nested(ri, attr_space):
 
     ri.cw.block_start(line="mnl_attr_for_each_nested(attr, nested)")
 
-    for arg in ri.family['attributes']['spaces'][attr_space]['list']:
+    for arg in ri.family.attr_spaces[attr_space]:
         attribute_get(ri, arg, "dst")
 
     ri.cw.block_end()
@@ -819,7 +898,7 @@ def print_type(ri, direction):
 
 
 def print_type_full(ri, attr_space):
-    types = ri.family['attributes']['spaces'][attr_space]['list']
+    types = ri.family.attr_spaces[attr_space]
     _print_type(ri, "", types, ri.family.inherited_members[attr_space])
 
 
@@ -888,7 +967,7 @@ def print_wrapped_type(ri):
 
 def _free_type_members(ri, var, type_list, ref=''):
     for arg in type_list:
-        spec = ri.family["attributes"]["spaces"][ri.attr_space]["list"][arg]
+        spec = ri.family.attr_spaces[ri.attr_space][arg]
         if spec['type'] in attr_types_multi:
             ri.cw.p(f'free({var}->{ref}{arg});')
     ri.cw.p(f'free({var});')
@@ -905,7 +984,7 @@ def _free_type(ri, direction, type_list):
 
 
 def free_rsp_nested(ri, attr_space):
-    types = ri.family['attributes']['spaces'][attr_space]['list']
+    types = ri.family.attr_spaces[attr_space]
     _free_type(ri, "", types)
 
 
@@ -963,10 +1042,10 @@ def print_ntf_type_parse(family, cw, ku_mode):
     cw.nl()
     cw.block_start(line='switch (genlh->cmd)')
     for ntf_op in sorted(family.all_notify.keys()):
-        op = family['operations']['list'][ntf_op]
+        op = family.ops[ntf_op]
         ri = RenderInfo(cw, family, ku_mode, op, ntf_op, "notify")
         for ntf in op['notify']['cmds']:
-            cw.p(f"case {family['operations']['name-prefix']}{ntf.upper()}:")
+            cw.p(f"case {family.op_prefix}{ntf.upper()}:")
         cw.p(f"rsp = calloc(1, sizeof({type_name(ri, 'notify')}));")
         cw.p(f"parse = {op_prefix(ri, 'reply', deref=True)}_parse;")
         cw.p('break;')
@@ -1059,7 +1138,7 @@ def main():
                 ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
                 print_type_full(ri, attr_space)
 
-        for op_name, op in parsed['operations']['list'].items():
+        for op_name, op in parsed.ops.items():
             if not op:
                 continue
 
@@ -1120,10 +1199,7 @@ def main():
                 if 'reply' in parsed.pure_nested_spaces[attr_space]:
                     parse_rsp_nested(ri, attr_space)
 
-        for op_name, op in parsed['operations']['list'].items():
-            if not op:
-                continue
-
+        for op_name, op in parsed.ops.items():
             cw.p(f"/* ============== {parsed['operations']['name-prefix']}{op_name.upper()} ============== */")
 
             if 'do' in op:
