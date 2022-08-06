@@ -223,10 +223,11 @@ class AttrSpace:
 
 
 class Operation:
-    def __init__(self, yaml):
+    def __init__(self, family, yaml):
         self.yaml = yaml
 
         self.name = self.yaml['name']
+        self.enum_name = family.op_prefix + self.name.upper()
 
     def __getitem__(self, key):
         return self.yaml[key]
@@ -283,7 +284,7 @@ class Family:
                 continue
             if 'attribute-space' not in elem:
                 continue
-            self.ops[elem['name']] = Operation(elem)
+            self.ops[elem['name']] = Operation(self, elem)
         for n in ntf:
             self.ops[n['notify']].add_notification(n)
 
@@ -474,10 +475,6 @@ def rdir(direction):
     if direction == 'request':
         return 'reply'
     return direction
-
-
-def op_enum_name(ri):
-    return f"{ri.family.op_prefix}{ri.op_name.upper()}"
 
 
 def attr_enum_name(ri, attr):
@@ -850,7 +847,7 @@ def print_req(ri):
     ri.cw.block_start()
     ri.cw.write_func_lvar(local_vars)
 
-    ri.cw.p(f"nlh = ynl_gemsg_start_req(ys, {ri.nl.get_family_id()}, {op_enum_name(ri)}, 1);")
+    ri.cw.p(f"nlh = ynl_gemsg_start_req(ys, {ri.nl.get_family_id()}, {ri.op.enum_name}, 1);")
     ri.cw.nl()
 
     for arg in ri.op[ri.op_mode]["request"]['attributes']:
@@ -905,7 +902,7 @@ def print_dump(ri):
     ri.cw.p('yds.alloc_sz = sizeof(*rsp);')
     ri.cw.p(f"yds.cb = {op_prefix(ri, 'reply', deref=True)}_parse;")
     ri.cw.nl()
-    ri.cw.p(f"nlh = ynl_gemsg_start_dump(ys, {ri.nl.get_family_id()}, {op_enum_name(ri)}, 1);")
+    ri.cw.p(f"nlh = ynl_gemsg_start_dump(ys, {ri.nl.get_family_id()}, {ri.op.enum_name}, 1);")
     ri.cw.nl()
 
     if "request" in ri.op[ri.op_mode]:
@@ -1194,6 +1191,10 @@ def main():
     cw.nl()
 
     if args.mode == 'uapi':
+        cw.block_start(line='enum')
+        for op_name, op in parsed.ops.items():
+            cw.p(op.enum_name + ',')
+        cw.block_end(line=';')
         return
 
     if args.mode == 'kernel':
