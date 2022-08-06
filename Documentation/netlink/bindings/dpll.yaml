@@ -4,8 +4,7 @@ description: |
   DPLL subsystem.
 
 headers:
-  user: linux/dpll.h
-  kernel: linux/dpll.h
+  uapi: linux/dpll.h
 
 constants:
   -

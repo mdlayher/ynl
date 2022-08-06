@@ -6,8 +6,7 @@ description: |
   accepted messages and attributes.
 
 headers:
-  user: linux/genetlink.h
-  kernel: linux/genetlink.h
+  uapi: linux/genetlink.h
 
 attribute-spaces:
   -

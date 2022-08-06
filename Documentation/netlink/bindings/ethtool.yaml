@@ -52,8 +52,8 @@ attribute-spaces:
         type: u32
 
 headers:
-  user: [ linux/ethtool_netlink.h, linux/if.h ]
-  kernel: linux/ethtool_netlink.h
+  user: linux/if.h
+  uapi: linux/ethtool_netlink.h
 
 operations:
   name-prefix: ETHTOOL_MSG_

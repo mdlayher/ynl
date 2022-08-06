@@ -473,9 +473,9 @@ def attribute_put(ri, attr, var):
 
     t = None
     if spec['type'] == 'flag':
-        complex = f"mnl_attr_put(nlh, {attr_enum_name(ri, attr)}, 0, NULL)"
+        full_line = f"mnl_attr_put(nlh, {attr_enum_name(ri, attr)}, 0, NULL)"
     elif spec['type'] == 'binary':
-        complex = f"mnl_attr_put(nlh, {attr_enum_name(ri, attr)}, {spec['len']}, {var}->{attr})"
+        full_line = f"mnl_attr_put(nlh, {attr_enum_name(ri, attr)}, {spec['len']}, {var}->{attr})"
     elif spec['type'] in scalars:
         t = spec['type']
         # mnl does not have a helper for signed types
@@ -484,7 +484,7 @@ def attribute_put(ri, attr, var):
     elif spec['type'] == 'nul-string':
         t = 'strz'
     elif spec['type'] == 'nest':
-        complex = f"{nest_op_prefix(ri, spec['nested-attributes'])}_put(nlh, {attr_enum_name(ri, attr)}," +\
+        full_line = f"{nest_op_prefix(ri, spec['nested-attributes'])}_put(nlh, {attr_enum_name(ri, attr)}," +\
                   f" &{var}->{attr})"
     else:
         raise Exception(f"Type {spec['type']} not supported yet")
@@ -492,8 +492,8 @@ def attribute_put(ri, attr, var):
     ri.cw.p(f"if ({var}->{attr}_present)")
     if t:
         ri.cw.p(f"\tmnl_attr_put_{t}(nlh, {attr_enum_name(ri, attr)}, {var}->{attr});")
-    elif complex:
-        ri.cw.p(f"\t{complex};")
+    elif full_line:
+        ri.cw.p(f"\t{full_line};")
 
 
 def attribute_get(ri, attr, var):
@@ -1109,11 +1109,16 @@ def main():
     if args.mode == 'kernel':
         cw.p(f'#include <net/netlink.h>')
         cw.nl()
-    headers = parsed['headers'][args.mode]
-    if type(headers) is str:
-        headers = [headers]
-    for h in headers:
-        cw.p(f"#include <{h}>")
+    headers = []
+    for header_type in ['uapi', args.mode]:
+        if header_type not in parsed['headers']:
+            continue
+        one = parsed['headers'][header_type]
+        if type(one) is str:
+            one = [one]
+        headers += one
+    for one in headers:
+        cw.p(f"#include <{one}>")
     cw.nl()
 
     if args.mode == "user":
@@ -1124,8 +1129,8 @@ def main():
             cw.p("#include <libmnl/libmnl.h>")
             cw.p("#include <linux/genetlink.h>")
             cw.nl()
-            for h in args.user_header:
-                cw.p(f'#include "{h}"')
+            for one in args.user_header:
+                cw.p(f'#include "{one}"')
         else:
             cw.p('struct ynl_sock;')
         cw.nl()
