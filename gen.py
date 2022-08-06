@@ -1163,6 +1163,34 @@ def print_req_policy(ri):
     ri.cw.p("};")
 
 
+def render_uapi(family, cw):
+    for aspace in family['attribute-spaces']:
+        if 'subspace-of' in aspace:
+            continue
+
+        start_line = 'enum'
+        if 'name-enum' in aspace:
+            start_line = 'enum ' + aspace['name-enum']
+        cw.block_start(line=start_line)
+        for attr in aspace['attributes']:
+            attr_name = aspace['name-prefix'] + attr['name'].upper()
+            cw.p(attr_name + ',')
+        cw.nl()
+        cw.p(f"__{aspace['name-prefix']}MAX")
+        cw.block_end(line=';')
+        cw.p(f"#define {aspace['name-prefix']}_MAX (__{aspace['name-prefix']}MAX - 1)")
+        cw.nl()
+
+    start_line = 'enum'
+    if 'name-enum' in family['operations']:
+        start_line = 'enum ' + family['operations']['name-enum']
+    cw.block_start(line=start_line)
+    for op in family['operations']['list']:
+        op_name = family['operations']['name-prefix'] + op['name'].upper()
+        cw.p(op_name + ',')
+    cw.block_end(line=';')
+
+
 def main():
     parser = argparse.ArgumentParser(description='Netlink simple parsing generator')
     parser.add_argument('--mode', dest='mode', type=str, required=True)
@@ -1191,10 +1219,7 @@ def main():
     cw.nl()
 
     if args.mode == 'uapi':
-        cw.block_start(line='enum')
-        for op_name, op in parsed.ops.items():
-            cw.p(op.enum_name + ',')
-        cw.block_end(line=';')
+        render_uapi(parsed, cw)
         return
 
     if args.mode == 'kernel':

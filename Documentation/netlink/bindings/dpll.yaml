@@ -16,6 +16,7 @@ attribute-spaces:
   -
     name: main
     name-prefix: DPLLA_
+    name-enum: dpll_genl_attr
     attributes:
       -
         name: unspec
@@ -100,6 +101,7 @@ attribute-spaces:
 
 operations:
   name-prefix: DPLL_CMD_
+  name-enum: dpll_genl_cmd
   list:
     -
       name: unspec

@@ -58,6 +58,9 @@ properties:
         name-prefix:
           description: Prefix for the C enum name of the attributes.
           type: string
+        name-enum:
+          description: Name for the enum type of the attribute.
+          type: string
         description:
           description: Documentation of the space.
           type: string
@@ -107,6 +110,9 @@ properties:
         description: |
           Prefix for the C enum name of the command. The name is formed by concatenating
           the prefix with the upper case name of the command, with dashes replaced by underscores.
+        type: string
+      name-enum:
+        description: Name for the enum type with commands.
         type: string
       list:
         decription: List of commands
