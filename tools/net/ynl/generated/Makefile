@@ -9,9 +9,10 @@ SRCS=$(patsubst %,%-user.c,${GENS})
 HDRS=$(patsubst %,%-user.h,${GENS})
 KSRCS=$(patsubst %,%-kernel.c,${GENS})
 KHDRS=$(patsubst %,%-kernel.h,${GENS})
+UAPI=$(patsubst %,%-uapi.h,${GENS})
 OBJS=$(patsubst %,%-user.o,${GENS})
 
-all: protos.a $(HDRS) $(SRCS) $(KHDRS) $(KSRCS)
+all: protos.a $(HDRS) $(SRCS) $(KHDRS) $(KSRCS) $(UAPI)
 
 protos.a: $(OBJS)
 	@echo -e "\tAR $@"
@@ -25,6 +26,10 @@ protos.a: $(OBJS)
 	@echo -e "\tGEN $@"
 	@$(TOOL) --mode user --user-header $(patsubst %.c,%.h,$@) ynl.h \
 		--source --spec $< > $@
+
+%-uapi.h: ../../../../Documentation/netlink/bindings/%.yaml $(TOOL)
+	@echo -e "\tGEN $@"
+	@$(TOOL) --mode uapi --header --spec $< > $@
 
 %-kernel.h: ../../../../Documentation/netlink/bindings/%.yaml $(TOOL)
 	@echo -e "\tGEN $@"

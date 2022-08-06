@@ -1192,6 +1192,10 @@ def main():
     cw.p(f"//\t{args.spec}")
     cw.p(f"// {' '.join(os.sys.argv)}")
     cw.nl()
+
+    if args.mode == 'uapi':
+        return
+
     if args.mode == 'kernel':
         cw.p(f'#include <net/netlink.h>')
         cw.nl()
