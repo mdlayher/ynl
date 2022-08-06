@@ -24,6 +24,9 @@ class Type:
         if 'nested-attributes' in attr:
             self.nested_attrs = attr['nested-attributes']
 
+    def is_multi_val(self):
+        return None
+
     def is_scalar(self):
         return self.type in {'u8', 'u16', 'u32', 'u64', 's32', 's64'}
 
@@ -75,11 +78,13 @@ class TypeNest(Type):
 
 
 class TypeMultiAttr(Type):
-    pass
+    def is_multi_val(self):
+        return True
 
 
 class TypeArrayNest(Type):
-    pass
+    def is_multi_val(self):
+        return True
 
 
 class TypeNestTypeValue(Type):
@@ -374,7 +379,6 @@ class CodeWriter:
 
 
 scalars = {'u8', 'u16', 'u32', 'u64', 's32', 's64'}
-attr_types_multi = {'array-nest', 'multi-attr'}
 
 direction_to_suffix = {
     'reply': '_rsp',
@@ -520,7 +524,7 @@ def attribute_pres_member(ri, space, attr, suffix=""):
     spec = ri.family.attr_spaces[space][attr]
     pfx = '__' if ri.ku_space == 'user' else ''
 
-    if spec['type'] in attr_types_multi:
+    if spec.typed.is_multi_val():
         return False
 
     ri.cw.p(f"{pfx}u32 {attr}_present:1{suffix}")
@@ -612,7 +616,7 @@ def attribute_get(ri, attr, var):
             ri.cw.p(l)
         ri.cw.nl()
 
-    if spec['type'] not in attr_types_multi:
+    if not spec.typed.is_multi_val():
         ri.cw.p(f"{var}->{attr}_present = 1;")
 
     for line in get_lines:
@@ -1037,7 +1041,7 @@ def print_wrapped_type(ri):
 def _free_type_members(ri, var, type_list, ref=''):
     for arg in type_list:
         spec = ri.family.attr_spaces[ri.attr_space][arg]
-        if spec['type'] in attr_types_multi:
+        if spec.typed.is_multi_val():
             ri.cw.p(f'free({var}->{ref}{arg});')
     ri.cw.p(f'free({var});')
 
