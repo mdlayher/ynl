@@ -14,9 +14,102 @@ class BaseNlLib:
         return 'ys->family_id'
 
 
+class Type:
+    def __init__(self, attr):
+        self.attr = attr
+        self.name = attr['name']
+        self.type = attr['type']
+        if 'len' in attr:
+            self.len = attr['len']
+        if 'nested-attributes' in attr:
+            self.nested_attrs = attr['nested-attributes']
+
+    def is_scalar(self):
+        return self.type in {'u8', 'u16', 'u32', 'u64', 's32', 's64'}
+
+    def _attr_put_line(self, ri, var, line):
+        ri.cw.p(f"if ({var}->{self.name}_present)")
+        ri.cw.p(f"{line};", add_ind=1)
+
+    def _attr_put_simple(self, ri, var, put_type):
+        line = f"mnl_attr_put_{put_type}(nlh, {attr_enum_name(ri, self.name)}, {var}->{self.name})"
+        self._attr_put_line(ri, var, line)
+
+    def attr_put(self, ri, var):
+        raise Exception(f"Put not implemented for class type {self.type}")
+
+
+class TypeUnused(Type):
+    pass
+
+
+class TypeScalar(Type):
+    def attr_put(self, ri, var):
+        t = self.type
+        # mnl does not have a helper for signed types
+        if t[0] == 's':
+            t = 'u' + t[1:]
+        self._attr_put_simple(ri, var, t)
+
+
+class TypeFlag(Type):
+    def attr_put(self, ri, var):
+        self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {attr_enum_name(ri, self.name)}, 0, NULL)")
+
+
+class TypeNulString(Type):
+    def attr_put(self, ri, var):
+        self._attr_put_simple(ri, var, 'strz')
+
+
+class TypeBinary(Type):
+    def attr_put(self, ri, var):
+        self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {attr_enum_name(ri, self.name)}, " +
+                            f"{self.len}, {var}->{self.name})")
+
+
+class TypeNest(Type):
+    def attr_put(self, ri, var):
+        self._attr_put_line(ri, var, f"{nest_op_prefix(ri, self.nested_attrs)}_put(nlh, " +
+                            f"{attr_enum_name(ri, self.name)}, &{var}->{self.name})")
+
+
+class TypeMultiAttr(Type):
+    pass
+
+
+class TypeArrayNest(Type):
+    pass
+
+
+class TypeNestTypeValue(Type):
+    pass
+
+
 class Attribute:
     def __init__(self, yaml):
         self.yaml = yaml
+
+        if yaml['type'] in scalars:
+            self.typed = TypeScalar(self)
+        elif yaml['type'] == 'unused':
+            self.typed = TypeUnused(self)
+        elif yaml['type'] == 'flag':
+            self.typed = TypeFlag(self)
+        elif yaml['type'] == 'nul-string':
+            self.typed = TypeNulString(self)
+        elif yaml['type'] == 'binary':
+            self.typed = TypeBinary(self)
+        elif yaml['type'] == 'nest':
+            self.typed = TypeNest(self)
+        elif yaml['type'] == 'multi-attr':
+            self.typed = TypeMultiAttr(self)
+        elif yaml['type'] == 'array-nest':
+            self.typed = TypeArrayNest(self)
+        elif yaml['type'] == 'nest-type-value':
+            self.typed = TypeNestTypeValue(self)
+        else:
+            raise Exception(f"No typed class for type {yaml['type']}")
 
         c_name = yaml['name']
         if c_name in c_kw:
@@ -206,13 +299,15 @@ class CodeWriter:
         self._nl = False
         self._ind = 0
 
-    def p(self, line):
+    def p(self, line, add_ind=0):
         if self._nl:
             print()
             self._nl = False
         ind = self._ind
         if line[-1] == ':':
             ind -= 1
+        if add_ind:
+            ind += add_ind
         print('\t' * ind + line)
 
     def nl(self):
@@ -468,34 +563,6 @@ def attribute_setter(ri, space, attr, direction, deref=False, ref=None):
     ri.cw.block_end()
 
 
-def attribute_put(ri, attr, var):
-    spec = ri.family.attr_spaces[ri.attr_space][attr]
-
-    t = None
-    if spec['type'] == 'flag':
-        full_line = f"mnl_attr_put(nlh, {attr_enum_name(ri, attr)}, 0, NULL)"
-    elif spec['type'] == 'binary':
-        full_line = f"mnl_attr_put(nlh, {attr_enum_name(ri, attr)}, {spec['len']}, {var}->{attr})"
-    elif spec['type'] in scalars:
-        t = spec['type']
-        # mnl does not have a helper for signed types
-        if t[0] == 's':
-            t = 'u' + t[1:]
-    elif spec['type'] == 'nul-string':
-        t = 'strz'
-    elif spec['type'] == 'nest':
-        full_line = f"{nest_op_prefix(ri, spec['nested-attributes'])}_put(nlh, {attr_enum_name(ri, attr)}," +\
-                  f" &{var}->{attr})"
-    else:
-        raise Exception(f"Type {spec['type']} not supported yet")
-
-    ri.cw.p(f"if ({var}->{attr}_present)")
-    if t:
-        ri.cw.p(f"\tmnl_attr_put_{t}(nlh, {attr_enum_name(ri, attr)}, {var}->{attr});")
-    elif full_line:
-        ri.cw.p(f"\t{full_line};")
-
-
 def attribute_get(ri, attr, var):
     spec = ri.family.attr_spaces[ri.attr_space][attr]
     local_vars = []
@@ -605,8 +672,8 @@ def put_req_nested(ri, attr_space):
 
     ri.cw.p("nest = mnl_attr_nest_start(nlh, attr_type);")
 
-    for arg in ri.family.attr_spaces[attr_space]:
-        attribute_put(ri, arg, "obj")
+    for _, arg in ri.family.attr_spaces[attr_space].items():
+        arg.typed.attr_put(ri, "obj")
 
     ri.cw.p("mnl_attr_nest_end(nlh, nest);")
 
@@ -770,7 +837,8 @@ def print_req(ri):
     ri.cw.nl()
 
     for arg in ri.op[ri.op_mode]["request"]['attributes']:
-        attribute_put(ri, arg, "req")
+        attr = ri.family.attr_spaces[ri.attr_space][arg]
+        attr.typed.attr_put(ri, "req")
     ri.cw.nl()
 
     ri.cw.p(f"""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
@@ -825,7 +893,8 @@ def print_dump(ri):
 
     if "request" in ri.op[ri.op_mode]:
         for arg in ri.op[ri.op_mode]["request"]['attributes']:
-            attribute_put(ri, arg, "req")
+            attr = ri.family.attr_spaces[ri.attr_space][arg]
+            attr.typed.attr_put(ri, "req")
         ri.cw.nl()
 
     ri.cw.p(f"""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
