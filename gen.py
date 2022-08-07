@@ -256,6 +256,7 @@ class Family:
         if 'constants' not in self.yaml:
             self.yaml['constants'] = []
 
+        self.name = self.yaml['name']
         self.op_prefix = self.yaml['operations']['name-prefix']
 
         # dict space-name -> 'request': set(attrs), 'reply': set(attrs)
@@ -1185,9 +1186,8 @@ def print_req_policy(ri):
 
 
 def render_uapi(family, cw):
-    defines = []
-    defines.append((family["name"].upper() + '_FAMILY_NAME', family["name"]), )
-    defines.append((family["name"].upper() + '_VERSION', family.get('version', 1)), )
+    defines = [(family["name"].upper() + '_FAMILY_NAME', family["name"]),
+               (family["name"].upper() + '_VERSION', family.get('version', 1))]
     cw.writes_defines(defines)
     cw.nl()
 
@@ -1197,7 +1197,7 @@ def render_uapi(family, cw):
 
         start_line = 'enum'
         if 'name-enum' in aspace:
-            start_line = 'enum ' + aspace['name-enum']
+            start_line = 'enum ' + family.name + '_' + aspace['name-enum']
         cw.block_start(line=start_line)
         for attr in aspace['attributes']:
             attr_name = aspace['name-prefix'] + attr['name'].upper()
@@ -1210,7 +1210,7 @@ def render_uapi(family, cw):
 
     start_line = 'enum'
     if 'name-enum' in family['operations']:
-        start_line = 'enum ' + family['operations']['name-enum']
+        start_line = 'enum ' + family.name + '_' + family['operations']['name-enum']
     cw.block_start(line=start_line)
     for op in family['operations']['list']:
         op_name = family['operations']['name-prefix'] + op['name'].upper()
