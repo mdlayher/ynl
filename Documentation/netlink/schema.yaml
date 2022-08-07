@@ -118,6 +118,9 @@ properties:
               nested-attributes:
                 description: Name of the space (sub-space) used inside the attribute.
                 type: string
+              enum:
+                description: Name of the enum used for the atttribute.
+                type: string
               flags-mask:
                 description: Name of the flags constant on which to base mask (unsigned scalar types only).
                 type: string

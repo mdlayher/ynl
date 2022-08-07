@@ -55,6 +55,7 @@ attribute-spaces:
       -
         name: source_type
         type: u32
+        enum: genl_signal_type
       -
         name: source_supported
         type: u32
@@ -69,18 +70,21 @@ attribute-spaces:
       -
         name: output_type
         type: u32
+        enum: genl_signal_type
       -
         name: output_supported
         type: u32
       -
         name: status
         type: u32
+        enum: genl_status
       -
         name: temp
         type: u32
       -
         name: lock_status
         type: u32
+        enum: genl_lock_status
       -
         name: flags
         type: u32
@@ -96,6 +100,7 @@ attribute-spaces:
       -
         name: output_type
         type: u32
+        enum: genl_signal_type
       -
         name: output_supported
         type: multi-attr
@@ -111,6 +116,7 @@ attribute-spaces:
       -
         name: source_type
         type: u32
+        enum: genl_signal_type
       -
         name: source_supported
         type: multi-attr
