@@ -253,6 +253,9 @@ class Family:
 
         jsonschema.validate(self.yaml, schema)
 
+        if 'constants' not in self.yaml:
+            self.yaml['constants'] = []
+
         self.op_prefix = self.yaml['operations']['name-prefix']
 
         # dict space-name -> 'request': set(attrs), 'reply': set(attrs)
@@ -272,6 +275,9 @@ class Family:
 
     def __getitem__(self, key):
         return self.yaml[key]
+
+    def get(self, key, default=None):
+        return self.yaml.get(key, default)
 
     def _dictify(self):
         for elem in self.yaml['attribute-spaces']:
@@ -446,6 +452,21 @@ class CodeWriter:
         for var in local_vars:
             self.p(var)
         self.nl()
+
+    def writes_defines(self, defines):
+        longest = 0
+        for define in defines:
+            if len(define[0]) > longest:
+                longest = len(define[0])
+        longest = ((longest + 8) // 8) * 8
+        for define in defines:
+            line = '#define ' + define[0]
+            line += '\t' * ((longest - len(define[0]) + 7) // 8)
+            if type(define[1]) is int:
+                line += str(define[1])
+            elif type(define[1]) is str:
+                line += '"' + define[1] + '"'
+            self.p(line)
 
 
 scalars = {'u8', 'u16', 'u32', 'u64', 's32', 's64'}
@@ -1164,6 +1185,12 @@ def print_req_policy(ri):
 
 
 def render_uapi(family, cw):
+    defines = []
+    defines.append((family["name"].upper() + '_FAMILY_NAME', family["name"]), )
+    defines.append((family["name"].upper() + '_VERSION', family.get('version', 1)), )
+    cw.writes_defines(defines)
+    cw.nl()
+
     for aspace in family['attribute-spaces']:
         if 'subspace-of' in aspace:
             continue

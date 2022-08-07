@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/dpll.yaml
 // /home/kicinski/devel/linux/gen.py --mode uapi --header --spec ../../../../Documentation/netlink/bindings/dpll.yaml
 
+#define DPLL_FAMILY_NAME	"dpll"
+#define DPLL_VERSION		1
+
 enum dpll_genl_attr {
 	DPLLA_UNSPEC,
 	DPLLA_DEVICE_ID,

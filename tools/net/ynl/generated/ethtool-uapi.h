@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/ethtool.yaml
 // /home/kicinski/devel/linux/gen.py --mode uapi --header --spec ../../../../Documentation/netlink/bindings/ethtool.yaml
 
+#define ETHTOOL_FAMILY_NAME	"ethtool"
+#define ETHTOOL_VERSION		1
+
 enum {
 	ETHTOOL_A_HEADER_DEV_INDEX,
 	ETHTOOL_A_HEADER_DEV_NAME,

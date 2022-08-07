@@ -16,6 +16,9 @@ properties:
   description:
     description: Description of the family
     type: string
+  version:
+    description: Version of the family as defined by genetlink.
+    type: integer
   headers:
     decription: C headers defining the protocol
     type: object

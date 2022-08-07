@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/genetlink.yaml
 // /home/kicinski/devel/linux/gen.py --mode uapi --header --spec ../../../../Documentation/netlink/bindings/genetlink.yaml
 
+#define NLCTRL_FAMILY_NAME	"nlctrl"
+#define NLCTRL_VERSION		1
+
 enum {
 	CTRL_ATTR_FAMILY_ID,
 	CTRL_ATTR_FAMILY_NAME,

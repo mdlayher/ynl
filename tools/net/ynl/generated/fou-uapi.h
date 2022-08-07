@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/fou.yaml
 // /home/kicinski/devel/linux/gen.py --mode uapi --header --spec ../../../../Documentation/netlink/bindings/fou.yaml
 
+#define FOU_FAMILY_NAME	"fou"
+#define FOU_VERSION	1
+
 enum {
 	FOU_ATTR_UNSPEC,
 	FOU_ATTR_PORT,

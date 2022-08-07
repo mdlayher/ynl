@@ -8,12 +8,9 @@ headers:
 
 constants:
   -
-    type: family-name
-  -
-    type: version
-  -
     type: enum
     name: encap_type
+    value-prefix: FOU_ENCAP_
     value: [ UNSPEC, DIRECT, GUE ]
 
 attribute-spaces:
