@@ -40,10 +40,26 @@ properties:
         description: Additional headers on which the protocol definition depends (user side)
         anyOf: *str-or-arrstr
   constants:
-    decription: bla
+    decription: Enums and defines of the protocol
     type: array
     items:
       type: object
+      required: [ name, type ]
+      additionalProperties: False
+      properties:
+        name:
+          type: string
+        type:
+          enum: [ enum ]
+        value-prefix:
+          description: For enum the prefix of the values, optional.
+          type: string
+        values:
+          description: For enum array of values
+          type: array
+          items:
+            type: string
+
   attribute-spaces:
     description: Definition of attribute spaces for this family.
     type: array

@@ -1185,20 +1185,35 @@ def print_req_policy(ri):
     ri.cw.p("};")
 
 
+def uapi_enum_start(family, cw, obj, key):
+    start_line = 'enum'
+    if key in obj:
+        start_line = 'enum ' + family.name + '_' + obj[key]
+    cw.block_start(line=start_line)
+
+
 def render_uapi(family, cw):
     defines = [(family["name"].upper() + '_FAMILY_NAME', family["name"]),
                (family["name"].upper() + '_VERSION', family.get('version', 1))]
     cw.writes_defines(defines)
     cw.nl()
 
+    for const in family['constants']:
+        if const['type'] == 'enum':
+            uapi_enum_start(family, cw, const, 'name')
+            for item in const['values']:
+                item_name = item
+                if 'value-prefix' in const:
+                    item_name = const['value-prefix'] + item.upper()
+                cw.p(item_name + ',')
+            cw.block_end(line=';')
+            cw.nl()
+
     for aspace in family['attribute-spaces']:
         if 'subspace-of' in aspace:
             continue
 
-        start_line = 'enum'
-        if 'name-enum' in aspace:
-            start_line = 'enum ' + family.name + '_' + aspace['name-enum']
-        cw.block_start(line=start_line)
+        uapi_enum_start(family, cw, aspace, 'name-enum')
         for attr in aspace['attributes']:
             attr_name = aspace['name-prefix'] + attr['name'].upper()
             cw.p(attr_name + ',')
@@ -1208,15 +1223,11 @@ def render_uapi(family, cw):
         cw.p(f"#define {aspace['name-prefix']}_MAX (__{aspace['name-prefix']}MAX - 1)")
         cw.nl()
 
-    start_line = 'enum'
-    if 'name-enum' in family['operations']:
-        start_line = 'enum ' + family.name + '_' + family['operations']['name-enum']
-    cw.block_start(line=start_line)
+    uapi_enum_start(family, cw, family['operations'], 'name-enum')
     for op in family['operations']['list']:
         op_name = family['operations']['name-prefix'] + op['name'].upper()
         cw.p(op_name + ',')
     cw.block_end(line=';')
-
 
 def main():
     parser = argparse.ArgumentParser(description='Netlink simple parsing generator')
