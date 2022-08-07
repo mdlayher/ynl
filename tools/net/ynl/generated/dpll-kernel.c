@@ -30,7 +30,7 @@ dpll_device_get_req_parse(const struct nlattr **tb,
 const struct nla_policy dpll_device_get_policy[] = {
 	[DPLLA_DEVICE_ID] = { .type = NLA_U32 },
 	[DPLLA_DEVICE_NAME] = { .type = NLA_NUL_STRING, .len = DPLL_NAME_LENGTH - 1 },
-	[DPLLA_FLAGS] = { .type = NLA_U32 },
+	[DPLLA_FLAGS] = NLA_POLICY_MASK(NLA_U32, 0x7),
 };
 
 /* ============== DPLL_CMD_SET_SOURCE_TYPE ============== */

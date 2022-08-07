@@ -259,15 +259,16 @@ class Family:
         self.name = self.yaml['name']
         self.op_prefix = self.yaml['operations']['name-prefix']
 
+        self.consts = dict()
+        self.ops = dict()
+        self.attr_spaces = dict()
+
         # dict space-name -> 'request': set(attrs), 'reply': set(attrs)
         self.root_spaces = dict()
         # dict space-name -> set('request', 'reply')
         self.pure_nested_spaces = dict()
         self.inherited_members = dict()
         self.all_notify = dict()
-
-        self.ops = dict()
-        self.attr_spaces = dict()
 
         self._dictify()
         self._load_root_spaces()
@@ -281,6 +282,9 @@ class Family:
         return self.yaml.get(key, default)
 
     def _dictify(self):
+        for elem in self.yaml['constants']:
+            self.consts[elem['name']] = elem
+
         for elem in self.yaml['attribute-spaces']:
             self.attr_spaces[elem['name']] = AttrSpace(elem)
 
@@ -544,13 +548,19 @@ def nest_type_name(ri, attr_space):
 def attribute_policy(ri, attr, prototype=True, suffix=""):
     aspace = ri.family.attr_spaces[ri.attr_space]
     spec = aspace[attr]
+
     policy = 'NLA_' + spec['type'].upper()
     policy = policy.replace('-', '_')
 
-    mem = '{ .type = ' + policy
-    if 'len' in spec:
-        mem += ', .len = ' + str(spec['len'])
-    mem += ' }'
+    if 'flags-mask' in spec:
+        flags = ri.family.consts[spec['flags-mask']]
+        flag_cnt = len(flags['values'])
+        mem = f"NLA_POLICY_MASK({policy}, 0x{(1 << flag_cnt) - 1:x})"
+    else:
+        mem = '{ .type = ' + policy
+        if 'len' in spec:
+            mem += ', .len = ' + str(spec['len'])
+        mem += ' }'
 
     ri.cw.p(f"\t[{aspace.name_prefix}{attr.upper()}] = {mem},")
 
@@ -1309,9 +1319,6 @@ def main():
                 print_type_full(ri, attr_space)
 
         for op_name, op in parsed.ops.items():
-            if not op:
-                continue
-
             cw.p(f"/* ============== {parsed['operations']['name-prefix']}{op_name.upper()} ============== */")
 
             if 'do' in op:

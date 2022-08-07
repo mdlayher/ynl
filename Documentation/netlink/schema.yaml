@@ -44,7 +44,7 @@ properties:
     type: array
     items:
       type: object
-      required: [ type ]
+      required: [ type, name ]
       additionalProperties: False
       properties:
         name:
@@ -117,6 +117,9 @@ properties:
               sub-type: *attr-type
               nested-attributes:
                 description: Name of the space (sub-space) used inside the attribute.
+                type: string
+              flags-mask:
+                description: Name of the flags constant on which to base mask (unsigned scalar types only).
                 type: string
   operations:
     decription: Operations supported by the protocol.

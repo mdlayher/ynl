@@ -9,6 +9,7 @@ headers:
 constants:
   -
     type: flags
+    name: genl_get_flags
     value-prefix: DPLL_FLAG_
     values: [ sources, outputs, status ]
 
@@ -68,6 +69,7 @@ attribute-spaces:
       -
         name: flags
         type: u32
+        flags-mask: genl_get_flags
   -
     name: source
     subspace-of: main
