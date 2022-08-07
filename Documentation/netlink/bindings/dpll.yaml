@@ -12,6 +12,21 @@ constants:
     name: genl_get_flags
     value-prefix: DPLL_FLAG_
     values: [ sources, outputs, status ]
+  -
+    type: enum
+    name: genl_status
+    value-prefix: DPLL_STATUS_
+    values: [ none, calibrating, locked ]
+  -
+    type: enum
+    name: genl_signal_type
+    value-prefix: DPLL_TYPE_
+    values: [ none, ext_1pps, ext_10mhz, synce_eth_port, int_oscillator, gnss, custom ]
+  -
+    type: enum
+    name: genl_lock_status
+    value-prefix: DPLL_LOCK_STATUS_
+    values: [ unlocked, ext_1pps, ext_10mhz, synce, int_oscillator, gnss ]
 
 attribute-spaces:
   -
