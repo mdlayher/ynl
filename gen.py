@@ -1203,6 +1203,11 @@ def uapi_enum_start(family, cw, obj, key):
 
 
 def render_uapi(family, cw):
+    hdr_prot = f"_UAPI_LINUX_{family.name.upper()}_H"
+    cw.p('#ifndef ' + hdr_prot)
+    cw.p('#define ' + hdr_prot)
+    cw.nl()
+
     defines = [(family["name"].upper() + '_FAMILY_NAME', family["name"]),
                (family["name"].upper() + '_VERSION', family.get('version', 1))]
     cw.writes_defines(defines)
@@ -1249,6 +1254,9 @@ def render_uapi(family, cw):
         op_name = family['operations']['name-prefix'] + op['name'].upper()
         cw.p(op_name + ',')
     cw.block_end(line=';')
+    cw.nl()
+
+    cw.p(f'#endif /* {hdr_prot} */')
 
 def main():
     parser = argparse.ArgumentParser(description='Netlink simple parsing generator')

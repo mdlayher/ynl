@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/genetlink.yaml
 // /home/kicinski/devel/linux/gen.py --mode uapi --header --spec ../../../../Documentation/netlink/bindings/genetlink.yaml
 
+#ifndef _UAPI_LINUX_NLCTRL_H
+#define _UAPI_LINUX_NLCTRL_H
+
 #define NLCTRL_FAMILY_NAME	"nlctrl"
 #define NLCTRL_VERSION		1
 
@@ -71,3 +74,5 @@ enum {
 	CTRL_CMD_DELMCAST_GRP,
 	CTRL_CMD_GETPOLICY,
 };
+
+#endif /* _UAPI_LINUX_NLCTRL_H */

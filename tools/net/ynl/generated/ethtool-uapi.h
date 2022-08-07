@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/ethtool.yaml
 // /home/kicinski/devel/linux/gen.py --mode uapi --header --spec ../../../../Documentation/netlink/bindings/ethtool.yaml
 
+#ifndef _UAPI_LINUX_ETHTOOL_H
+#define _UAPI_LINUX_ETHTOOL_H
+
 #define ETHTOOL_FAMILY_NAME	"ethtool"
 #define ETHTOOL_VERSION		1
 
@@ -35,3 +38,5 @@ enum {
 	ETHTOOL_MSG_CHANNELS_NTF,
 	ETHTOOL_MSG_CHANNELS_SET,
 };
+
+#endif /* _UAPI_LINUX_ETHTOOL_H */

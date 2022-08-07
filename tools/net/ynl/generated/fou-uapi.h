@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/fou.yaml
 // /home/kicinski/devel/linux/gen.py --mode uapi --header --spec ../../../../Documentation/netlink/bindings/fou.yaml
 
+#ifndef _UAPI_LINUX_FOU_H
+#define _UAPI_LINUX_FOU_H
+
 #define FOU_FAMILY_NAME	"fou"
 #define FOU_VERSION	1
 
@@ -36,3 +39,5 @@ enum {
 	FOU_CMD_DEL,
 	FOU_CMD_GET,
 };
+
+#endif /* _UAPI_LINUX_FOU_H */
