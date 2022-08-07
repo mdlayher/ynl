@@ -61,7 +61,7 @@ const struct nla_policy dpll_set_source_type_policy[] = {
 	[DPLLA_DEVICE_ID] = { .type = NLA_U32 },
 	[DPLLA_DEVICE_NAME] = { .type = NLA_NUL_STRING, .len = DPLL_NAME_LENGTH - 1 },
 	[DPLLA_SOURCE_ID] = { .type = NLA_U32 },
-	[DPLLA_SOURCE_TYPE] = { .type = NLA_U32 },
+	[DPLLA_SOURCE_TYPE] = NLA_POLICY_MAX(NLA_U32, 7),
 };
 
 /* ============== DPLL_CMD_SET_OUTPUT_TYPE ============== */
@@ -92,5 +92,5 @@ const struct nla_policy dpll_set_output_type_policy[] = {
 	[DPLLA_DEVICE_ID] = { .type = NLA_U32 },
 	[DPLLA_DEVICE_NAME] = { .type = NLA_NUL_STRING, .len = DPLL_NAME_LENGTH - 1 },
 	[DPLLA_OUTPUT_ID] = { .type = NLA_U32 },
-	[DPLLA_OUTPUT_TYPE] = { .type = NLA_U32 },
+	[DPLLA_OUTPUT_TYPE] = NLA_POLICY_MAX(NLA_U32, 7),
 };

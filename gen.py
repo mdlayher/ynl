@@ -556,6 +556,10 @@ def attribute_policy(ri, attr, prototype=True, suffix=""):
         flags = ri.family.consts[spec['flags-mask']]
         flag_cnt = len(flags['values'])
         mem = f"NLA_POLICY_MASK({policy}, 0x{(1 << flag_cnt) - 1:x})"
+    elif 'enum' in spec:
+        enum = ri.family.consts[spec['enum']]
+        cnt = len(enum['values'])
+        mem = f"NLA_POLICY_MAX({policy}, {cnt})"
     else:
         mem = '{ .type = ' + policy
         if 'len' in spec:
