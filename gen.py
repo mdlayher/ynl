@@ -609,7 +609,10 @@ def _attribute_member(ri, space, attr, prototype=True, suffix=""):
     elif t == 'nest' or t == 'nest-type-value':
         t = f"struct {nest_op_prefix(ri, spec['nested-attributes'])} "
     elif t in scalars:
-        t = scalar_pfx + t + ' '
+        if 'enum' in spec:
+            t = f"enum {ri.family.name}_{spec['enum']} "
+        else:
+            t = scalar_pfx + t + ' '
     else:
         raise Exception(f'Type {t} not supported yet')
 

@@ -37,9 +37,9 @@ struct dpll_device_get_rsp {
 	struct dpll_source *source;
 	unsigned int n_output;
 	struct dpll_output *output;
-	u32 status;
+	enum dpll_genl_status status;
 	u32 temp;
-	u32 lock_status;
+	enum dpll_genl_lock_status lock_status;
 };
 
 void dpll_device_get_rsp_free(struct dpll_device_get_rsp *rsp);
@@ -60,7 +60,7 @@ struct dpll_set_source_type_req {
 	u32 device_id;
 	char device_name[DPLL_NAME_LENGTH];
 	u32 source_id;
-	u32 source_type;
+	enum dpll_genl_signal_type source_type;
 };
 
 void dpll_set_source_type_req_free(struct dpll_set_source_type_req *req);
@@ -81,7 +81,7 @@ struct dpll_set_output_type_req {
 	u32 device_id;
 	char device_name[DPLL_NAME_LENGTH];
 	u32 output_id;
-	u32 output_type;
+	enum dpll_genl_signal_type output_type;
 };
 
 void dpll_set_output_type_req_free(struct dpll_set_output_type_req *req);

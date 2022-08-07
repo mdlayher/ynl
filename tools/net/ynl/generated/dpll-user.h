@@ -16,7 +16,7 @@ struct dpll_output {
 	__u32 source_type_present:1;
 
 	__u32 source_id;
-	__u32 source_type;
+	enum dpll_genl_signal_type source_type;
 	unsigned int n_source_supported;
 	__u32 *source_supported;
 };
@@ -26,7 +26,7 @@ struct dpll_source {
 	__u32 output_type_present:1;
 
 	__u32 output_id;
-	__u32 output_type;
+	enum dpll_genl_signal_type output_type;
 	unsigned int n_output_supported;
 	__u32 *output_supported;
 };
@@ -79,9 +79,9 @@ struct dpll_device_get_rsp {
 	struct dpll_source *source;
 	unsigned int n_output;
 	struct dpll_output *output;
-	__u32 status;
+	enum dpll_genl_status status;
 	__u32 temp;
-	__u32 lock_status;
+	enum dpll_genl_lock_status lock_status;
 };
 
 void dpll_device_get_rsp_free(struct dpll_device_get_rsp *rsp);
@@ -100,7 +100,7 @@ struct dpll_set_source_type_req {
 	__u32 device_id;
 	char device_name[DPLL_NAME_LENGTH];
 	__u32 source_id;
-	__u32 source_type;
+	enum dpll_genl_signal_type source_type;
 };
 
 void dpll_set_source_type_req_free(struct dpll_set_source_type_req *req);
@@ -128,7 +128,7 @@ dpll_set_source_type_req_set_source_id(struct dpll_set_source_type_req *req,
 }
 static inline void
 dpll_set_source_type_req_set_source_type(struct dpll_set_source_type_req *req,
-					 __u32 source_type)
+					 enum dpll_genl_signal_type source_type)
 {
 	req->source_type_present = 1;
 	req->source_type = source_type;
@@ -148,7 +148,7 @@ struct dpll_set_output_type_req {
 	__u32 device_id;
 	char device_name[DPLL_NAME_LENGTH];
 	__u32 output_id;
-	__u32 output_type;
+	enum dpll_genl_signal_type output_type;
 };
 
 void dpll_set_output_type_req_free(struct dpll_set_output_type_req *req);
@@ -176,7 +176,7 @@ dpll_set_output_type_req_set_output_id(struct dpll_set_output_type_req *req,
 }
 static inline void
 dpll_set_output_type_req_set_output_type(struct dpll_set_output_type_req *req,
-					 __u32 output_type)
+					 enum dpll_genl_signal_type output_type)
 {
 	req->output_type_present = 1;
 	req->output_type = output_type;
