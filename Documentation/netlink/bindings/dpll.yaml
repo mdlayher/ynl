@@ -6,6 +6,12 @@ description: |
 headers:
   uapi: linux/dpll.h
 
+constants:
+  -
+    type: flags
+    value-prefix: DPLL_FLAG_
+    values: [ sources, outputs, status ]
+
 attribute-spaces:
   -
     name: main

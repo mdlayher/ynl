@@ -44,16 +44,19 @@ properties:
     type: array
     items:
       type: object
-      required: [ name, type ]
+      required: [ type ]
       additionalProperties: False
       properties:
         name:
           type: string
         type:
-          enum: [ enum ]
+          enum: [ enum, flags ]
         value-prefix:
           description: For enum the prefix of the values, optional.
           type: string
+        value-start:
+          description: For enum the literal initializer for the first value.
+          oneOf: [ { type: string }, { type: integer }]
         values:
           description: For enum array of values
           type: array
@@ -110,11 +113,7 @@ properties:
                 items:
                   type: string
               len:
-                oneOf:
-                  -
-                    type: string
-                  -
-                    type: integer
+                oneOf: [ { type: string }, { type: integer }]
               sub-type: *attr-type
               nested-attributes:
                 description: Name of the space (sub-space) used inside the attribute.

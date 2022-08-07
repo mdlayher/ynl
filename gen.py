@@ -1208,6 +1208,17 @@ def render_uapi(family, cw):
                 cw.p(item_name + ',')
             cw.block_end(line=';')
             cw.nl()
+        elif const['type'] == 'flags':
+            uapi_enum_start(family, cw, const, 'name')
+            i = 0
+            for item in const['values']:
+                item_name = item
+                if 'value-prefix' in const:
+                    item_name = const['value-prefix'] + item.upper()
+                cw.p(f'{item_name} = {1 << i},')
+                i += 1
+            cw.block_end(line=';')
+            cw.nl()
 
     for aspace in family['attribute-spaces']:
         if 'subspace-of' in aspace:

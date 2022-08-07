@@ -6,6 +6,12 @@
 #define DPLL_FAMILY_NAME	"dpll"
 #define DPLL_VERSION		1
 
+enum {
+	DPLL_FLAG_SOURCES = 1,
+	DPLL_FLAG_OUTPUTS = 2,
+	DPLL_FLAG_STATUS = 4,
+};
+
 enum dpll_genl_attr {
 	DPLLA_UNSPEC,
 	DPLLA_DEVICE_ID,
