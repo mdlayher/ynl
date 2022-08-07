@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/ethtool.yaml
 // /home/kicinski/devel/linux/gen.py --mode user --user-header ynl.h --header --spec ../../../../Documentation/netlink/bindings/ethtool.yaml
 
+#ifndef _LINUX_ETHTOOL_GEN_H
+#define _LINUX_ETHTOOL_GEN_H
+
 #include <linux/ethtool_netlink.h>
 #include <linux/if.h>
 
@@ -177,3 +180,5 @@ int ethtool_channels_set(struct ynl_sock *ys,
 
 // --------------- Common notification parsing --------------- //
 struct ynl_ntf_base_type *ethtool_ntf_parse(struct ynl_sock *ys);
+
+#endif /* _LINUX_ETHTOOL_GEN_H */

@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/fou.yaml
 // /home/kicinski/devel/linux/gen.py --mode kernel --header --spec ../../../../Documentation/netlink/bindings/fou.yaml
 
+#ifndef _LINUX_FOU_GEN_H
+#define _LINUX_FOU_GEN_H
+
 #include <net/netlink.h>
 
 #include <linux/fou.h>
@@ -117,3 +120,5 @@ void fou_get_req_parse(const struct nlattr **tb, struct fou_get_req *req);
 const struct nla_policy fou_get_policy[];
 
 // FOU_CMD_GET - dump
+
+#endif /* _LINUX_FOU_GEN_H */

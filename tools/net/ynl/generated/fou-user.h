@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/fou.yaml
 // /home/kicinski/devel/linux/gen.py --mode user --user-header ynl.h --header --spec ../../../../Documentation/netlink/bindings/fou.yaml
 
+#ifndef _LINUX_FOU_GEN_H
+#define _LINUX_FOU_GEN_H
+
 #include <linux/fou.h>
 
 struct ynl_sock;
@@ -271,3 +274,5 @@ struct fou_get_list {
 void fou_get_list_free(struct fou_get_list *rsp);
 
 struct fou_get_list *fou_get_dump(struct ynl_sock *ys);
+
+#endif /* _LINUX_FOU_GEN_H */

@@ -1258,6 +1258,7 @@ def render_uapi(family, cw):
 
     cw.p(f'#endif /* {hdr_prot} */')
 
+
 def main():
     parser = argparse.ArgumentParser(description='Netlink simple parsing generator')
     parser.add_argument('--mode', dest='mode', type=str, required=True)
@@ -1288,6 +1289,12 @@ def main():
     if args.mode == 'uapi':
         render_uapi(parsed, cw)
         return
+
+    if args.header:
+        hdr_prot = f"_LINUX_{parsed.name.upper()}_GEN_H"
+        cw.p('#ifndef ' + hdr_prot)
+        cw.p('#define ' + hdr_prot)
+        cw.nl()
 
     if args.mode == 'kernel':
         cw.p(f'#include <net/netlink.h>')
@@ -1372,6 +1379,9 @@ def main():
         if has_ntf:
             cw.p('// --------------- Common notification parsing --------------- //')
             print_ntf_parse_prototype(parsed, cw)
+        cw.nl()
+
+        cw.p(f'#endif /* {hdr_prot} */')
     else:
         if args.mode == "user":
             cw.p('// Common nested types')

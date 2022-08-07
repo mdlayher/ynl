@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/genetlink.yaml
 // /home/kicinski/devel/linux/gen.py --mode user --user-header ynl.h --header --spec ../../../../Documentation/netlink/bindings/genetlink.yaml
 
+#ifndef _LINUX_NLCTRL_GEN_H
+#define _LINUX_NLCTRL_GEN_H
+
 #include <linux/genetlink.h>
 
 struct ynl_sock;
@@ -191,3 +194,5 @@ nlctrl_getpolicy_dump(struct ynl_sock *ys,
 
 // --------------- Common notification parsing --------------- //
 struct ynl_ntf_base_type *nlctrl_ntf_parse(struct ynl_sock *ys);
+
+#endif /* _LINUX_NLCTRL_GEN_H */

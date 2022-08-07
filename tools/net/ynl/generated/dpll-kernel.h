@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/dpll.yaml
 // /home/kicinski/devel/linux/gen.py --mode kernel --header --spec ../../../../Documentation/netlink/bindings/dpll.yaml
 
+#ifndef _LINUX_DPLL_GEN_H
+#define _LINUX_DPLL_GEN_H
+
 #include <net/netlink.h>
 
 #include <linux/dpll.h>
@@ -87,3 +90,5 @@ void
 dpll_set_output_type_req_parse(const struct nlattr **tb,
 			       struct dpll_set_output_type_req *req);
 const struct nla_policy dpll_set_output_type_policy[];
+
+#endif /* _LINUX_DPLL_GEN_H */

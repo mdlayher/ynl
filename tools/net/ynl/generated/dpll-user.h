@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/dpll.yaml
 // /home/kicinski/devel/linux/gen.py --mode user --user-header ynl.h --header --spec ../../../../Documentation/netlink/bindings/dpll.yaml
 
+#ifndef _LINUX_DPLL_GEN_H
+#define _LINUX_DPLL_GEN_H
+
 #include <linux/dpll.h>
 
 struct ynl_sock;
@@ -181,3 +184,5 @@ dpll_set_output_type_req_set_output_type(struct dpll_set_output_type_req *req,
 
 int dpll_set_output_type(struct ynl_sock *ys,
 			 struct dpll_set_output_type_req *req);
+
+#endif /* _LINUX_DPLL_GEN_H */

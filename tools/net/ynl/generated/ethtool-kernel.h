@@ -3,6 +3,9 @@
 //	../../../../Documentation/netlink/bindings/ethtool.yaml
 // /home/kicinski/devel/linux/gen.py --mode kernel --header --spec ../../../../Documentation/netlink/bindings/ethtool.yaml
 
+#ifndef _LINUX_ETHTOOL_GEN_H
+#define _LINUX_ETHTOOL_GEN_H
+
 #include <net/netlink.h>
 
 #include <linux/ethtool_netlink.h>
@@ -70,3 +73,5 @@ void
 ethtool_channels_set_req_parse(const struct nlattr **tb,
 			       struct ethtool_channels_set_req *req);
 const struct nla_policy ethtool_channels_set_policy[];
+
+#endif /* _LINUX_ETHTOOL_GEN_H */
