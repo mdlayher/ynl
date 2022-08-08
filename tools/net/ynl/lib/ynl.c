@@ -12,8 +12,19 @@
 
 #define err(msg...)		fprintf(stderr, msg)
 #define err_ret(ret, msg...)	({ err(msg); ret; })
-#define perr(msg)		fprintf(stderr, "%s: %s\n", (msg), strerror(errno))
 #define perr_ret(ret, msg)	({ perr(msg); ret; })
+
+#define __perr(yse, _msg)			\
+	({					\
+		struct ynl_error *_yse = (yse);	\
+						\
+		if (_yse) {			\
+			_yse->msg = _msg;	\
+			_yse->code = errno;	\
+		}				\
+	})
+
+#define perr(ys, msg) __perr(&(ys)->err, msg)
 
 /* -- Netlink bolier plate */
 
@@ -156,7 +167,24 @@ ynl_gemsg_start_dump(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version)
 			       cmd, version);
 }
 
-struct ynl_sock *ynl_sock_create(const char *family_name)
+int ynl_recv_ack(struct ynl_sock *ys, int ret)
+{
+	if (!ret)
+		return 0;
+
+	ret = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
+	if (ret < 0)
+		return ret;
+	return mnl_cb_run(ys->rx_buf, ret, ys->seq, ys->portid,
+			  ynl_cb_null, NULL);
+}
+
+int ynl_cb_null(const struct nlmsghdr *nlh, void *data)
+{
+	return MNL_CB_ERROR;
+}
+
+struct ynl_sock *ynl_sock_create(const char *family_name, struct ynl_error *yse)
 {
 	struct nlmsghdr *nlh;
 	struct ynl_sock *ys;
@@ -173,18 +201,18 @@ struct ynl_sock *ynl_sock_create(const char *family_name)
 
 	ys->sock = mnl_socket_open(NETLINK_GENERIC);
 	if (!ys->sock) {
-		perr("failed to create a netlink socket");
+		__perr(yse, "failed to create a netlink socket");
 		goto err_free_sock;
 	}
 
 	if (mnl_socket_setsockopt(ys->sock, NETLINK_CAP_ACK,
 				  &one, sizeof(one))) {
-		perr("failed to enable netlink ACK");
+		__perr(yse, "failed to enable netlink ACK");
 		goto err_close_sock;
 	}
 	if (mnl_socket_setsockopt(ys->sock, NETLINK_EXT_ACK,
 				  &one, sizeof(one))) {
-		perr("failed to enable netlink ext ACK");
+		__perr(yse, "failed to enable netlink ext ACK");
 		goto err_close_sock;
 	}
 
@@ -196,7 +224,7 @@ struct ynl_sock *ynl_sock_create(const char *family_name)
 
 	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
 	if (err < 0) {
-		perr("failed to request socket family info");
+		__perr(yse, "failed to request socket family info");
 		goto err_close_sock;
 	}
 
@@ -204,14 +232,14 @@ struct ynl_sock *ynl_sock_create(const char *family_name)
 		err = mnl_socket_recvfrom(ys->sock, ys->rx_buf,
 					  MNL_SOCKET_BUFFER_SIZE);
 		if (err <= 0) {
-			perr("failed to receive the socket family info");
+			__perr(yse, "failed to receive the socket family info");
 			goto err_close_sock;
 		}
 		err = mnl_cb_run2(ys->rx_buf, err, ys->seq, ys->portid,
 				  get_family_id_cb, ys,
 				  mnlg_cb_array, ARRAY_SIZE(mnlg_cb_array));
 		if (err < 0) {
-			perr("failed to receive the socket family info 2");
+			__perr(yse, "failed to receive the socket family info 2");
 			goto err_close_sock;
 		}
 	} while (err > 0);
@@ -232,22 +260,7 @@ void ynl_sock_destroy(struct ynl_sock *ys)
 	free(ys);
 }
 
-int ynl_recv_ack(struct ynl_sock *ys, int ret)
-{
-	if (!ret)
-		return 0;
-
-	ret = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
-	if (ret < 0)
-		return ret;
-	return mnl_cb_run(ys->rx_buf, ret, ys->seq, ys->portid,
-			  ynl_cb_null, NULL);
-}
-
-int ynl_cb_null(const struct nlmsghdr *nlh, void *data)
-{
-	return MNL_CB_ERROR;
-}
+/* YNL specific helpers used by the auto-generated code */
 
 int ynl_dump_trampoline(const struct nlmsghdr *nlh, void *data)
 {

@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	ys = ynl_sock_create("nlctrl");
+	ys = ynl_sock_create("nlctrl", NULL);
 	if (!ys)
 		return 1;
 

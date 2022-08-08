@@ -9,18 +9,33 @@ struct nlmsghdr;
 
 /* Generic mnl helper code */
 
+enum ynl_error_code {
+	YNL_ERROR_NONE = 0,
+	__YNL_ERRNO_END = 4096,
+};
+
+struct ynl_error {
+	enum ynl_error_code code;
+	const char *msg;
+};
+
 struct ynl_sock {
 	struct mnl_socket *sock;
 	__u32 seq;
 	__u32 portid;
 	__u16 family_id;
+
+	struct ynl_error err;
+
 	struct nlmsghdr *nlh;
 	unsigned char *tx_buf;
 	unsigned char *rx_buf;
 	unsigned char raw_buf[];
 };
 
-struct ynl_sock *ynl_sock_create(const char *family_name);
+struct ynl_sock *ynl_sock_alloc(void);
+
+struct ynl_sock *ynl_sock_create(const char *family_name, struct ynl_error *e);
 void ynl_sock_destroy(struct ynl_sock *ys);
 
 struct nlmsghdr *

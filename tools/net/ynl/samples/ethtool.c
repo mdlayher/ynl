@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	ys = ynl_sock_create("ethtool");
+	ys = ynl_sock_create("ethtool", NULL);
 	if (!ys)
 		return 1;
 
