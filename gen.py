@@ -13,6 +13,13 @@ class BaseNlLib:
     def get_family_id(self):
         return 'ys->family_id'
 
+    def parse_cb_run(self, cb, data, is_dump=False, indent=1):
+        if is_dump:
+            return f"mnl_cb_run(ys->rx_buf, len, 0, 0, {cb}, {data})"
+        else:
+            ind = '\n\t\t' + '\t' * indent + ' '
+            return f"mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,{ind}{cb}, {data})"
+
 
 class Type:
     def __init__(self, attr):
@@ -928,8 +935,7 @@ def print_req(ri):
     if 'reply' in ri.op[ri.op_mode]:
         ri.cw.p(f"""rsp = calloc(1, sizeof(*rsp));
 
-	err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
-			 {op_prefix(ri, "reply")}_parse, rsp);
+	err = {ri.nl.parse_cb_run(op_prefix(ri, "reply") + "_parse", 'rsp', False)};
 	if (err < 0)
 		goto err_free;""")
     ri.cw.nl()
@@ -981,8 +987,7 @@ def print_dump(ri):
 		if (len < 0)
 			goto free_list;
 
-		err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
-				 ynl_dump_trampoline, &yds);
+		err = {ri.nl.parse_cb_run('ynl_dump_trampoline', '&yds', False, indent=2)};
 		if (err < 0)
 			goto free_list;
 	{'}'} while (err > 0);
@@ -1200,9 +1205,9 @@ def print_ntf_type_parse(family, cw, ku_mode):
     cw.p('return NULL;')
     cw.block_end()
     cw.nl()
-    cw.p("""err = mnl_cb_run(ys->rx_buf, len, 0, 0, parse, rsp);
-	if (err)
-		goto err_free;""")
+    cw.p(f"err = {cw.nlib.parse_cb_run('parse', 'rsp', True)};")
+    cw.p('if (err)')
+    cw.p('\tgoto err_free;')
     cw.nl()
     cw.p('rsp->family = nlh->nlmsg_type;')
     cw.p('rsp->cmd = genlh->cmd;')
