@@ -104,9 +104,12 @@ void dpll_device_get_rsp_free(struct dpll_device_get_rsp *rsp)
 
 int dpll_device_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 {
-	struct dpll_device_get_rsp *dst = data;
+	struct ynl_parse_arg *yarg = data;
+	struct dpll_device_get_rsp *dst;
 	const struct nlattr *attr;
 	int i;
+
+	dst = yarg->data;
 
 	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 		if (mnl_attr_get_type(attr) == DPLLA_DEVICE_ID) {
@@ -165,6 +168,7 @@ int dpll_device_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 struct dpll_device_get_rsp *
 dpll_device_get(struct ynl_sock *ys, struct dpll_device_get_req *req)
 {
+	struct ynl_parse_arg yarg = { .ys = ys, };
 	struct dpll_device_get_rsp *rsp;
 	struct nlmsghdr *nlh;
 	int len, err;
@@ -187,9 +191,11 @@ dpll_device_get(struct ynl_sock *ys, struct dpll_device_get_req *req)
 		return NULL;
 
 	rsp = calloc(1, sizeof(*rsp));
+	yarg.data = rsp;
 
-	err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
-			 dpll_device_get_rsp_parse, rsp);
+	err = mnl_cb_run2(ys->rx_buf, len, ys->seq, ys->portid,
+			 dpll_device_get_rsp_parse, &yarg,
+			 ynl_cb_array, NLMSG_MIN_TYPE);
 	if (err < 0)
 		goto err_free;
 

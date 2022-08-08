@@ -14,11 +14,12 @@ class BaseNlLib:
         return 'ys->family_id'
 
     def parse_cb_run(self, cb, data, is_dump=False, indent=1):
+        ind = '\n\t\t' + '\t' * indent + ' '
         if is_dump:
-            return f"mnl_cb_run(ys->rx_buf, len, 0, 0, {cb}, {data})"
+            return f"mnl_cb_run2(ys->rx_buf, len, 0, 0, {cb}, {data},{ind}ynl_cb_array, NLMSG_MIN_TYPE)"
         else:
-            ind = '\n\t\t' + '\t' * indent + ' '
-            return f"mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,{ind}{cb}, {data})"
+            return f"mnl_cb_run2(ys->rx_buf, len, ys->seq, ys->portid,{ind}{cb}, {data},{ind}" + \
+                   "ynl_cb_array, NLMSG_MIN_TYPE)"
 
 
 class Type:
@@ -871,7 +872,8 @@ def parse_rsp_msg(ri, deref=False):
     func_args = ['const struct nlmsghdr *nlh',
                  'void *data']
 
-    local_vars = [f'{struct_type} *dst = data;',
+    local_vars = [f'{struct_type} *dst;',
+                  'struct ynl_parse_arg *yarg = data;',
                   'const struct nlattr *attr;']
 
     array_nests = set()
@@ -883,6 +885,8 @@ def parse_rsp_msg(ri, deref=False):
     ri.cw.block_start()
     ri.cw.write_func_lvar(local_vars)
 
+    ri.cw.p('dst = yarg->data;')
+    ri.cw.nl()
     ri.cw.block_start(line="mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr))")
 
     for arg in ri.op[ri.op_mode]["reply"]['attributes']:
@@ -909,7 +913,8 @@ def print_req(ri):
     if 'reply' in ri.op[ri.op_mode]:
         ret_ok = 'rsp'
         ret_err = 'NULL'
-        local_vars += [f'{type_name(ri, rdir(direction))} *rsp;']
+        local_vars += [f'{type_name(ri, rdir(direction))} *rsp;',
+                       'struct ynl_parse_arg yarg = { .ys = ys, };']
 
     print_prototype(ri, direction, terminate=False)
     ri.cw.block_start()
@@ -934,8 +939,9 @@ def print_req(ri):
 
     if 'reply' in ri.op[ri.op_mode]:
         ri.cw.p(f"""rsp = calloc(1, sizeof(*rsp));
+	yarg.data = rsp;
 
-	err = {ri.nl.parse_cb_run(op_prefix(ri, "reply") + "_parse", 'rsp', False)};
+	err = {ri.nl.parse_cb_run(op_prefix(ri, "reply") + "_parse", '&yarg', False)};
 	if (err < 0)
 		goto err_free;""")
     ri.cw.nl()
@@ -966,6 +972,7 @@ def print_dump(ri):
         ri.cw.p(f'{var}')
     ri.cw.nl()
 
+    ri.cw.p('yds.ys = ys;')
     ri.cw.p('yds.alloc_sz = sizeof(*rsp);')
     ri.cw.p(f"yds.cb = {op_prefix(ri, 'reply', deref=True)}_parse;")
     ri.cw.nl()
@@ -1182,6 +1189,7 @@ def print_ntf_type_parse(family, cw, ku_mode):
     cw.block_start()
     cw.write_func_lvar(['struct genlmsghdr *genlh;',
                         'struct nlmsghdr *nlh;',
+                        'struct ynl_parse_arg yarg = { .ys = ys, };',
                         'struct ynl_ntf_base_type *rsp;',
                         'int len, err;',
                         'mnl_cb_t parse;'])
@@ -1205,7 +1213,9 @@ def print_ntf_type_parse(family, cw, ku_mode):
     cw.p('return NULL;')
     cw.block_end()
     cw.nl()
-    cw.p(f"err = {cw.nlib.parse_cb_run('parse', 'rsp', True)};")
+    cw.p('yarg.data = rsp;')
+    cw.nl()
+    cw.p(f"err = {cw.nlib.parse_cb_run('parse', '&yarg', True)};")
     cw.p('if (err)')
     cw.p('\tgoto err_free;')
     cw.nl()

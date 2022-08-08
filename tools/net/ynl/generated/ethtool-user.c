@@ -71,8 +71,11 @@ void ethtool_channels_get_rsp_free(struct ethtool_channels_get_rsp *rsp)
 
 int ethtool_channels_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 {
-	struct ethtool_channels_get_rsp *dst = data;
+	struct ethtool_channels_get_rsp *dst;
+	struct ynl_parse_arg *yarg = data;
 	const struct nlattr *attr;
+
+	dst = yarg->data;
 
 	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_HEADER) {
@@ -119,6 +122,7 @@ int ethtool_channels_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 struct ethtool_channels_get_rsp *
 ethtool_channels_get(struct ynl_sock *ys, struct ethtool_channels_get_req *req)
 {
+	struct ynl_parse_arg yarg = { .ys = ys, };
 	struct ethtool_channels_get_rsp *rsp;
 	struct nlmsghdr *nlh;
 	int len, err;
@@ -137,9 +141,11 @@ ethtool_channels_get(struct ynl_sock *ys, struct ethtool_channels_get_req *req)
 		return NULL;
 
 	rsp = calloc(1, sizeof(*rsp));
+	yarg.data = rsp;
 
-	err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
-			 ethtool_channels_get_rsp_parse, rsp);
+	err = mnl_cb_run2(ys->rx_buf, len, ys->seq, ys->portid,
+			 ethtool_channels_get_rsp_parse, &yarg,
+			 ynl_cb_array, NLMSG_MIN_TYPE);
 	if (err < 0)
 		goto err_free;
 
@@ -175,6 +181,7 @@ ethtool_channels_get_dump(struct ynl_sock *ys)
 	struct nlmsghdr *nlh;
 	int len, err;
 
+	yds.ys = ys;
 	yds.alloc_sz = sizeof(*rsp);
 	yds.cb = ethtool_channels_get_rsp_parse;
 
@@ -189,8 +196,9 @@ ethtool_channels_get_dump(struct ynl_sock *ys)
 		if (len < 0)
 			goto free_list;
 
-		err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
-				 ynl_dump_trampoline, &yds);
+		err = mnl_cb_run2(ys->rx_buf, len, ys->seq, ys->portid,
+				 ynl_dump_trampoline, &yds,
+				 ynl_cb_array, NLMSG_MIN_TYPE);
 		if (err < 0)
 			goto free_list;
 	} while (err > 0);
@@ -255,6 +263,7 @@ err_free:
 // --------------- Common notification parsing --------------- //
 struct ynl_ntf_base_type *ethtool_ntf_parse(struct ynl_sock *ys)
 {
+	struct ynl_parse_arg yarg = { .ys = ys, };
 	struct ynl_ntf_base_type *rsp;
 	struct genlmsghdr *genlh;
 	struct nlmsghdr *nlh;
@@ -277,7 +286,10 @@ struct ynl_ntf_base_type *ethtool_ntf_parse(struct ynl_sock *ys)
 		return NULL;
 	}
 
-	err = mnl_cb_run(ys->rx_buf, len, 0, 0, parse, rsp);
+	yarg.data = rsp;
+
+	err = mnl_cb_run2(ys->rx_buf, len, 0, 0, parse, &yarg,
+			 ynl_cb_array, NLMSG_MIN_TYPE);
 	if (err)
 		goto err_free;
 

@@ -265,6 +265,7 @@ int ynl_dump_trampoline(const struct nlmsghdr *nlh, void *data)
 {
 	struct ynl_dump_state *ds = data;
 	struct ynl_dump_list_type *obj;
+	struct ynl_parse_arg yarg = {};
 
 	obj = calloc(1, ds->alloc_sz);
 	if (!obj)
@@ -276,5 +277,8 @@ int ynl_dump_trampoline(const struct nlmsghdr *nlh, void *data)
 		ds->last->next = obj;
 	ds->last = obj;
 
-	return ds->cb(nlh, obj->data);
+	yarg.ys = ds->ys;
+	yarg.data = &obj->data;
+
+	return ds->cb(nlh, &yarg);
 }

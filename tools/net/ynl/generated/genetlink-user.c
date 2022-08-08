@@ -169,11 +169,14 @@ void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *rsp)
 
 int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 {
-	struct nlctrl_getfamily_rsp *dst = data;
 	const struct nlattr *attr_mcast_groups;
+	struct ynl_parse_arg *yarg = data;
+	struct nlctrl_getfamily_rsp *dst;
 	const struct nlattr *attr_ops;
 	const struct nlattr *attr;
 	int i;
+
+	dst = yarg->data;
 
 	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_FAMILY_ID) {
@@ -236,6 +239,7 @@ int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 struct nlctrl_getfamily_rsp *
 nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req)
 {
+	struct ynl_parse_arg yarg = { .ys = ys, };
 	struct nlctrl_getfamily_rsp *rsp;
 	struct nlmsghdr *nlh;
 	int len, err;
@@ -256,9 +260,11 @@ nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req)
 		return NULL;
 
 	rsp = calloc(1, sizeof(*rsp));
+	yarg.data = rsp;
 
-	err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
-			 nlctrl_getfamily_rsp_parse, rsp);
+	err = mnl_cb_run2(ys->rx_buf, len, ys->seq, ys->portid,
+			 nlctrl_getfamily_rsp_parse, &yarg,
+			 ynl_cb_array, NLMSG_MIN_TYPE);
 	if (err < 0)
 		goto err_free;
 
@@ -295,6 +301,7 @@ struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys)
 	struct nlmsghdr *nlh;
 	int len, err;
 
+	yds.ys = ys;
 	yds.alloc_sz = sizeof(*rsp);
 	yds.cb = nlctrl_getfamily_rsp_parse;
 
@@ -309,8 +316,9 @@ struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys)
 		if (len < 0)
 			goto free_list;
 
-		err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
-				 ynl_dump_trampoline, &yds);
+		err = mnl_cb_run2(ys->rx_buf, len, ys->seq, ys->portid,
+				 ynl_dump_trampoline, &yds,
+				 ynl_cb_array, NLMSG_MIN_TYPE);
 		if (err < 0)
 			goto free_list;
 	} while (err > 0);
@@ -339,8 +347,11 @@ void nlctrl_getfamily_ntf_free(struct nlctrl_getfamily_ntf *rsp)
 // CTRL_CMD_GETPOLICY - dump
 int nlctrl_getpolicy_rsp_dump_parse(const struct nlmsghdr *nlh, void *data)
 {
-	struct nlctrl_getpolicy_rsp_dump *dst = data;
+	struct nlctrl_getpolicy_rsp_dump *dst;
+	struct ynl_parse_arg *yarg = data;
 	const struct nlattr *attr;
+
+	dst = yarg->data;
 
 	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_FAMILY_ID) {
@@ -393,6 +404,7 @@ nlctrl_getpolicy_dump(struct ynl_sock *ys,
 	struct nlmsghdr *nlh;
 	int len, err;
 
+	yds.ys = ys;
 	yds.alloc_sz = sizeof(*rsp);
 	yds.cb = nlctrl_getpolicy_rsp_dump_parse;
 
@@ -414,8 +426,9 @@ nlctrl_getpolicy_dump(struct ynl_sock *ys,
 		if (len < 0)
 			goto free_list;
 
-		err = mnl_cb_run(ys->rx_buf, len, ys->seq, ys->portid,
-				 ynl_dump_trampoline, &yds);
+		err = mnl_cb_run2(ys->rx_buf, len, ys->seq, ys->portid,
+				 ynl_dump_trampoline, &yds,
+				 ynl_cb_array, NLMSG_MIN_TYPE);
 		if (err < 0)
 			goto free_list;
 	} while (err > 0);
@@ -435,6 +448,7 @@ free_list:
 // --------------- Common notification parsing --------------- //
 struct ynl_ntf_base_type *nlctrl_ntf_parse(struct ynl_sock *ys)
 {
+	struct ynl_parse_arg yarg = { .ys = ys, };
 	struct ynl_ntf_base_type *rsp;
 	struct genlmsghdr *genlh;
 	struct nlmsghdr *nlh;
@@ -460,7 +474,10 @@ struct ynl_ntf_base_type *nlctrl_ntf_parse(struct ynl_sock *ys)
 		return NULL;
 	}
 
-	err = mnl_cb_run(ys->rx_buf, len, 0, 0, parse, rsp);
+	yarg.data = rsp;
+
+	err = mnl_cb_run2(ys->rx_buf, len, 0, 0, parse, &yarg,
+			 ynl_cb_array, NLMSG_MIN_TYPE);
 	if (err)
 		goto err_free;
 
