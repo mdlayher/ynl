@@ -10,104 +10,59 @@
 
 #define ARRAY_SIZE(arr)		(sizeof(arr) / sizeof(*arr))
 
-#define err(msg...)		fprintf(stderr, msg)
-#define err_ret(ret, msg...)	({ err(msg); ret; })
-#define perr_ret(ret, msg)	({ perr(msg); ret; })
-
-#define __perr(yse, _msg)			\
+#define __err(yse, _code, _msg)			\
 	({					\
 		struct ynl_error *_yse = (yse);	\
 						\
 		if (_yse) {			\
 			_yse->msg = _msg;	\
-			_yse->code = errno;	\
+			_yse->code = _code;	\
 		}				\
 	})
 
-#define perr(ys, msg) __perr(&(ys)->err, msg)
+#define __perr(yse, _msg)		__err(yse, errno, _msg)
+
+#define err(_ys, _code, _msg)		__err(&(_ys)->err, _code, _msg)
+#define perr(_ys, _msg)			__err(&(_ys)->err, errno, _msg)
 
 /* -- Netlink bolier plate */
-
-static int nl_dump_ext_ack_done(const struct nlmsghdr *nlh, int errfn)
-{
-	/* TODO */
-	return 0;
-}
-
-static int nl_dump_ext_ack(const struct nlmsghdr *nlh, void *errfn)
-{
-	/* TODO */
-	return 0;
-}
-
-static int get_family_id_attr_cb(const struct nlattr *attr, void *data)
-{
-	const struct nlattr **tb = data;
-	int type = mnl_attr_get_type(attr);
-
-	if (mnl_attr_type_valid(attr, CTRL_ATTR_MAX) < 0)
-		return MNL_CB_ERROR;
-
-	if (type == CTRL_ATTR_FAMILY_ID &&
-	    mnl_attr_validate(attr, MNL_TYPE_U16) < 0)
-		return MNL_CB_ERROR;
-
-	tb[type] = attr;
-	return MNL_CB_OK;
-}
-
-static int get_family_id_cb(const struct nlmsghdr *nlh, void *data)
-{
-	struct genlmsghdr *genl = mnl_nlmsg_get_payload(nlh);
-	struct nlattr *tb[CTRL_ATTR_MAX + 1] = {};
-	struct ynl_sock *ys = data;
-
-	mnl_attr_parse(nlh, sizeof(*genl), get_family_id_attr_cb, tb);
-	if (!tb[CTRL_ATTR_FAMILY_ID])
-		return MNL_CB_ERROR;
-
-	ys->family_id = mnl_attr_get_u16(tb[CTRL_ATTR_FAMILY_ID]);
-	return MNL_CB_OK;
-}
-
-static int mnlg_cb_noop(const struct nlmsghdr *nlh, void *data)
+static int ynl_cb_noop(const struct nlmsghdr *nlh, void *data)
 {
 	return MNL_CB_OK;
 }
 
-static int mnlg_cb_error(const struct nlmsghdr *nlh, void *data)
+static int ynl_cb_error(const struct nlmsghdr *nlh, void *data)
 {
 	const struct nlmsgerr *err = mnl_nlmsg_get_payload(nlh);
+	struct ynl_parse_arg *yarg = data;
+	int code;
 
-	/* Netlink subsystems returns the errno value with different signess */
-	if (err->error < 0)
-		errno = -err->error;
-	else
-		errno = err->error;
+	code = err->error >= 0 ? err->error : -err->error;
+	yarg->ys->err.code = code;
+	errno = code;
 
-	if (nl_dump_ext_ack(nlh, NULL))
-		return MNL_CB_ERROR;
-
-	return err->error == 0 ? MNL_CB_STOP : MNL_CB_ERROR;
+	return code ? MNL_CB_STOP : MNL_CB_ERROR;
 }
 
-static int mnlg_cb_stop(const struct nlmsghdr *nlh, void *data)
+static int ynl_cb_stop(const struct nlmsghdr *nlh, void *data)
 {
-	int len = *(int *)NLMSG_DATA(nlh);
+	struct ynl_parse_arg *yarg = data;
+	int err;
 
-	if (len < 0) {
-		errno = -len;
-		nl_dump_ext_ack_done(nlh, len);
+	err = *(int *)NLMSG_DATA(nlh);
+	if (err < 0) {
+		yarg->ys->err.code = -err;
+		errno = -err;
 		return MNL_CB_ERROR;
 	}
 	return MNL_CB_STOP;
 }
 
-static mnl_cb_t mnlg_cb_array[NLMSG_MIN_TYPE] = {
-	[NLMSG_NOOP]	= mnlg_cb_noop,
-	[NLMSG_ERROR]	= mnlg_cb_error,
-	[NLMSG_DONE]	= mnlg_cb_stop,
-	[NLMSG_OVERRUN]	= mnlg_cb_noop,
+mnl_cb_t ynl_cb_array[NLMSG_MIN_TYPE] = {
+	[NLMSG_NOOP]	= ynl_cb_noop,
+	[NLMSG_ERROR]	= ynl_cb_error,
+	[NLMSG_DONE]	= ynl_cb_stop,
+	[NLMSG_OVERRUN]	= ynl_cb_noop,
 };
 
 /* Generic code */
@@ -169,27 +124,91 @@ ynl_gemsg_start_dump(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version)
 
 int ynl_recv_ack(struct ynl_sock *ys, int ret)
 {
-	if (!ret)
-		return 0;
+	if (!ret) {
+		err(ys, YNL_ERROR_EXPECT_ACK,
+		    "Expecting an ACK but nothing received");
+		return -1;
+	}
 
 	ret = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
-	if (ret < 0)
+	if (ret < 0) {
+		perr(ys, "Socket receive failed");
 		return ret;
+	}
 	return mnl_cb_run(ys->rx_buf, ret, ys->seq, ys->portid,
-			  ynl_cb_null, NULL);
+			  ynl_cb_null, ys);
 }
 
 int ynl_cb_null(const struct nlmsghdr *nlh, void *data)
 {
+	struct ynl_parse_arg *yarg = data;
+
+	err(yarg->ys, YNL_ERROR_UNEXPECT_MSG,
+	    "Received a message when none were expected");
+
 	return MNL_CB_ERROR;
+}
+
+/* Init/fini and genetlink boiler plate */
+
+static int ynl_get_family_id_cb(const struct nlmsghdr *nlh, void *data)
+{
+	struct ynl_parse_arg *yarg = data;
+	struct ynl_sock *ys = yarg->ys;
+	const struct nlattr *attr;
+
+	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
+		if (mnl_attr_get_type(attr) != CTRL_ATTR_FAMILY_ID)
+			continue;
+
+		if (mnl_attr_get_payload_len(attr) != sizeof(__u16)) {
+			err(ys, YNL_ERROR_ATTR_INVALID, "Invalid family ID");
+			return MNL_CB_ERROR;
+		}
+
+		ys->family_id = mnl_attr_get_u16(attr);
+		return MNL_CB_OK;
+	}
+
+	err(ys, YNL_ERROR_ATTR_MISSING, "Family ID missing");
+	return MNL_CB_ERROR;
+}
+
+static int ynl_sock_read_family(struct ynl_sock *ys, const char *family_name)
+{
+	struct ynl_parse_arg yarg = { .ys = ys, };
+	struct nlmsghdr *nlh;
+	int err;
+
+	nlh = ynl_gemsg_start_req(ys, GENL_ID_CTRL, CTRL_CMD_GETFAMILY, 1);
+	mnl_attr_put_strz(nlh, CTRL_ATTR_FAMILY_NAME, family_name);
+
+	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
+	if (err < 0) {
+		perr(ys, "failed to request socket family info");
+		return err;
+	}
+
+	err = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
+	if (err <= 0) {
+		perr(ys, "failed to receive the socket family info");
+		return err;
+	}
+	err = mnl_cb_run2(ys->rx_buf, err, ys->seq, ys->portid,
+			  ynl_get_family_id_cb, &yarg,
+			  ynl_cb_array, ARRAY_SIZE(ynl_cb_array));
+	if (err < 0) {
+		perr(ys, "failed to receive the socket family info 2");
+		return err;
+	}
+
+	return ynl_recv_ack(ys, err);
 }
 
 struct ynl_sock *ynl_sock_create(const char *family_name, struct ynl_error *yse)
 {
-	struct nlmsghdr *nlh;
 	struct ynl_sock *ys;
 	int one = 1;
-	int err;
 
 	ys = malloc(sizeof(*ys) + 2 * MNL_SOCKET_BUFFER_SIZE);
 	if (!ys)
@@ -219,31 +238,11 @@ struct ynl_sock *ynl_sock_create(const char *family_name, struct ynl_error *yse)
 	ys->seq = random();
 	ys->portid = mnl_socket_get_portid(ys->sock);
 
-	nlh = ynl_gemsg_start_req(ys, GENL_ID_CTRL, CTRL_CMD_GETFAMILY, 1);
-	mnl_attr_put_strz(nlh, CTRL_ATTR_FAMILY_NAME, family_name);
-
-	err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
-	if (err < 0) {
-		__perr(yse, "failed to request socket family info");
+	if (ynl_sock_read_family(ys, family_name)) {
+		if (yse)
+			memcpy(yse, &ys->err, sizeof(*yse));
 		goto err_close_sock;
 	}
-
-	do {
-		err = mnl_socket_recvfrom(ys->sock, ys->rx_buf,
-					  MNL_SOCKET_BUFFER_SIZE);
-		if (err <= 0) {
-			__perr(yse, "failed to receive the socket family info");
-			goto err_close_sock;
-		}
-		err = mnl_cb_run2(ys->rx_buf, err, ys->seq, ys->portid,
-				  get_family_id_cb, ys,
-				  mnlg_cb_array, ARRAY_SIZE(mnlg_cb_array));
-		if (err < 0) {
-			__perr(yse, "failed to receive the socket family info 2");
-			goto err_close_sock;
-		}
-	} while (err > 0);
-
 
 	return ys;
 

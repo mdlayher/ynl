@@ -12,6 +12,11 @@ struct nlmsghdr;
 enum ynl_error_code {
 	YNL_ERROR_NONE = 0,
 	__YNL_ERRNO_END = 4096,
+	YNL_ERROR_EXPECT_ACK,
+	YNL_ERROR_EXPECT_MSG,
+	YNL_ERROR_UNEXPECT_MSG,
+	YNL_ERROR_ATTR_MISSING,
+	YNL_ERROR_ATTR_INVALID,
 };
 
 struct ynl_error {
@@ -33,7 +38,12 @@ struct ynl_sock {
 	unsigned char raw_buf[];
 };
 
-struct ynl_sock *ynl_sock_alloc(void);
+struct ynl_parse_arg {
+	struct ynl_sock *ys;
+	void *data;
+};
+
+extern mnl_cb_t ynl_cb_array[NLMSG_MIN_TYPE];
 
 struct ynl_sock *ynl_sock_create(const char *family_name, struct ynl_error *e);
 void ynl_sock_destroy(struct ynl_sock *ys);
