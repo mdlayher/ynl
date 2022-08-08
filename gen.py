@@ -66,6 +66,25 @@ class Type:
     def attr_get(self, ri, var):
         raise Exception(f"Put not implemented for class type {self.type}")
 
+    def _setter_lines(self, ri, member):
+        raise Exception(f"Setter not implemented for class type {self.type}")
+
+    def setter(self, ri, space, direction, deref=False, ref=None):
+        ref = (ref if ref else []) + [self.c_name]
+        var = "req"
+        member = f"{var}->{'.'.join(ref)}"
+
+        code = []
+        for i in range(0, len(ref)):
+            code.append(f"{var}->{'.'.join(ref[:i + 1])}_present = 1;")
+        code += self._setter_lines(ri, member)
+
+        ri.cw.write_func('static inline void',
+                         f"{op_prefix(ri, direction, deref=deref)}_set_{'_'.join(ref)}",
+                         body=code,
+                         args=[f'{type_name(ri, direction, deref=deref)} *{var}'] +
+                              _attribute_member(ri, space, self.c_name, prototype=True))
+
 
 class TypeUnused(Type):
     pass
@@ -85,6 +104,9 @@ class TypeScalar(Type):
     def attr_get(self, ri, var):
         self._attr_get(ri, var, f"{var}->{self.c_name} = mnl_attr_get_{self._mnl_type()}(attr);")
 
+    def _setter_lines(self, ri, member):
+        return [f"{member} = {self.c_name};"]
+
 
 class TypeFlag(Type):
     def attr_put(self, ri, var):
@@ -92,6 +114,9 @@ class TypeFlag(Type):
 
     def attr_get(self, ri, var):
         self._attr_get(ri, var, [])
+
+    def _setter_lines(self, ri, member):
+        return []
 
 
 class TypeNulString(Type):
@@ -103,6 +128,10 @@ class TypeNulString(Type):
                        [f"strncpy({var}->{self.c_name}, mnl_attr_get_str(attr), {self.len});",
                         f"{var}->{self.c_name}[{self.len}] = 0;"])
 
+    def _setter_lines(self, ri, member):
+        return [f'strncpy({member}, {self.c_name}, sizeof({member}));',
+                f'{member}[{self.len}] = 0;']
+
 
 class TypeBinary(Type):
     def attr_put(self, ri, var):
@@ -111,6 +140,9 @@ class TypeBinary(Type):
 
     def attr_get(self, ri, var):
         self._attr_get(ri, var, f"memcpy({var}->{self.name}, mnl_attr_get_payload(attr), {self.len});")
+
+    def _setter_lines(self, ri, member):
+        return [f"memcpy({member}, {self.c_name}, {self.len});"]
 
 
 class TypeNest(Type):
@@ -121,6 +153,12 @@ class TypeNest(Type):
     def attr_get(self, ri, var):
         self._attr_get(ri, var,
                        f"{nest_op_prefix(ri, self.nested_attrs)}_parse(&{var}->{self.name}, attr);")
+
+    def setter(self, ri, space, direction, deref=False, ref=None):
+        ref = (ref if ref else []) + [self.c_name]
+
+        for _, attr in ri.family.attr_spaces[self.nested_attrs].items():
+            attr.typed.setter(ri, self.nested_attrs, direction, deref=deref, ref=ref)
 
 
 class TypeMultiAttr(Type):
@@ -468,6 +506,15 @@ class CodeWriter:
             self.p(var)
         self.nl()
 
+    def write_func(self, qual_ret, name, body, args=None, local_vars=None):
+        self.write_func_prot(qual_ret=qual_ret, name=name, args=args)
+        self.write_func_lvar(local_vars=local_vars)
+
+        self.block_start()
+        for line in body:
+            self.p(line)
+        self.block_end()
+
     def writes_defines(self, defines):
         longest = 0
         for define in defines:
@@ -633,42 +680,6 @@ def attribute_member(ri, space, attr, prototype=True, suffix=""):
     members = _attribute_member(ri, space, attr, prototype, suffix)
     for line in members:
         ri.cw.p(line)
-
-
-def attribute_setter(ri, space, attr, direction, deref=False, ref=None):
-    ref = (ref if ref else []) + [attr]
-    spec = ri.family.attr_spaces[space][attr]
-    var = "req"
-    member = f"{var}->{'.'.join(ref)}"
-
-    code = []
-    if spec['type'] == 'flag':
-        pass
-    elif spec['type'] == 'binary':
-        code += [f"memcpy({member}, {attr}, {spec['len']});"]
-    elif spec['type'] in scalars:
-        code += [f"{member} = {attr};"]
-    elif spec['type'] == 'nul-string':
-        code += [f'strncpy({member}, {attr}, sizeof({member}));',
-                 f'{member}[{spec["len"]}] = 0;']
-    elif spec['type'] == 'nest':
-        nested_space = spec['nested-attributes']
-        for nested in ri.family.attr_spaces[nested_space]:
-            attribute_setter(ri, nested_space, nested, direction, deref=deref, ref=ref)
-        return
-    else:
-        raise Exception(f'Type {spec["type"]} not supported yet - setter')
-
-    ri.cw.write_func_prot('static inline void',
-                          f"{op_prefix(ri, direction, deref=deref)}_set_{'_'.join(ref)}",
-                          [f'{type_name(ri, direction, deref=deref)} *{var}'] +
-                          _attribute_member(ri, space, attr, prototype=True))
-    ri.cw.block_start()
-    for i in range(0, len(ref)):
-        ri.cw.p(f"{var}->{'.'.join(ref[:i + 1])}_present = 1;")
-    for line in code:
-        ri.cw.p(line)
-    ri.cw.block_end()
 
 
 def attribute_parse_kernel(ri, attr, prototype=True, suffix=""):
@@ -1031,7 +1042,8 @@ def print_type_helpers(ri, direction, deref=False):
 
     if ri.ku_space == 'user' and direction == 'request':
         for arg in type_list:
-            attribute_setter(ri, ri.attr_space, arg, direction, deref=deref)
+            attr = ri.family.attr_spaces[ri.attr_space][arg]
+            attr.typed.setter(ri, ri.attr_space, direction, deref=deref)
     ri.cw.nl()
 
 
