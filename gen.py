@@ -31,6 +31,10 @@ class Type:
     def is_scalar(self):
         return self.type in {'u8', 'u16', 'u32', 'u64', 's32', 's64'}
 
+    def presence_member(self, ri):
+        pfx = '__' if ri.ku_space == 'user' else ''
+        ri.cw.p(f"{pfx}u32 {self.name}_present:1;")
+
     def _attr_put_line(self, ri, var, line):
         ri.cw.p(f"if ({var}->{self.name}_present)")
         ri.cw.p(f"{line};", add_ind=1)
@@ -123,6 +127,9 @@ class TypeMultiAttr(Type):
     def is_multi_val(self):
         return True
 
+    def presence_member(self, ri):
+        return
+
     def attr_get(self, ri, var):
         self._attr_get(ri, var, f'{var}->n_{self.name}++;')
 
@@ -130,6 +137,9 @@ class TypeMultiAttr(Type):
 class TypeArrayNest(Type):
     def is_multi_val(self):
         return True
+
+    def presence_member(self, ri):
+        return
 
     def attr_get(self, ri, var):
         local_vars = ['const struct nlattr *attr2;']
@@ -625,17 +635,6 @@ def attribute_member(ri, space, attr, prototype=True, suffix=""):
         ri.cw.p(line)
 
 
-def attribute_pres_member(ri, space, attr, suffix=""):
-    spec = ri.family.attr_spaces[space][attr]
-    pfx = '__' if ri.ku_space == 'user' else ''
-
-    if spec.typed.is_multi_val():
-        return False
-
-    ri.cw.p(f"{pfx}u32 {attr}_present:1{suffix}")
-    return True
-
-
 def attribute_setter(ri, space, attr, direction, deref=False, ref=None):
     ref = (ref if ref else []) + [attr]
     spec = ri.family.attr_spaces[space][attr]
@@ -1002,7 +1001,8 @@ def _print_type(ri, direction, type_list, inherited_list={}):
 
     ri.cw.block_start(line=f"struct {ri.family['name']}{suffix}")
     for arg in type_list:
-        attribute_pres_member(ri, ri.attr_space, arg, suffix=';')
+        attr = ri.family.attr_spaces[ri.attr_space][arg]
+        attr.typed.presence_member(ri)
     ri.cw.nl()
 
     for arg in sorted(inherited_list):
