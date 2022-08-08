@@ -585,11 +585,6 @@ def op_prefix(ri, direction, deref=False):
     return f"{ri.family['name']}{suffix}"
 
 
-def op_aspec(ri, attr):
-    aspace = ri.family.attr_spaces[ri.op['attribute-space']]
-    return aspace[attr]
-
-
 def type_name(ri, direction, deref=False):
     return f"struct {op_prefix(ri, direction, deref=deref)}"
 
