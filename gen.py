@@ -35,6 +35,29 @@ class Type:
         pfx = '__' if ri.ku_space == 'user' else ''
         ri.cw.p(f"{pfx}u32 {self.name}_present:1;")
 
+    def _complex_member_type(self, ri):
+        return None
+
+    def arg_member(self, ri):
+        member = self._complex_member_type(ri)
+        if member:
+            return [member + ' *' + self.c_name]
+        raise Exception(f"Struct member not implemented for class type {self.type}")
+
+    def struct_member(self, ri):
+        if self.is_multi_val():
+            ri.cw.p(f"unsigned int n_{self.c_name};")
+        member = self._complex_member_type(ri)
+        if member:
+            ptr = ''
+            if self. is_multi_val():
+                ptr = '*'
+            ri.cw.p(f"{member} {ptr}{self.c_name};")
+            return
+        members = self.arg_member(ri)
+        for one in members:
+            ri.cw.p(one + ';')
+
     def _attr_put_line(self, ri, var, line):
         ri.cw.p(f"if ({var}->{self.name}_present)")
         ri.cw.p(f"{line};", add_ind=1)
@@ -82,8 +105,7 @@ class Type:
         ri.cw.write_func('static inline void',
                          f"{op_prefix(ri, direction, deref=deref)}_set_{'_'.join(ref)}",
                          body=code,
-                         args=[f'{type_name(ri, direction, deref=deref)} *{var}'] +
-                              _attribute_member(ri, space, self.c_name, prototype=True))
+                         args=[f'{type_name(ri, direction, deref=deref)} *{var}'] + self.arg_member(ri))
 
 
 class TypeUnused(Type):
@@ -98,6 +120,14 @@ class TypeScalar(Type):
             t = 'u' + t[1:]
         return t
 
+    def arg_member(self, ri):
+        if 'enum' in self.attr:
+            t = f"enum {ri.family.name}_{self.attr['enum']} "
+        else:
+            scalar_pfx = '__' if ri.ku_space == 'user' else ''
+            t = scalar_pfx + self.type + ' '
+        return [f'{t}{self.c_name}']
+
     def attr_put(self, ri, var):
         self._attr_put_simple(ri, var, self._mnl_type())
 
@@ -109,6 +139,9 @@ class TypeScalar(Type):
 
 
 class TypeFlag(Type):
+    def arg_member(self, ri):
+        return []
+
     def attr_put(self, ri, var):
         self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {attr_enum_name(ri, self.name)}, 0, NULL)")
 
@@ -120,6 +153,16 @@ class TypeFlag(Type):
 
 
 class TypeNulString(Type):
+    def arg_member(self, ri):
+        return [f"const char *{self.c_name}"]
+
+    def struct_member(self, ri):
+        if self.len[-4:] == " - 1":
+            attr_len = f"{self.len[:-4]}"
+        else:
+            attr_len = f"{self.len} + 1"
+        ri.cw.p(f"char {self.c_name}[{attr_len}];")
+
     def attr_put(self, ri, var):
         self._attr_put_simple(ri, var, 'strz')
 
@@ -134,6 +177,12 @@ class TypeNulString(Type):
 
 
 class TypeBinary(Type):
+    def arg_member(self, ri):
+        return [f"const void *{self.c_name}"]
+
+    def struct_member(self, ri):
+        ri.cw.p(f"unsigned char {self.c_name}[{self.len}];")
+
     def attr_put(self, ri, var):
         self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {attr_enum_name(ri, self.name)}, " +
                             f"{self.len}, {var}->{self.name})")
@@ -146,6 +195,9 @@ class TypeBinary(Type):
 
 
 class TypeNest(Type):
+    def _complex_member_type(self, ri):
+        return f"struct {nest_op_prefix(ri, self.nested_attrs)}"
+
     def attr_put(self, ri, var):
         self._attr_put_line(ri, var, f"{nest_op_prefix(ri, self.nested_attrs)}_put(nlh, " +
                             f"{attr_enum_name(ri, self.name)}, &{var}->{self.name})")
@@ -168,6 +220,15 @@ class TypeMultiAttr(Type):
     def presence_member(self, ri):
         return
 
+    def _complex_member_type(self, ri):
+        if 'sub-type' not in self.attr or self.attr['sub-type'] == 'nest':
+            return f"struct {nest_op_prefix(ri, self.nested_attrs)}"
+        elif self.attr['sub-type'] in scalars:
+            scalar_pfx = '__' if ri.ku_space == 'user' else ''
+            return scalar_pfx + self.attr['sub-type']
+        else:
+            raise Exception(f"Sub-type {self.attr['sub-type']} not supported yet")
+
     def attr_get(self, ri, var):
         self._attr_get(ri, var, f'{var}->n_{self.name}++;')
 
@@ -179,6 +240,15 @@ class TypeArrayNest(Type):
     def presence_member(self, ri):
         return
 
+    def _complex_member_type(self, ri):
+        if 'sub-type' not in self.attr or self.attr['sub-type'] == 'nest':
+            return f"struct {nest_op_prefix(ri, self.nested_attrs)}"
+        elif self.attr['sub-type'] in scalars:
+            scalar_pfx = '__' if ri.ku_space == 'user' else ''
+            return scalar_pfx + self.attr['sub-type']
+        else:
+            raise Exception(f"Sub-type {self.attr['sub-type']} not supported yet")
+
     def attr_get(self, ri, var):
         local_vars = ['const struct nlattr *attr2;']
         get_lines = [f'attr_{self.name} = attr;',
@@ -188,6 +258,9 @@ class TypeArrayNest(Type):
 
 
 class TypeNestTypeValue(Type):
+    def _complex_member_type(self, ri):
+        return f"struct {nest_op_prefix(ri, self.nested_attrs)}"
+
     def attr_get(self, ri, var):
         prev = 'attr'
         tv_args = ''
@@ -621,62 +694,6 @@ def attribute_policy(ri, attr, prototype=True, suffix=""):
     ri.cw.p(f"\t[{aspace.name_prefix}{attr.upper()}] = {mem},")
 
 
-def _attribute_member_len(spec):
-    if spec['len'][-4:] == " - 1":
-        return f"{spec['len'][:-4]}"
-    else:
-        return f"{spec['len']} + 1"
-
-
-def _attribute_member(ri, space, attr, prototype=True, suffix=""):
-    spec = ri.family.attr_spaces[space][attr]
-    scalar_pfx = '__' if ri.ku_space == 'user' else ''
-
-    t = spec['type']
-    if t == 'flag':
-        # Nothing, presence is enough for a flag
-        return []
-    elif t == "binary":
-        if prototype:
-            t = 'const void *'
-        else:
-            t = 'unsigned char '
-            suffix = f"[{spec['len']}]{suffix}"
-    elif t == "nul-string":
-        if prototype:
-            t = 'const char *'
-        else:
-            t = 'char '
-            suffix = f'[{_attribute_member_len(spec)}]{suffix}'
-    elif t == 'array-nest' or t == 'multi-attr':
-        if 'sub-type' not in spec or spec['sub-type'] == 'nest':
-            t = f"struct {nest_op_prefix(ri, spec['nested-attributes'])} *"
-        elif spec['sub-type'] in scalars:
-            t = scalar_pfx + spec['sub-type'] + ' *'
-        else:
-            raise Exception(f"Sub-type {spec} not supported yet")
-
-        if not prototype:
-            ri.cw.p(f"unsigned int n_{attr};")
-    elif t == 'nest' or t == 'nest-type-value':
-        t = f"struct {nest_op_prefix(ri, spec['nested-attributes'])} "
-    elif t in scalars:
-        if 'enum' in spec:
-            t = f"enum {ri.family.name}_{spec['enum']} "
-        else:
-            t = scalar_pfx + t + ' '
-    else:
-        raise Exception(f'Type {t} not supported yet')
-
-    return [f"{t}{spec['c_name']}{suffix}"]
-
-
-def attribute_member(ri, space, attr, prototype=True, suffix=""):
-    members = _attribute_member(ri, space, attr, prototype, suffix)
-    for line in members:
-        ri.cw.p(line)
-
-
 def attribute_parse_kernel(ri, attr, prototype=True, suffix=""):
     aspace = ri.family.attr_spaces[ri.attr_space]
     spec = aspace[attr]
@@ -1015,7 +1032,8 @@ def _print_type(ri, direction, type_list, inherited_list={}):
         ri.cw.p(f"__u32 {arg};")
 
     for arg in type_list:
-        attribute_member(ri, ri.attr_space, arg, prototype=False, suffix=';')
+        attr = ri.family.attr_spaces[ri.attr_space][arg]
+        attr.typed.struct_member(ri)
 
     ri.cw.block_end(line=';')
     ri.cw.nl()
