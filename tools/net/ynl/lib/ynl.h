@@ -21,7 +21,8 @@ enum ynl_error_code {
 
 struct ynl_error {
 	enum ynl_error_code code;
-	const char *msg;
+	unsigned int attr_offs;
+	char msg[512];
 };
 
 struct ynl_sock {

@@ -10,24 +10,82 @@
 
 #define ARRAY_SIZE(arr)		(sizeof(arr) / sizeof(*arr))
 
-#define __err(yse, _code, _msg)			\
+#define __yerr_msg(yse, _msg...)					\
+	({								\
+		struct ynl_error *_yse = (yse);				\
+									\
+		if (_yse) {						\
+			snprintf(_yse->msg, sizeof(_yse->msg) - 1,  _msg); \
+			_yse->msg[sizeof(_yse->msg) - 1] = 0;		\
+		}							\
+	})
+
+#define __yerr_code(yse, _code...)		\
 	({					\
 		struct ynl_error *_yse = (yse);	\
 						\
 		if (_yse) {			\
-			_yse->msg = _msg;	\
 			_yse->code = _code;	\
 		}				\
 	})
 
-#define __perr(yse, _msg)		__err(yse, errno, _msg)
 
-#define err(_ys, _code, _msg)		__err(&(_ys)->err, _code, _msg)
-#define perr(_ys, _msg)			__err(&(_ys)->err, errno, _msg)
+#define __yerr(yse, _code, _msg...)		\
+	({					\
+		__yerr_msg(yse, _msg);		\
+		__yerr_code(yse, _code);	\
+	})
+
+#define __perr(yse, _msg)		__yerr(yse, errno, _msg)
+
+#define yerr_msg(_ys, _msg...)		__yerr_msg(&(_ys)->err, _msg)
+#define yerr(_ys, _code, _msg)		__yerr(&(_ys)->err, _code, _msg)
+#define perr(_ys, _msg)			__yerr(&(_ys)->err, errno, _msg)
 
 /* -- Netlink bolier plate */
-static int ynl_cb_noop(const struct nlmsghdr *nlh, void *data)
+static int ynl_ext_ack_offs(struct ynl_sock *ys, const struct nlattr *attr)
 {
+	if (mnl_attr_get_payload_len(attr) != sizeof(__u32))
+		return MNL_CB_ERROR;
+
+	ys->err.attr_offs = mnl_attr_get_u32(attr);
+	return MNL_CB_OK;
+}
+
+static int ynl_ext_ack_msg(struct ynl_sock *ys, const struct nlattr *attr)
+{
+	const char *msg = mnl_attr_get_payload(attr);
+
+	if (msg[mnl_attr_get_payload_len(attr) - 1])
+		return MNL_CB_ERROR;
+
+	/* Implicitly depend on ys->err.code already set */
+	yerr_msg(ys, "Kernel %s: %s", ys->err.code ? "error" : "warning", msg);
+	return MNL_CB_OK;
+}
+
+static int
+ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
+		  unsigned int hlen)
+{
+	const struct nlattr *attr;
+
+	if (!(nlh->nlmsg_flags & NLM_F_ACK_TLVS))
+		return MNL_CB_OK;
+
+	mnl_attr_for_each(attr, nlh, hlen) {
+		int ret = MNL_CB_OK;
+
+		if (mnl_attr_get_type(attr) == NLMSGERR_ATTR_MSG)
+			ret = ynl_ext_ack_msg(ys, attr);
+
+		if (mnl_attr_get_type(attr) == NLMSGERR_ATTR_OFFS)
+			ret = ynl_ext_ack_offs(ys, attr);
+
+		if (ret != MNL_CB_OK)
+			return ret;
+	}
+
 	return MNL_CB_OK;
 }
 
@@ -35,16 +93,23 @@ static int ynl_cb_error(const struct nlmsghdr *nlh, void *data)
 {
 	const struct nlmsgerr *err = mnl_nlmsg_get_payload(nlh);
 	struct ynl_parse_arg *yarg = data;
+	unsigned int hlen;
 	int code;
 
 	code = err->error >= 0 ? err->error : -err->error;
 	yarg->ys->err.code = code;
 	errno = code;
 
-	return code ? MNL_CB_STOP : MNL_CB_ERROR;
+	hlen = sizeof(*err);
+	if (!(nlh->nlmsg_flags & NLM_F_CAPPED))
+		hlen += mnl_nlmsg_get_payload_len(&err->msg);
+
+	ynl_ext_ack_check(yarg->ys, nlh, hlen);
+
+	return code ? MNL_CB_ERROR : MNL_CB_STOP;
 }
 
-static int ynl_cb_stop(const struct nlmsghdr *nlh, void *data)
+static int ynl_cb_done(const struct nlmsghdr *nlh, void *data)
 {
 	struct ynl_parse_arg *yarg = data;
 	int err;
@@ -53,23 +118,40 @@ static int ynl_cb_stop(const struct nlmsghdr *nlh, void *data)
 	if (err < 0) {
 		yarg->ys->err.code = -err;
 		errno = -err;
+
+		ynl_ext_ack_check(yarg->ys, nlh, sizeof(int));
+
 		return MNL_CB_ERROR;
 	}
 	return MNL_CB_STOP;
 }
 
+static int ynl_cb_noop(const struct nlmsghdr *nlh, void *data)
+{
+	return MNL_CB_OK;
+}
+
 mnl_cb_t ynl_cb_array[NLMSG_MIN_TYPE] = {
 	[NLMSG_NOOP]	= ynl_cb_noop,
 	[NLMSG_ERROR]	= ynl_cb_error,
-	[NLMSG_DONE]	= ynl_cb_stop,
+	[NLMSG_DONE]	= ynl_cb_done,
 	[NLMSG_OVERRUN]	= ynl_cb_noop,
 };
 
 /* Generic code */
 
+static void ynl_err_reset(struct ynl_sock *ys)
+{
+	ys->err.code = 0;
+	ys->err.attr_offs = 0;
+	ys->err.msg[0] = 0;
+}
+
 struct nlmsghdr *ynl_msg_start(struct ynl_sock *ys, __u32 id, __u16 flags)
 {
 	struct nlmsghdr *nlh;
+
+	ynl_err_reset(ys);
 
 	nlh = ys->nlh = mnl_nlmsg_put_header(ys->tx_buf);
 	nlh->nlmsg_type	= id;
@@ -124,9 +206,10 @@ ynl_gemsg_start_dump(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version)
 
 int ynl_recv_ack(struct ynl_sock *ys, int ret)
 {
+	fprintf(stderr, "called %d\n", ret);
 	if (!ret) {
-		err(ys, YNL_ERROR_EXPECT_ACK,
-		    "Expecting an ACK but nothing received");
+		yerr(ys, YNL_ERROR_EXPECT_ACK,
+		     "Expecting an ACK but nothing received");
 		return -1;
 	}
 
@@ -143,8 +226,8 @@ int ynl_cb_null(const struct nlmsghdr *nlh, void *data)
 {
 	struct ynl_parse_arg *yarg = data;
 
-	err(yarg->ys, YNL_ERROR_UNEXPECT_MSG,
-	    "Received a message when none were expected");
+	yerr(yarg->ys, YNL_ERROR_UNEXPECT_MSG,
+	     "Received a message when none were expected");
 
 	return MNL_CB_ERROR;
 }
@@ -162,7 +245,7 @@ static int ynl_get_family_id_cb(const struct nlmsghdr *nlh, void *data)
 			continue;
 
 		if (mnl_attr_get_payload_len(attr) != sizeof(__u16)) {
-			err(ys, YNL_ERROR_ATTR_INVALID, "Invalid family ID");
+			yerr(ys, YNL_ERROR_ATTR_INVALID, "Invalid family ID");
 			return MNL_CB_ERROR;
 		}
 
@@ -170,7 +253,7 @@ static int ynl_get_family_id_cb(const struct nlmsghdr *nlh, void *data)
 		return MNL_CB_OK;
 	}
 
-	err(ys, YNL_ERROR_ATTR_MISSING, "Family ID missing");
+	yerr(ys, YNL_ERROR_ATTR_MISSING, "Family ID missing");
 	return MNL_CB_ERROR;
 }
 
