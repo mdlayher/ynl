@@ -3,6 +3,8 @@ name: ethtool
 description: |
   Ethernet device configuration interface.
 
+attr-cnt-suffix: CNT
+
 attribute-spaces:
   -
     name: header

@@ -19,6 +19,9 @@ properties:
   version:
     description: Version of the family as defined by genetlink.
     type: integer
+  attr-cnt-suffix:
+    description: Suffix for last member of attribute enum, default is "MAX".
+    type: string
   headers:
     decription: C headers defining the protocol
     type: object

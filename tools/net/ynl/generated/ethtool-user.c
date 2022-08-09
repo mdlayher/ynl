@@ -21,6 +21,17 @@ void ethtool_header_free(struct ethtool_header *obj)
 	free(obj);
 }
 
+struct ynl_policy_attr ethtool_header_policy[ETHTOOL_A_HEADER_MAX + 1] = {
+	[ETHTOOL_A_HEADER_DEV_INDEX] = { .name = "dev_index", },
+	[ETHTOOL_A_HEADER_DEV_NAME] = { .name = "dev_name", },
+	[ETHTOOL_A_HEADER_FLAGS] = { .name = "flags", },
+};
+
+struct ynl_policy_nest ethtool_header_nest = {
+	.max_type = ETHTOOL_A_HEADER_MAX,
+	.table = ethtool_header_policy,
+};
+
 int ethtool_header_put(struct nlmsghdr *nlh, unsigned int attr_type,
 		       struct ethtool_header *obj)
 {

@@ -66,6 +66,9 @@ class Type:
         for one in members:
             ri.cw.p(one + ';')
 
+    def attr_typol(self, ri):
+        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {"}"},')
+
     def _attr_put_line(self, ri, var, line):
         ri.cw.p(f"if ({var}->{self.name}_present)")
         ri.cw.p(f"{line};", add_ind=1)
@@ -387,6 +390,8 @@ class Family:
 
         self.name = self.yaml['name']
         self.op_prefix = self.yaml['operations']['name-prefix']
+
+        self.attr_cnt_suffix = self.yaml.get('attr-cnt-suffix', 'MAX')
 
         self.consts = dict()
         self.ops = dict()
@@ -740,6 +745,23 @@ def print_req_prototype(ri):
 
 def print_dump_prototype(ri):
     print_prototype(ri, "request")
+
+
+def put_req_nested_typol(ri, attr_space):
+    type_max = f"{ri.family.attr_spaces[attr_space].name_prefix}MAX"
+    ri.cw.block_start(line=f'struct ynl_policy_attr {nest_op_prefix(ri, attr_space)}_policy[{type_max} + 1] =')
+
+    for _, arg in ri.family.attr_spaces[attr_space].items():
+        arg.typed.attr_typol(ri)
+
+    ri.cw.block_end(line=';')
+    ri.cw.nl()
+
+    ri.cw.block_start(line=f'struct ynl_policy_nest {nest_op_prefix(ri, attr_space)}_nest =')
+    ri.cw.p(f'.max_type = {type_max},')
+    ri.cw.p(f'.table = {nest_op_prefix(ri, attr_space)}_policy,')
+    ri.cw.block_end(line=';')
+    ri.cw.nl()
 
 
 def put_req_nested(ri, attr_space):
@@ -1291,9 +1313,9 @@ def render_uapi(family, cw):
             attr_name = aspace['name-prefix'] + attr['name'].upper()
             cw.p(attr_name + ',')
         cw.nl()
-        cw.p(f"__{aspace['name-prefix']}MAX")
+        cw.p(f"__{aspace['name-prefix']}{family.attr_cnt_suffix}")
         cw.block_end(line=';')
-        cw.p(f"#define {aspace['name-prefix']}_MAX (__{aspace['name-prefix']}MAX - 1)")
+        cw.p(f"#define {aspace['name-prefix']}_MAX (__{aspace['name-prefix']}{family.attr_cnt_suffix} - 1)")
         cw.nl()
 
     uapi_enum_start(family, cw, family['operations'], 'name-enum')
@@ -1437,6 +1459,7 @@ def main():
 
                 free_rsp_nested(ri, attr_space)
                 if 'request' in parsed.pure_nested_spaces[attr_space]:
+                    put_req_nested_typol(ri, attr_space)
                     put_req_nested(ri, attr_space)
                 if 'reply' in parsed.pure_nested_spaces[attr_space]:
                     parse_rsp_nested(ri, attr_space)
