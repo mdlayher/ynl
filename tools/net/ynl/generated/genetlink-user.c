@@ -27,11 +27,11 @@ struct ynl_policy_attr nlctrl_main_policy[CTRL_ATTR_MAX + 1] = {
 	[CTRL_ATTR_VERSION] = { .name = "version", .type = YNL_PT_U32, },
 	[CTRL_ATTR_HDRSIZE] = { .name = "hdrsize", .type = YNL_PT_U32, },
 	[CTRL_ATTR_MAXATTR] = { .name = "maxattr", .type = YNL_PT_U32, },
-	[CTRL_ATTR_OPS] = { .name = "ops", .nest = &nlctrl_operation_nest, },
-	[CTRL_ATTR_MCAST_GROUPS] = { .name = "mcast_groups", .nest = &nlctrl_mcast_group_nest, },
+	[CTRL_ATTR_OPS] = { .name = "ops", .type = YNL_PT_NEST, .nest = &nlctrl_operation_nest, },
+	[CTRL_ATTR_MCAST_GROUPS] = { .name = "mcast_groups", .type = YNL_PT_NEST, .nest = &nlctrl_mcast_group_nest, },
 	[CTRL_ATTR_OP] = { .name = "op", .type = YNL_PT_U32, },
-	[CTRL_ATTR_OP_POLICY] = { .name = "op_policy", .nest = &nlctrl_policy_nest, },
-	[CTRL_ATTR_POLICY] = { .name = "policy", .nest = &nlctrl_nl_policy_nest, },
+	[CTRL_ATTR_OP_POLICY] = { .name = "op_policy", .type = YNL_PT_NEST, .nest = &nlctrl_policy_nest, },
+	[CTRL_ATTR_POLICY] = { .name = "policy", .type = YNL_PT_NEST, .nest = &nlctrl_nl_policy_nest, },
 };
 
 struct ynl_policy_nest nlctrl_main_nest = {

@@ -290,12 +290,8 @@ class TypeArrayNest(Type):
         else:
             raise Exception(f"Sub-type {self.attr['sub-type']} not supported yet")
 
-    def attr_typol(self, ri):
-        # TODO this obviously needs to be pushed down to subtypes
-        nest = ''
-        if 'nested-attributes' in self.attr:
-            nest = f".nest = &{nest_op_prefix(ri, self.attr['nested-attributes'])}_nest, "
-        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {nest}{"}"},')
+    def _attr_typol(self, ri):
+        return f'.type = YNL_PT_NEST, .nest = &{nest_op_prefix(ri, self.nested_attrs)}_nest, '
 
     def attr_get(self, ri, var):
         local_vars = ['const struct nlattr *attr2;']
@@ -309,12 +305,8 @@ class TypeNestTypeValue(Type):
     def _complex_member_type(self, ri):
         return f"struct {nest_op_prefix(ri, self.nested_attrs)}"
 
-    def attr_typol(self, ri):
-        # TODO this obviously needs to be pushed down to subtypes
-        nest = ''
-        if 'nested-attributes' in self.attr:
-            nest = f".nest = &{nest_op_prefix(ri, self.attr['nested-attributes'])}_nest, "
-        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {nest}{"}"},')
+    def _attr_typol(self, ri):
+        return f'.type = YNL_PT_NEST, .nest = &{nest_op_prefix(ri, self.nested_attrs)}_nest, '
 
     def attr_get(self, ri, var):
         prev = 'attr'

@@ -23,11 +23,11 @@ struct ynl_policy_attr dpll_main_policy[DPLLA_MAX + 1] = {
 	[DPLLA_UNSPEC] = { .name = "unspec", .type = YNL_PT_REJECT, },
 	[DPLLA_DEVICE_ID] = { .name = "device_id", .type = YNL_PT_U32, },
 	[DPLLA_DEVICE_NAME] = { .name = "device_name", .type = YNL_PT_NUL_STR, .len = DPLL_NAME_LENGTH, },
-	[DPLLA_SOURCE] = { .name = "source", .nest = &dpll_source_nest, },
+	[DPLLA_SOURCE] = { .name = "source", .type = YNL_PT_NEST, .nest = &dpll_source_nest, },
 	[DPLLA_SOURCE_ID] = { .name = "source_id", .type = YNL_PT_U32, },
 	[DPLLA_SOURCE_TYPE] = { .name = "source_type", .type = YNL_PT_U32, },
 	[DPLLA_SOURCE_SUPPORTED] = { .name = "source_supported", .type = YNL_PT_U32, },
-	[DPLLA_OUTPUT] = { .name = "output", .nest = &dpll_output_nest, },
+	[DPLLA_OUTPUT] = { .name = "output", .type = YNL_PT_NEST, .nest = &dpll_output_nest, },
 	[DPLLA_OUTPUT_ID] = { .name = "output_id", .type = YNL_PT_U32, },
 	[DPLLA_OUTPUT_TYPE] = { .name = "output_type", .type = YNL_PT_U32, },
 	[DPLLA_OUTPUT_SUPPORTED] = { .name = "output_supported", .type = YNL_PT_U32, },
@@ -45,7 +45,7 @@ struct ynl_policy_nest dpll_main_nest = {
 struct ynl_policy_attr dpll_source_policy[DPLLA_MAX + 1] = {
 	[DPLLA_OUTPUT_ID] = { .name = "output_id", .type = YNL_PT_U32, },
 	[DPLLA_OUTPUT_TYPE] = { .name = "output_type", .type = YNL_PT_U32, },
-	[DPLLA_OUTPUT_SUPPORTED] = { .name = "output_supported", },
+	[DPLLA_OUTPUT_SUPPORTED] = { .name = "output_supported", .type = YNL_PT_U32, },
 };
 
 struct ynl_policy_nest dpll_source_nest = {
@@ -56,7 +56,7 @@ struct ynl_policy_nest dpll_source_nest = {
 struct ynl_policy_attr dpll_output_policy[DPLLA_MAX + 1] = {
 	[DPLLA_SOURCE_ID] = { .name = "source_id", .type = YNL_PT_U32, },
 	[DPLLA_SOURCE_TYPE] = { .name = "source_type", .type = YNL_PT_U32, },
-	[DPLLA_SOURCE_SUPPORTED] = { .name = "source_supported", },
+	[DPLLA_SOURCE_SUPPORTED] = { .name = "source_supported", .type = YNL_PT_U32, },
 };
 
 struct ynl_policy_nest dpll_output_nest = {
