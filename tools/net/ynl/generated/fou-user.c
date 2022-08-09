@@ -33,7 +33,7 @@ struct ynl_policy_attr fou_main_policy[FOU_ATTR_MAX + 1] = {
 };
 
 struct ynl_policy_nest fou_main_nest = {
-	.max_type = FOU_ATTR_MAX,
+	.max_attr = FOU_ATTR_MAX,
 	.table = fou_main_policy,
 };
 

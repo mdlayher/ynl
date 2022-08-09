@@ -26,7 +26,7 @@ struct ynl_policy_attr ethtool_header_policy[ETHTOOL_A_HEADER_MAX + 1] = {
 };
 
 struct ynl_policy_nest ethtool_header_nest = {
-	.max_type = ETHTOOL_A_HEADER_MAX,
+	.max_attr = ETHTOOL_A_HEADER_MAX,
 	.table = ethtool_header_policy,
 };
 
@@ -43,7 +43,7 @@ struct ynl_policy_attr ethtool_channels_policy[ETHTOOL_A_CHANNELS_MAX + 1] = {
 };
 
 struct ynl_policy_nest ethtool_channels_nest = {
-	.max_type = ETHTOOL_A_CHANNELS_MAX,
+	.max_attr = ETHTOOL_A_CHANNELS_MAX,
 	.table = ethtool_channels_policy,
 };
 

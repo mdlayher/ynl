@@ -38,7 +38,7 @@ struct ynl_policy_attr dpll_main_policy[DPLLA_MAX + 1] = {
 };
 
 struct ynl_policy_nest dpll_main_nest = {
-	.max_type = DPLLA_MAX,
+	.max_attr = DPLLA_MAX,
 	.table = dpll_main_policy,
 };
 
@@ -49,7 +49,7 @@ struct ynl_policy_attr dpll_source_policy[DPLLA_MAX + 1] = {
 };
 
 struct ynl_policy_nest dpll_source_nest = {
-	.max_type = DPLLA_MAX,
+	.max_attr = DPLLA_MAX,
 	.table = dpll_source_policy,
 };
 
@@ -60,7 +60,7 @@ struct ynl_policy_attr dpll_output_policy[DPLLA_MAX + 1] = {
 };
 
 struct ynl_policy_nest dpll_output_nest = {
-	.max_type = DPLLA_MAX,
+	.max_attr = DPLLA_MAX,
 	.table = dpll_output_policy,
 };
 

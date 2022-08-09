@@ -39,7 +39,7 @@
 #define __perr(yse, _msg)		__yerr(yse, errno, _msg)
 
 #define yerr_msg(_ys, _msg...)		__yerr_msg(&(_ys)->err, _msg)
-#define yerr(_ys, _code, _msg)		__yerr(&(_ys)->err, _code, _msg)
+#define yerr(_ys, _code, _msg...)	__yerr(&(_ys)->err, _code, _msg)
 #define perr(_ys, _msg)			__yerr(&(_ys)->err, errno, _msg)
 
 /* -- Netlink bolier plate */
@@ -77,7 +77,7 @@ ynl_err_walk(struct ynl_sock *ys, void *start, void *end, unsigned int off,
 	off -= astart_off;
 
 	type = mnl_attr_get_type(attr);
-	if (type >= policy->max_type) {
+	if (type > policy->max_attr) {
 		if (n < str_sz)
 			n += snprintf(str, str_sz, "!oob");
 		return n;
@@ -221,6 +221,81 @@ mnl_cb_t ynl_cb_array[NLMSG_MIN_TYPE] = {
 	[NLMSG_DONE]	= ynl_cb_done,
 	[NLMSG_OVERRUN]	= ynl_cb_noop,
 };
+
+/* Attribute validation */
+
+int ynl_attr_validate(struct ynl_sock *ys, const struct nlattr *attr,
+		      struct ynl_policy_nest *nest)
+{
+	struct ynl_policy_attr *policy;
+	unsigned int type, len;
+	unsigned char *data;
+
+	data =mnl_attr_get_payload(attr);
+	len = mnl_attr_get_payload_len(attr);
+	type = mnl_attr_get_type(attr);
+	if (type > nest->max_attr) {
+		yerr(ys, YNL_ERROR_INTERNAL,
+		     "Internal error, validating unknown attribute");
+		return -1;
+	}
+
+	policy = &nest->table[type];
+
+	switch (type) {
+	case YNL_PT_U8:
+		if (len == sizeof(__u8))
+			break;
+		yerr(ys, YNL_ERROR_ATTR_INVALID,
+		     "Invalid attribute (u8 %s)", policy->name);
+		return -1;
+	case YNL_PT_U16:
+		if (len == sizeof(__u16))
+			break;
+		yerr(ys, YNL_ERROR_ATTR_INVALID,
+		     "Invalid attribute (u16 %s)", policy->name);
+		return -1;
+	case YNL_PT_U32:
+		if (len == sizeof(__u32))
+			break;
+		yerr(ys, YNL_ERROR_ATTR_INVALID,
+		     "Invalid attribute (u32 %s)", policy->name);
+		return -1;
+	case YNL_PT_U64:
+		if (len == sizeof(__u64))
+			break;
+		yerr(ys, YNL_ERROR_ATTR_INVALID,
+		     "Invalid attribute (u64 %s)", policy->name);
+		return -1;
+	case YNL_PT_FLAG:
+		/* Let flags grow into real attrs, why not.. */
+		break;
+	case YNL_PT_NEST:
+		if (!len || len >= sizeof(*attr))
+			break;
+		yerr(ys, YNL_ERROR_ATTR_INVALID,
+		     "Invalid attribute (nest %s)", policy->name);
+		return -1;
+	case YNL_PT_BINARY:
+		if (len == policy->len)
+			break;
+		yerr(ys, YNL_ERROR_ATTR_INVALID,
+		     "Invalid attribute (binary %s)", policy->name);
+		return -1;
+	case YNL_PT_NUL_STR:
+		if (len <= policy->len && !data[len])
+			break;
+		yerr(ys, YNL_ERROR_ATTR_INVALID,
+		     "Invalid attribute (nul-string %s)", policy->name);
+		return -1;
+	default:
+		yerr(ys, YNL_ERROR_ATTR_INVALID,
+		     "Invalid attribute (unknown %s)", policy->name);
+		return -1;
+	}
+
+	return 0;
+}
 
 /* Generic code */
 

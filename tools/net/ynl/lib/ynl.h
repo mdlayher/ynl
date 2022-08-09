@@ -17,6 +17,7 @@ enum ynl_error_code {
 	YNL_ERROR_UNEXPECT_MSG,
 	YNL_ERROR_ATTR_MISSING,
 	YNL_ERROR_ATTR_INVALID,
+	YNL_ERROR_INTERNAL,
 };
 
 struct ynl_error {
@@ -40,14 +41,26 @@ struct ynl_sock {
 	unsigned char raw_buf[];
 };
 
+enum ynl_policy_type {
+	YNL_PT_NEST = 1,
+	YNL_PT_FLAG,
+	YNL_PT_BINARY,
+	YNL_PT_U8,
+	YNL_PT_U16,
+	YNL_PT_U32,
+	YNL_PT_U64,
+	YNL_PT_NUL_STR,
+};
+
 struct ynl_policy_attr {
-	unsigned int type;
+	enum ynl_policy_type type;
+	unsigned int len;
 	const char *name;
 	struct ynl_policy_nest *nest;
 };
 
 struct ynl_policy_nest {
-	unsigned int max_type;
+	unsigned int max_attr;
 	struct ynl_policy_attr *table;
 };
 
@@ -65,6 +78,9 @@ struct nlmsghdr *
 ynl_gemsg_start_req(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version);
 struct nlmsghdr *
 ynl_gemsg_start_dump(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version);
+
+int ynl_attr_validate(struct ynl_sock *ys, const struct nlattr *attr,
+		      struct ynl_policy_nest *nest);
 
 int ynl_recv_ack(struct ynl_sock *ys, int ret);
 int ynl_cb_null(const struct nlmsghdr *nlh, void *data);

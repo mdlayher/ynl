@@ -35,7 +35,7 @@ struct ynl_policy_attr nlctrl_main_policy[CTRL_ATTR_MAX + 1] = {
 };
 
 struct ynl_policy_nest nlctrl_main_nest = {
-	.max_type = CTRL_ATTR_MAX,
+	.max_attr = CTRL_ATTR_MAX,
 	.table = nlctrl_main_policy,
 };
 
@@ -45,7 +45,7 @@ struct ynl_policy_attr nlctrl_operation_policy[CTRL_ATTR_OP_MAX + 1] = {
 };
 
 struct ynl_policy_nest nlctrl_operation_nest = {
-	.max_type = CTRL_ATTR_OP_MAX,
+	.max_attr = CTRL_ATTR_OP_MAX,
 	.table = nlctrl_operation_policy,
 };
 
@@ -55,7 +55,7 @@ struct ynl_policy_attr nlctrl_mcast_group_policy[CTRL_ATTR_MCAST_GRP_MAX + 1] = 
 };
 
 struct ynl_policy_nest nlctrl_mcast_group_nest = {
-	.max_type = CTRL_ATTR_MCAST_GRP_MAX,
+	.max_attr = CTRL_ATTR_MCAST_GRP_MAX,
 	.table = nlctrl_mcast_group_policy,
 };
 
@@ -65,7 +65,7 @@ struct ynl_policy_attr nlctrl_policy_policy[CTRL_ATTR_POLICY_MAX + 1] = {
 };
 
 struct ynl_policy_nest nlctrl_policy_nest = {
-	.max_type = CTRL_ATTR_POLICY_MAX,
+	.max_attr = CTRL_ATTR_POLICY_MAX,
 	.table = nlctrl_policy_policy,
 };
 
@@ -84,7 +84,7 @@ struct ynl_policy_attr nlctrl_nl_policy_policy[NL_POLICY_TYPE_ATTR_MAX + 1] = {
 };
 
 struct ynl_policy_nest nlctrl_nl_policy_nest = {
-	.max_type = NL_POLICY_TYPE_ATTR_MAX,
+	.max_attr = NL_POLICY_TYPE_ATTR_MAX,
 	.table = nlctrl_nl_policy_policy,
 };
 

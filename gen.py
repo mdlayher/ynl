@@ -766,7 +766,7 @@ def put_typol(ri, attr_space):
     ri.cw.nl()
 
     ri.cw.block_start(line=f'struct ynl_policy_nest {nest_op_prefix(ri, attr_space)}_nest =')
-    ri.cw.p(f'.max_type = {type_max},')
+    ri.cw.p(f'.max_attr = {type_max},')
     ri.cw.p(f'.table = {nest_op_prefix(ri, attr_space)}_policy,')
     ri.cw.block_end(line=';')
     ri.cw.nl()
