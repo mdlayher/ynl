@@ -319,6 +319,7 @@ nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req)
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, CTRL_CMD_GETFAMILY, 1);
+	ys->req_policy = &nlctrl_main_nest;
 
 	if (req->family_id_present)
 		mnl_attr_put_u16(nlh, CTRL_ATTR_FAMILY_ID, req->family_id);
@@ -483,6 +484,7 @@ nlctrl_getpolicy_dump(struct ynl_sock *ys,
 	yds.cb = nlctrl_getpolicy_rsp_dump_parse;
 
 	nlh = ynl_gemsg_start_dump(ys, ys->family_id, CTRL_CMD_GETPOLICY, 1);
+	ys->req_policy = &nlctrl_main_nest;
 
 	if (req->family_id_present)
 		mnl_attr_put_u16(nlh, CTRL_ATTR_FAMILY_ID, req->family_id);

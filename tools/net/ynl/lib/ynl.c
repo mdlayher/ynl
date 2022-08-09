@@ -54,6 +54,12 @@ ynl_err_walk(struct ynl_sock *ys, void *start, void *end, unsigned int off,
 	bool found = false;
 	int n = 0;
 
+	if (!policy) {
+		if (n < str_sz)
+			n += snprintf(str, str_sz, "!policy");
+		return n;
+	}
+
 	data_len = end - start;
 
 	mnl_attr_for_each_payload(start, data_len) {

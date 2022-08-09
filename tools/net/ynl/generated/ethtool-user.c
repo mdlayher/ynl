@@ -160,6 +160,7 @@ ethtool_channels_get(struct ynl_sock *ys, struct ethtool_channels_get_req *req)
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, ETHTOOL_MSG_CHANNELS_GET, 1);
+	ys->req_policy = &ethtool_channels_nest;
 
 	if (req->header_present)
 		ethtool_header_put(nlh, ETHTOOL_A_CHANNELS_HEADER, &req->header);
@@ -262,6 +263,7 @@ int ethtool_channels_set(struct ynl_sock *ys,
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, ETHTOOL_MSG_CHANNELS_SET, 1);
+	ys->req_policy = &ethtool_channels_nest;
 
 	if (req->header_present)
 		ethtool_header_put(nlh, ETHTOOL_A_CHANNELS_HEADER, &req->header);

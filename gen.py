@@ -951,8 +951,9 @@ def print_req(ri):
     ri.cw.write_func_lvar(local_vars)
 
     ri.cw.p(f"nlh = ynl_gemsg_start_req(ys, {ri.nl.get_family_id()}, {ri.op.enum_name}, 1);")
-    ri.cw.nl()
 
+    ri.cw.p(f"ys->req_policy = &{nest_op_prefix(ri, ri.attr_space)}_nest;")
+    ri.cw.nl()
     for arg in ri.op[ri.op_mode]["request"]['attributes']:
         attr = ri.family.attr_spaces[ri.attr_space][arg]
         attr.typed.attr_put(ri, "req")
@@ -1007,13 +1008,14 @@ def print_dump(ri):
     ri.cw.p(f"yds.cb = {op_prefix(ri, 'reply', deref=True)}_parse;")
     ri.cw.nl()
     ri.cw.p(f"nlh = ynl_gemsg_start_dump(ys, {ri.nl.get_family_id()}, {ri.op.enum_name}, 1);")
-    ri.cw.nl()
 
     if "request" in ri.op[ri.op_mode]:
+        ri.cw.p(f"ys->req_policy = &{nest_op_prefix(ri, ri.attr_space)}_nest;")
+        ri.cw.nl()
         for arg in ri.op[ri.op_mode]["request"]['attributes']:
             attr = ri.family.attr_spaces[ri.attr_space][arg]
             attr.typed.attr_put(ri, "req")
-        ri.cw.nl()
+    ri.cw.nl()
 
     ri.cw.p(f"""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
 	if (err < 0)

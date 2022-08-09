@@ -46,6 +46,7 @@ int fou_add(struct ynl_sock *ys, struct fou_add_req *req)
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, FOU_CMD_ADD, 1);
+	ys->req_policy = &fou_main_nest;
 
 	if (req->port_present)
 		mnl_attr_put_u16(nlh, FOU_ATTR_PORT, req->port);
@@ -94,6 +95,7 @@ int fou_del(struct ynl_sock *ys, struct fou_del_req *req)
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, FOU_CMD_DEL, 1);
+	ys->req_policy = &fou_main_nest;
 
 	if (req->af_present)
 		mnl_attr_put_u8(nlh, FOU_ATTR_AF, req->af);
@@ -198,6 +200,7 @@ struct fou_get_rsp *fou_get(struct ynl_sock *ys, struct fou_get_req *req)
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, FOU_CMD_GET, 1);
+	ys->req_policy = &fou_main_nest;
 
 	if (req->af_present)
 		mnl_attr_put_u8(nlh, FOU_ATTR_AF, req->af);

@@ -224,6 +224,7 @@ dpll_device_get(struct ynl_sock *ys, struct dpll_device_get_req *req)
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, DPLL_CMD_DEVICE_GET, 1);
+	ys->req_policy = &dpll_main_nest;
 
 	if (req->device_id_present)
 		mnl_attr_put_u32(nlh, DPLLA_DEVICE_ID, req->device_id);
@@ -269,6 +270,7 @@ int dpll_set_source_type(struct ynl_sock *ys,
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, DPLL_CMD_SET_SOURCE_TYPE, 1);
+	ys->req_policy = &dpll_main_nest;
 
 	if (req->device_id_present)
 		mnl_attr_put_u32(nlh, DPLLA_DEVICE_ID, req->device_id);
@@ -306,6 +308,7 @@ int dpll_set_output_type(struct ynl_sock *ys,
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, DPLL_CMD_SET_OUTPUT_TYPE, 1);
+	ys->req_policy = &dpll_main_nest;
 
 	if (req->device_id_present)
 		mnl_attr_put_u32(nlh, DPLLA_DEVICE_ID, req->device_id);
