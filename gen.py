@@ -84,9 +84,11 @@ class Type:
     def attr_put(self, ri, var):
         raise Exception(f"Put not implemented for class type {self.type}")
 
-    def _attr_get(self, ri, var, lines, local_vars=None):
+    def _attr_get(self, ri, var, lines, init_lines=None, local_vars=None):
         if type(lines) is str:
             lines = [lines]
+        if type(init_lines) is str:
+            init_lines = [init_lines]
 
         ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {attr_enum_name(ri, self.name)})")
         if local_vars:
@@ -98,6 +100,11 @@ class Type:
             ri.cw.p(f"if (ynl_attr_validate(yarg, attr))")
             ri.cw.p(f"\treturn MNL_CB_ERROR;")
             ri.cw.p(f"{var}->{self.name}_present = 1;")
+
+        if init_lines:
+            ri.cw.nl()
+            for line in init_lines:
+                ri.cw.p(line)
 
         for line in lines:
             ri.cw.p(line)
@@ -238,8 +245,11 @@ class TypeNest(Type):
                             f"{attr_enum_name(ri, self.name)}, &{var}->{self.name})")
 
     def attr_get(self, ri, var):
-        self._attr_get(ri, var,
-                       f"{nest_op_prefix(ri, self.nested_attrs)}_parse(&{var}->{self.name}, attr);")
+        nn_pfx = nest_op_prefix(ri, self.nested_attrs)
+        get_lines = [f"{nn_pfx}_parse(&parg, attr);"]
+        init_lines = [f"parg.rsp_policy = &{nn_pfx}_nest;",
+                      f"parg.data = &{var}->{self.name};"]
+        self._attr_get(ri, var, get_lines, init_lines=init_lines)
 
     def setter(self, ri, space, direction, deref=False, ref=None):
         ref = (ref if ref else []) + [self.c_name]
@@ -300,7 +310,7 @@ class TypeArrayNest(Type):
         get_lines = [f'attr_{self.name} = attr;',
                      'mnl_attr_for_each_nested(attr2, attr)',
                      f'\t{var}->n_{self.name}++;']
-        self._attr_get(ri, var, get_lines, local_vars)
+        self._attr_get(ri, var, get_lines, local_vars=local_vars)
 
 
 class TypeNestTypeValue(Type):
@@ -311,10 +321,13 @@ class TypeNestTypeValue(Type):
         return f'.type = YNL_PT_NEST, .nest = &{nest_op_prefix(ri, self.nested_attrs)}_nest, '
 
     def attr_get(self, ri, var):
+        nn_pfx = nest_op_prefix(ri, self.nested_attrs)
         prev = 'attr'
         tv_args = ''
         get_lines = []
         local_vars = []
+        init_lines = [f"parg.rsp_policy = &{nn_pfx}_nest;",
+                      f"parg.data = &{var}->{self.name};"]
         if 'type-value' in self.attr:
             local_vars += [f'const struct nlattr *attr_{", *attr_".join(self.attr["type-value"])};']
             local_vars += [f'__u32 {", ".join(self.attr["type-value"])};']
@@ -325,9 +338,8 @@ class TypeNestTypeValue(Type):
 
             tv_args = f", {', '.join(self.attr['type-value'])}"
 
-        get_lines += [f"{nest_op_prefix(ri, self.nested_attrs)}_parse(&{var}->{self.name}, " +
-                      f"{prev}{tv_args});"]
-        self._attr_get(ri, var, get_lines, local_vars)
+        get_lines += [f"{nn_pfx}_parse(&parg, {prev}{tv_args});"]
+        self._attr_get(ri, var, get_lines, init_lines=init_lines, local_vars=local_vars)
 
 
 class Attribute:
@@ -829,10 +841,11 @@ def put_req_nested(ri, attr_space):
     ri.cw.nl()
 
 
-def prep_multi_parse(ri, type_list, array_nests, multi_attrs, local_vars, attr_space=None):
+def prep_multi_parse(ri, type_list, array_nests, multi_attrs, lines, local_vars, attr_space=None):
     if attr_space is None:
         attr_space = ri.attr_space
 
+    needs_parg = False
     for arg in type_list:
         aspec = ri.family.attr_spaces[attr_space][arg]
         if aspec['type'] == 'array-nest':
@@ -840,8 +853,12 @@ def prep_multi_parse(ri, type_list, array_nests, multi_attrs, local_vars, attr_s
             array_nests.add(arg)
         if aspec['type'] == 'multi-attr':
             multi_attrs.add(arg)
+        needs_parg |= 'nested-attributes' in aspec
     if array_nests or multi_attrs:
         local_vars.append('int i;')
+    if needs_parg:
+        local_vars.append('struct ynl_parse_arg parg;')
+        lines.append('parg.ys = yarg->ys;')
 
 
 def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
@@ -855,12 +872,15 @@ def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
 
     for anest in sorted(array_nests):
         aspec = ri.family.attr_spaces[attr_space][anest]
+        nn_pfx = nest_op_prefix(ri, aspec['nested-attributes'])
+
         ri.cw.block_start(line=f"if (dst->n_{anest})")
         ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, sizeof(*dst->{anest}));")
         ri.cw.p('i = 0;')
+        ri.cw.p(f"parg.rsp_policy = &{nn_pfx}_nest;")
         ri.cw.block_start(line=f"mnl_attr_for_each_nested(attr, attr_{anest})")
-        ri.cw.p(f"{nest_op_prefix(ri, aspec['nested-attributes'])}_parse(&dst->{anest}[i], attr, " +
-                "mnl_attr_get_type(attr));")
+        ri.cw.p(f"parg.data = &dst->{anest}[i];")
+        ri.cw.p(f"{nn_pfx}_parse(&parg, attr, mnl_attr_get_type(attr));")
         ri.cw.p('i++;')
         ri.cw.block_end()
         ri.cw.block_end()
@@ -871,10 +891,13 @@ def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
         ri.cw.block_start(line=f"if (dst->n_{anest})")
         ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, sizeof(*dst->{anest}));")
         ri.cw.p('i = 0;')
+        if 'nested-attributes' in aspec:
+            ri.cw.p(f"parg.rsp_policy = &{nest_op_prefix(ri, aspec['nested-attributes'])}_nest;")
         ri.cw.block_start(line=iter_line)
         ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {attr_enum_name(ri, anest)})")
         if 'nested-attributes' in aspec:
-            ri.cw.p(f"{nest_op_prefix(ri, aspec['nested-attributes'])}_parse(&dst->{anest}[i], attr);")
+            ri.cw.p(f"parg.data = &dst->{anest}[i];")
+            ri.cw.p(f"{nest_op_prefix(ri, aspec['nested-attributes'])}_parse(&parg, attr);")
         elif aspec['sub-type'] in scalars:
             t = aspec['sub-type']
             if t[0] == 's':
@@ -892,21 +915,27 @@ def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
 def parse_rsp_nested(ri, attr_space):
     struct_type = nest_type_name(ri, attr_space)
 
-    func_args = [f'{struct_type} *dst',
+    func_args = ['struct ynl_parse_arg *yarg',
                  'const struct nlattr *nested']
     for arg in sorted(ri.family.inherited_members[attr_space]):
         func_args.append('__u32 ' + arg)
 
-    local_vars = ['const struct nlattr *attr;']
+    local_vars = ['const struct nlattr *attr;',
+                  f'{struct_type} *dst = yarg->data;']
+    init_lines = []
 
     array_nests = set()
     multi_attrs = set()
     prep_multi_parse(ri, ri.family.attr_spaces[attr_space],
-                     array_nests, multi_attrs, local_vars, attr_space=attr_space)
+                     array_nests, multi_attrs, init_lines, local_vars, attr_space=attr_space)
 
     ri.cw.write_func_prot('int', f'{nest_op_prefix(ri, attr_space)}_parse', func_args)
     ri.cw.block_start()
     ri.cw.write_func_lvar(local_vars)
+
+    for line in init_lines:
+        ri.cw.p(line)
+    ri.cw.nl()
 
     for arg in sorted(ri.family.inherited_members[attr_space]):
         ri.cw.p(f'dst->{arg} = {arg};')
@@ -939,17 +968,19 @@ def parse_rsp_msg(ri, deref=False):
     local_vars = [f'{struct_type} *dst;',
                   'struct ynl_parse_arg *yarg = data;',
                   'const struct nlattr *attr;']
+    init_lines = ['dst = yarg->data;']
 
     array_nests = set()
     multi_attrs = set()
     prep_multi_parse(ri, ri.op[ri.op_mode]["reply"]['attributes'],
-                     array_nests, multi_attrs, local_vars)
+                     array_nests, multi_attrs, init_lines, local_vars)
 
     ri.cw.write_func_prot('int', f'{op_prefix(ri, "reply", deref=deref)}_parse', func_args)
     ri.cw.block_start()
     ri.cw.write_func_lvar(local_vars)
 
-    ri.cw.p('dst = yarg->data;')
+    for line in init_lines:
+        ri.cw.p(line)
     ri.cw.nl()
     ri.cw.block_start(line="mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr))")
 

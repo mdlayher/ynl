@@ -149,41 +149,61 @@ int fou_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 
 	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 		if (mnl_attr_get_type(attr) == FOU_ATTR_PORT) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->port_present = 1;
 			dst->port = mnl_attr_get_u16(attr);
 		}
 		if (mnl_attr_get_type(attr) == FOU_ATTR_IPPROTO) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->ipproto_present = 1;
 			dst->ipproto = mnl_attr_get_u8(attr);
 		}
 		if (mnl_attr_get_type(attr) == FOU_ATTR_TYPE) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->type_present = 1;
 			dst->type = mnl_attr_get_u8(attr);
 		}
 		if (mnl_attr_get_type(attr) == FOU_ATTR_REMCSUM_NOPARTIAL) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->remcsum_nopartial_present = 1;
 		}
 		if (mnl_attr_get_type(attr) == FOU_ATTR_LOCAL_V4) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->local_v4_present = 1;
 			dst->local_v4 = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == FOU_ATTR_PEER_V4) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->peer_v4_present = 1;
 			dst->peer_v4 = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == FOU_ATTR_LOCAL_V6) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->local_v6_present = 1;
 			memcpy(dst->local_v6, mnl_attr_get_payload(attr), 16);
 		}
 		if (mnl_attr_get_type(attr) == FOU_ATTR_PEER_V6) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->peer_v6_present = 1;
 			memcpy(dst->peer_v6, mnl_attr_get_payload(attr), 16);
 		}
 		if (mnl_attr_get_type(attr) == FOU_ATTR_PEER_PORT) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->peer_port_present = 1;
 			dst->peer_port = mnl_attr_get_u16(attr);
 		}
 		if (mnl_attr_get_type(attr) == FOU_ATTR_IFINDEX) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->ifindex_present = 1;
 			dst->ifindex = mnl_attr_get_u32(attr);
 		}

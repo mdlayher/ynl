@@ -94,19 +94,24 @@ void nlctrl_mcast_group_free(struct nlctrl_mcast_group *obj)
 	free(obj);
 }
 
-int nlctrl_mcast_group_parse(struct nlctrl_mcast_group *dst,
+int nlctrl_mcast_group_parse(struct ynl_parse_arg *yarg,
 			     const struct nlattr *nested, __u32 idx)
 {
+	struct nlctrl_mcast_group *dst = yarg->data;
 	const struct nlattr *attr;
 
 	dst->idx = idx;
 
 	mnl_attr_for_each_nested(attr, nested) {
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_MCAST_GRP_ID) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->id_present = 1;
 			dst->id = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_MCAST_GRP_NAME) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->name_present = 1;
 			strncpy(dst->name, mnl_attr_get_str(attr), GENL_NAMSIZ - 1);
 			dst->name[GENL_NAMSIZ - 1] = 0;
@@ -121,10 +126,11 @@ void nlctrl_nl_policy_free(struct nlctrl_nl_policy *obj)
 	free(obj);
 }
 
-int nlctrl_nl_policy_parse(struct nlctrl_nl_policy *dst,
+int nlctrl_nl_policy_parse(struct ynl_parse_arg *yarg,
 			   const struct nlattr *nested, __u32 attr_idx,
 			   __u32 current_policy_idx)
 {
+	struct nlctrl_nl_policy *dst = yarg->data;
 	const struct nlattr *attr;
 
 	dst->attr_idx = attr_idx;
@@ -132,46 +138,68 @@ int nlctrl_nl_policy_parse(struct nlctrl_nl_policy *dst,
 
 	mnl_attr_for_each_nested(attr, nested) {
 		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_TYPE) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->type_present = 1;
 			dst->type = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MIN_VALUE_U) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->min_value_u_present = 1;
 			dst->min_value_u = mnl_attr_get_u64(attr);
 		}
 		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MAX_VALUE_U) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->max_value_u_present = 1;
 			dst->max_value_u = mnl_attr_get_u64(attr);
 		}
 		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MIN_VALUE_S) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->min_value_s_present = 1;
 			dst->min_value_s = mnl_attr_get_u64(attr);
 		}
 		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MAX_VALUE_S) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->max_value_s_present = 1;
 			dst->max_value_s = mnl_attr_get_u64(attr);
 		}
 		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MASK) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->mask_present = 1;
 			dst->mask = mnl_attr_get_u64(attr);
 		}
 		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MIN_LENGTH) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->min_length_present = 1;
 			dst->min_length = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MAX_LENGTH) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->max_length_present = 1;
 			dst->max_length = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_POLICY_IDX) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->policy_idx_present = 1;
 			dst->policy_idx = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_POLICY_MAXTYPE) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->policy_maxtype_present = 1;
 			dst->policy_maxtype = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_BITFIELD32_MASK) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->bitfield32_mask_present = 1;
 			dst->bitfield32_mask = mnl_attr_get_u32(attr);
 		}
@@ -185,19 +213,24 @@ void nlctrl_operation_free(struct nlctrl_operation *obj)
 	free(obj);
 }
 
-int nlctrl_operation_parse(struct nlctrl_operation *dst,
+int nlctrl_operation_parse(struct ynl_parse_arg *yarg,
 			   const struct nlattr *nested, __u32 idx)
 {
+	struct nlctrl_operation *dst = yarg->data;
 	const struct nlattr *attr;
 
 	dst->idx = idx;
 
 	mnl_attr_for_each_nested(attr, nested) {
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_OP_ID) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->id_present = 1;
 			dst->id = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_OP_FLAGS) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->flags_present = 1;
 			dst->flags = mnl_attr_get_u32(attr);
 		}
@@ -211,19 +244,24 @@ void nlctrl_policy_free(struct nlctrl_policy *obj)
 	free(obj);
 }
 
-int nlctrl_policy_parse(struct nlctrl_policy *dst, const struct nlattr *nested,
-			__u32 cmd)
+int nlctrl_policy_parse(struct ynl_parse_arg *yarg,
+			const struct nlattr *nested, __u32 cmd)
 {
+	struct nlctrl_policy *dst = yarg->data;
 	const struct nlattr *attr;
 
 	dst->cmd = cmd;
 
 	mnl_attr_for_each_nested(attr, nested) {
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_POLICY_DO) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->do_present = 1;
 			dst->do_ = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_POLICY_DUMP) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->dump_present = 1;
 			dst->dump = mnl_attr_get_u32(attr);
 		}
@@ -248,29 +286,41 @@ int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 	struct nlctrl_getfamily_rsp *dst;
 	const struct nlattr *attr_ops;
 	const struct nlattr *attr;
+	struct ynl_parse_arg parg;
 	int i;
 
 	dst = yarg->data;
+	parg.ys = yarg->ys;
 
 	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_FAMILY_ID) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->family_id_present = 1;
 			dst->family_id = mnl_attr_get_u16(attr);
 		}
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_FAMILY_NAME) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->family_name_present = 1;
 			strncpy(dst->family_name, mnl_attr_get_str(attr), GENL_NAMSIZ - 1);
 			dst->family_name[GENL_NAMSIZ - 1] = 0;
 		}
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_VERSION) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->version_present = 1;
 			dst->version = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_HDRSIZE) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->hdrsize_present = 1;
 			dst->hdrsize = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_MAXATTR) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->maxattr_present = 1;
 			dst->maxattr = mnl_attr_get_u32(attr);
 		}
@@ -293,16 +343,20 @@ int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 	if (dst->n_mcast_groups) {
 		dst->mcast_groups = calloc(dst->n_mcast_groups, sizeof(*dst->mcast_groups));
 		i = 0;
+		parg.rsp_policy = &nlctrl_mcast_group_nest;
 		mnl_attr_for_each_nested(attr, attr_mcast_groups) {
-			nlctrl_mcast_group_parse(&dst->mcast_groups[i], attr, mnl_attr_get_type(attr));
+			parg.data = &dst->mcast_groups[i];
+			nlctrl_mcast_group_parse(&parg, attr, mnl_attr_get_type(attr));
 			i++;
 		}
 	}
 	if (dst->n_ops) {
 		dst->ops = calloc(dst->n_ops, sizeof(*dst->ops));
 		i = 0;
+		parg.rsp_policy = &nlctrl_operation_nest;
 		mnl_attr_for_each_nested(attr, attr_ops) {
-			nlctrl_operation_parse(&dst->ops[i], attr, mnl_attr_get_type(attr));
+			parg.data = &dst->ops[i];
+			nlctrl_operation_parse(&parg, attr, mnl_attr_get_type(attr));
 			i++;
 		}
 	}
@@ -425,11 +479,15 @@ int nlctrl_getpolicy_rsp_dump_parse(const struct nlmsghdr *nlh, void *data)
 	struct nlctrl_getpolicy_rsp_dump *dst;
 	struct ynl_parse_arg *yarg = data;
 	const struct nlattr *attr;
+	struct ynl_parse_arg parg;
 
 	dst = yarg->data;
+	parg.ys = yarg->ys;
 
 	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_FAMILY_ID) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->family_id_present = 1;
 			dst->family_id = mnl_attr_get_u16(attr);
 		}
@@ -437,21 +495,31 @@ int nlctrl_getpolicy_rsp_dump_parse(const struct nlmsghdr *nlh, void *data)
 			const struct nlattr *attr_cmd;
 			__u32 cmd;
 
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->op_policy_present = 1;
+
+			parg.rsp_policy = &nlctrl_policy_nest;
+			parg.data = &dst->op_policy;
 			attr_cmd = mnl_attr_get_payload(attr);
 			cmd = mnl_attr_get_type(attr_cmd);
-			nlctrl_policy_parse(&dst->op_policy, attr_cmd, cmd);
+			nlctrl_policy_parse(&parg, attr_cmd, cmd);
 		}
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_POLICY) {
 			const struct nlattr *attr_current_policy_idx, *attr_attr_idx;
 			__u32 current_policy_idx, attr_idx;
 
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
 			dst->policy_present = 1;
+
+			parg.rsp_policy = &nlctrl_nl_policy_nest;
+			parg.data = &dst->policy;
 			attr_current_policy_idx = mnl_attr_get_payload(attr);
 			current_policy_idx = mnl_attr_get_type(attr_current_policy_idx);
 			attr_attr_idx = mnl_attr_get_payload(attr_current_policy_idx);
 			attr_idx = mnl_attr_get_type(attr_attr_idx);
-			nlctrl_nl_policy_parse(&dst->policy, attr_attr_idx, current_policy_idx, attr_idx);
+			nlctrl_nl_policy_parse(&parg, attr_attr_idx, current_policy_idx, attr_idx);
 		}
 	}
 

@@ -71,8 +71,9 @@ void dpll_output_free(struct dpll_output *obj)
 	free(obj);
 }
 
-int dpll_output_parse(struct dpll_output *dst, const struct nlattr *nested)
+int dpll_output_parse(struct ynl_parse_arg *yarg, const struct nlattr *nested)
 {
+	struct dpll_output *dst = yarg->data;
 	const struct nlattr *attr;
 	int i;
 
@@ -114,8 +115,9 @@ void dpll_source_free(struct dpll_source *obj)
 	free(obj);
 }
 
-int dpll_source_parse(struct dpll_source *dst, const struct nlattr *nested)
+int dpll_source_parse(struct ynl_parse_arg *yarg, const struct nlattr *nested)
 {
+	struct dpll_source *dst = yarg->data;
 	const struct nlattr *attr;
 	int i;
 
@@ -165,9 +167,11 @@ int dpll_device_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 	struct ynl_parse_arg *yarg = data;
 	struct dpll_device_get_rsp *dst;
 	const struct nlattr *attr;
+	struct ynl_parse_arg parg;
 	int i;
 
 	dst = yarg->data;
+	parg.ys = yarg->ys;
 
 	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 		if (mnl_attr_get_type(attr) == DPLLA_DEVICE_ID) {
@@ -212,9 +216,11 @@ int dpll_device_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 	if (dst->n_output) {
 		dst->output = calloc(dst->n_output, sizeof(*dst->output));
 		i = 0;
+		parg.rsp_policy = &dpll_output_nest;
 		mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 			if (mnl_attr_get_type(attr) == DPLLA_OUTPUT) {
-				dpll_output_parse(&dst->output[i], attr);
+				parg.data = &dst->output[i];
+				dpll_output_parse(&parg, attr);
 				i++;
 			}
 		}
@@ -222,9 +228,11 @@ int dpll_device_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 	if (dst->n_source) {
 		dst->source = calloc(dst->n_source, sizeof(*dst->source));
 		i = 0;
+		parg.rsp_policy = &dpll_source_nest;
 		mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 			if (mnl_attr_get_type(attr) == DPLLA_SOURCE) {
-				dpll_source_parse(&dst->source[i], attr);
+				parg.data = &dst->source[i];
+				dpll_source_parse(&parg, attr);
 				i++;
 			}
 		}
