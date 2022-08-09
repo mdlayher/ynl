@@ -67,7 +67,11 @@ class Type:
             ri.cw.p(one + ';')
 
     def attr_typol(self, ri):
-        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {"}"},')
+        # TODO this obviously needs to be pushed down to subtypes
+        nest = ''
+        if 'nested-attributes' in self.attr:
+            nest = f".nest = &{nest_op_prefix(ri, self.attr['nested-attributes'])}_nest, "
+        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {nest}{"}"},')
 
     def _attr_put_line(self, ri, var, line):
         ri.cw.p(f"if ({var}->{self.name}_present)")
@@ -745,6 +749,10 @@ def print_req_prototype(ri):
 
 def print_dump_prototype(ri):
     print_prototype(ri, "request")
+
+
+def put_typol_fwd(ri, attr_space):
+    ri.cw.p(f'extern struct ynl_policy_nest {nest_op_prefix(ri, attr_space)}_nest;')
 
 
 def put_typol(ri, attr_space):
@@ -1454,6 +1462,11 @@ def main():
     else:
         if args.mode == "user":
             cw.p('// Policies')
+            for name, _ in parsed.attr_spaces.items():
+                ri = RenderInfo(cw, parsed, args.mode, "", "", "", name)
+                put_typol_fwd(ri, name)
+            cw.nl()
+
             for name, _ in parsed.attr_spaces.items():
                 ri = RenderInfo(cw, parsed, args.mode, "", "", "", name)
                 put_typol(ri, name)

@@ -15,6 +15,8 @@
 #include "ynl.h"
 
 // Policies
+extern struct ynl_policy_nest fou_main_nest;
+
 struct ynl_policy_attr fou_main_policy[FOU_ATTR_MAX + 1] = {
 	[FOU_ATTR_UNSPEC] = { .name = "unspec", },
 	[FOU_ATTR_PORT] = { .name = "port", },

@@ -15,15 +15,19 @@
 #include "ynl.h"
 
 // Policies
+extern struct ynl_policy_nest dpll_main_nest;
+extern struct ynl_policy_nest dpll_source_nest;
+extern struct ynl_policy_nest dpll_output_nest;
+
 struct ynl_policy_attr dpll_main_policy[DPLLA_MAX + 1] = {
 	[DPLLA_UNSPEC] = { .name = "unspec", },
 	[DPLLA_DEVICE_ID] = { .name = "device_id", },
 	[DPLLA_DEVICE_NAME] = { .name = "device_name", },
-	[DPLLA_SOURCE] = { .name = "source", },
+	[DPLLA_SOURCE] = { .name = "source", .nest = &dpll_source_nest, },
 	[DPLLA_SOURCE_ID] = { .name = "source_id", },
 	[DPLLA_SOURCE_TYPE] = { .name = "source_type", },
 	[DPLLA_SOURCE_SUPPORTED] = { .name = "source_supported", },
-	[DPLLA_OUTPUT] = { .name = "output", },
+	[DPLLA_OUTPUT] = { .name = "output", .nest = &dpll_output_nest, },
 	[DPLLA_OUTPUT_ID] = { .name = "output_id", },
 	[DPLLA_OUTPUT_TYPE] = { .name = "output_type", },
 	[DPLLA_OUTPUT_SUPPORTED] = { .name = "output_supported", },

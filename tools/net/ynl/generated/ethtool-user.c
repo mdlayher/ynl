@@ -16,6 +16,9 @@
 #include "ynl.h"
 
 // Policies
+extern struct ynl_policy_nest ethtool_header_nest;
+extern struct ynl_policy_nest ethtool_channels_nest;
+
 struct ynl_policy_attr ethtool_header_policy[ETHTOOL_A_HEADER_MAX + 1] = {
 	[ETHTOOL_A_HEADER_DEV_INDEX] = { .name = "dev_index", },
 	[ETHTOOL_A_HEADER_DEV_NAME] = { .name = "dev_name", },
@@ -28,7 +31,7 @@ struct ynl_policy_nest ethtool_header_nest = {
 };
 
 struct ynl_policy_attr ethtool_channels_policy[ETHTOOL_A_CHANNELS_MAX + 1] = {
-	[ETHTOOL_A_CHANNELS_HEADER] = { .name = "header", },
+	[ETHTOOL_A_CHANNELS_HEADER] = { .name = "header", .nest = &ethtool_header_nest, },
 	[ETHTOOL_A_CHANNELS_RX_MAX] = { .name = "rx_max", },
 	[ETHTOOL_A_CHANNELS_TX_MAX] = { .name = "tx_max", },
 	[ETHTOOL_A_CHANNELS_OTHER_MAX] = { .name = "other_max", },

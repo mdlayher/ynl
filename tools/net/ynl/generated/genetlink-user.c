@@ -15,17 +15,23 @@
 #include "ynl.h"
 
 // Policies
+extern struct ynl_policy_nest nlctrl_main_nest;
+extern struct ynl_policy_nest nlctrl_operation_nest;
+extern struct ynl_policy_nest nlctrl_mcast_group_nest;
+extern struct ynl_policy_nest nlctrl_policy_nest;
+extern struct ynl_policy_nest nlctrl_nl_policy_nest;
+
 struct ynl_policy_attr nlctrl_main_policy[CTRL_ATTR_MAX + 1] = {
 	[CTRL_ATTR_FAMILY_ID] = { .name = "family_id", },
 	[CTRL_ATTR_FAMILY_NAME] = { .name = "family_name", },
 	[CTRL_ATTR_VERSION] = { .name = "version", },
 	[CTRL_ATTR_HDRSIZE] = { .name = "hdrsize", },
 	[CTRL_ATTR_MAXATTR] = { .name = "maxattr", },
-	[CTRL_ATTR_OPS] = { .name = "ops", },
-	[CTRL_ATTR_MCAST_GROUPS] = { .name = "mcast_groups", },
+	[CTRL_ATTR_OPS] = { .name = "ops", .nest = &nlctrl_operation_nest, },
+	[CTRL_ATTR_MCAST_GROUPS] = { .name = "mcast_groups", .nest = &nlctrl_mcast_group_nest, },
 	[CTRL_ATTR_OP] = { .name = "op", },
-	[CTRL_ATTR_OP_POLICY] = { .name = "op_policy", },
-	[CTRL_ATTR_POLICY] = { .name = "policy", },
+	[CTRL_ATTR_OP_POLICY] = { .name = "op_policy", .nest = &nlctrl_policy_nest, },
+	[CTRL_ATTR_POLICY] = { .name = "policy", .nest = &nlctrl_nl_policy_nest, },
 };
 
 struct ynl_policy_nest nlctrl_main_nest = {
