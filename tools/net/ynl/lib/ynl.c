@@ -43,48 +43,126 @@
 #define perr(_ys, _msg)			__yerr(&(_ys)->err, errno, _msg)
 
 /* -- Netlink bolier plate */
-static int ynl_ext_ack_offs(struct ynl_sock *ys, const struct nlattr *attr)
+static int
+ynl_err_walk(struct ynl_sock *ys, void *start, void *end, unsigned int off,
+	     struct ynl_policy_nest *policy, char *str, int str_sz)
 {
-	if (mnl_attr_get_payload_len(attr) != sizeof(__u32))
-		return MNL_CB_ERROR;
+	unsigned int astart_off, aend_off;
+	const struct nlattr *attr;
+	unsigned int data_len;
+	unsigned int type;
+	bool found = false;
+	int n = 0;
 
-	ys->err.attr_offs = mnl_attr_get_u32(attr);
-	return MNL_CB_OK;
-}
+	data_len = end - start;
 
-static int ynl_ext_ack_msg(struct ynl_sock *ys, const struct nlattr *attr)
-{
-	const char *msg = mnl_attr_get_payload(attr);
+	mnl_attr_for_each_payload(start, data_len) {
+		astart_off = (char *)attr - (char *)start;
+		aend_off = astart_off + mnl_attr_get_payload_len(attr);
+		if (aend_off <= off)
+			continue;
 
-	if (msg[mnl_attr_get_payload_len(attr) - 1])
-		return MNL_CB_ERROR;
+		found = true;
+		break;
+	}
+	if (!found)
+		return 0;
 
-	/* Implicitly depend on ys->err.code already set */
-	yerr_msg(ys, "Kernel %s: %s", ys->err.code ? "error" : "warning", msg);
-	return MNL_CB_OK;
+	off -= astart_off;
+
+	type = mnl_attr_get_type(attr);
+	if (type >= policy->max_type) {
+		if (n < str_sz)
+			n += snprintf(str, str_sz, "!oob");
+		return n;
+	}
+
+	if (!policy->table[type].name) {
+		if (n < str_sz)
+			n += snprintf(str, str_sz, "!name");
+		return n;
+	}
+
+	if (n < str_sz)
+		n += snprintf(str, str_sz - n, ".%s", policy->table[type].name);
+
+	if (!off)
+		return n;
+
+	if (!policy->table[type].nest) {
+		if (n < str_sz)
+			n += snprintf(str, str_sz, "!nest");
+		return n;
+	}
+
+	off -= sizeof(struct nlattr);
+	start =  mnl_attr_get_payload(attr);
+	end = start + mnl_attr_get_payload_len(attr);
+
+	return n + ynl_err_walk(ys, start, end, off, policy->table[type].nest,
+				&str[n], str_sz - n);
 }
 
 static int
 ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 		  unsigned int hlen)
 {
-	const struct nlattr *attr;
+	const struct nlattr *attr, *msg = NULL, *offs = NULL;
+	char bad_attr[sizeof(ys->err.msg)];
+	const char *str = "";
 
 	if (!(nlh->nlmsg_flags & NLM_F_ACK_TLVS))
 		return MNL_CB_OK;
 
 	mnl_attr_for_each(attr, nlh, hlen) {
-		int ret = MNL_CB_OK;
-
 		if (mnl_attr_get_type(attr) == NLMSGERR_ATTR_MSG)
-			ret = ynl_ext_ack_msg(ys, attr);
-
+			msg = attr;
 		if (mnl_attr_get_type(attr) == NLMSGERR_ATTR_OFFS)
-			ret = ynl_ext_ack_offs(ys, attr);
-
-		if (ret != MNL_CB_OK)
-			return ret;
+			offs = attr;
 	}
+	if (!offs && !msg)
+		return MNL_CB_OK;
+
+	bad_attr[0] = '\0';
+
+	if (offs) {
+		unsigned int n, off;
+		void *start, *end;
+
+		if (mnl_attr_get_payload_len(offs) != sizeof(__u32))
+			return MNL_CB_ERROR;
+
+		ys->err.attr_offs = mnl_attr_get_u32(offs);
+
+		n = snprintf(bad_attr, sizeof(bad_attr), " (bad attr: ");
+
+		start = mnl_nlmsg_get_payload_offset(ys->nlh,
+						     sizeof(struct genlmsghdr));
+		end = mnl_nlmsg_get_payload_tail(ys->nlh);
+
+		off = ys->err.attr_offs;
+		off -= sizeof(struct nlmsghdr);
+		off -= sizeof(struct genlmsghdr);
+
+		n += ynl_err_walk(ys, start, end, off, ys->req_policy,
+				  &bad_attr[n], sizeof(bad_attr) - n);
+
+		if (n < sizeof(bad_attr))
+			n += snprintf(&bad_attr[n], sizeof(bad_attr) - n, ")");
+		if (n >= sizeof(bad_attr))
+			n = sizeof(bad_attr) - 1;
+		bad_attr[n] = '\0';
+	}
+	if (msg) {
+		str = mnl_attr_get_payload(msg);
+
+		if (str[mnl_attr_get_payload_len(msg) - 1])
+			return MNL_CB_ERROR;
+	}
+
+	/* Implicitly depend on ys->err.code already set */
+	yerr_msg(ys, "Kernel %s: '%s'%s",
+		 ys->err.code ? "error" : "warning", str, bad_attr);
 
 	return MNL_CB_OK;
 }
@@ -206,7 +284,6 @@ ynl_gemsg_start_dump(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version)
 
 int ynl_recv_ack(struct ynl_sock *ys, int ret)
 {
-	fprintf(stderr, "called %d\n", ret);
 	if (!ret) {
 		yerr(ys, YNL_ERROR_EXPECT_ACK,
 		     "Expecting an ACK but nothing received");

@@ -27,8 +27,7 @@ int main(int argc, char **argv)
 	if (rsp)
 		fprintf(stderr, "Unexpected success with bad ifindex\n");
 	else
-		fprintf(stderr, "msg: %s code: %d off: %d\n",
-			ys->err.msg, ys->err.code, ys->err.attr_offs);
+		fprintf(stderr, "Getting channels failed: %s\n", ys->err.msg);
 
 	memset(&req, 0, sizeof(req));
 	ethtool_channels_get_req_set_header_dev_name(&req, argv[1]);

@@ -34,9 +34,21 @@ struct ynl_sock {
 	struct ynl_error err;
 
 	struct nlmsghdr *nlh;
+	struct ynl_policy_nest *req_policy;
 	unsigned char *tx_buf;
 	unsigned char *rx_buf;
 	unsigned char raw_buf[];
+};
+
+struct ynl_policy_attr {
+	unsigned int type;
+	const char *name;
+	struct ynl_policy_nest *nest;
+};
+
+struct ynl_policy_nest {
+	unsigned int max_type;
+	struct ynl_policy_attr *table;
 };
 
 struct ynl_parse_arg {
