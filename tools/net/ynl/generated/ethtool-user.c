@@ -20,9 +20,9 @@ extern struct ynl_policy_nest ethtool_header_nest;
 extern struct ynl_policy_nest ethtool_channels_nest;
 
 struct ynl_policy_attr ethtool_header_policy[ETHTOOL_A_HEADER_MAX + 1] = {
-	[ETHTOOL_A_HEADER_DEV_INDEX] = { .name = "dev_index", },
-	[ETHTOOL_A_HEADER_DEV_NAME] = { .name = "dev_name", },
-	[ETHTOOL_A_HEADER_FLAGS] = { .name = "flags", },
+	[ETHTOOL_A_HEADER_DEV_INDEX] = { .name = "dev_index", .type = YNL_PT_U32, },
+	[ETHTOOL_A_HEADER_DEV_NAME] = { .name = "dev_name", .type = YNL_PT_NUL_STR, .len = ALTIFNAMSIZ, },
+	[ETHTOOL_A_HEADER_FLAGS] = { .name = "flags", .type = YNL_PT_U32, },
 };
 
 struct ynl_policy_nest ethtool_header_nest = {
@@ -31,15 +31,15 @@ struct ynl_policy_nest ethtool_header_nest = {
 };
 
 struct ynl_policy_attr ethtool_channels_policy[ETHTOOL_A_CHANNELS_MAX + 1] = {
-	[ETHTOOL_A_CHANNELS_HEADER] = { .name = "header", .nest = &ethtool_header_nest, },
-	[ETHTOOL_A_CHANNELS_RX_MAX] = { .name = "rx_max", },
-	[ETHTOOL_A_CHANNELS_TX_MAX] = { .name = "tx_max", },
-	[ETHTOOL_A_CHANNELS_OTHER_MAX] = { .name = "other_max", },
-	[ETHTOOL_A_CHANNELS_COMBINED_MAX] = { .name = "combined_max", },
-	[ETHTOOL_A_CHANNELS_RX_COUNT] = { .name = "rx_count", },
-	[ETHTOOL_A_CHANNELS_TX_COUNT] = { .name = "tx_count", },
-	[ETHTOOL_A_CHANNELS_OTHER_COUNT] = { .name = "other_count", },
-	[ETHTOOL_A_CHANNELS_COMBINED_COUNT] = { .name = "combined_count", },
+	[ETHTOOL_A_CHANNELS_HEADER] = { .name = "header", .type = YNL_PT_NEST, .nest = &ethtool_header_nest, },
+	[ETHTOOL_A_CHANNELS_RX_MAX] = { .name = "rx_max", .type = YNL_PT_U32, },
+	[ETHTOOL_A_CHANNELS_TX_MAX] = { .name = "tx_max", .type = YNL_PT_U32, },
+	[ETHTOOL_A_CHANNELS_OTHER_MAX] = { .name = "other_max", .type = YNL_PT_U32, },
+	[ETHTOOL_A_CHANNELS_COMBINED_MAX] = { .name = "combined_max", .type = YNL_PT_U32, },
+	[ETHTOOL_A_CHANNELS_RX_COUNT] = { .name = "rx_count", .type = YNL_PT_U32, },
+	[ETHTOOL_A_CHANNELS_TX_COUNT] = { .name = "tx_count", .type = YNL_PT_U32, },
+	[ETHTOOL_A_CHANNELS_OTHER_COUNT] = { .name = "other_count", .type = YNL_PT_U32, },
+	[ETHTOOL_A_CHANNELS_COMBINED_COUNT] = { .name = "combined_count", .type = YNL_PT_U32, },
 };
 
 struct ynl_policy_nest ethtool_channels_nest = {

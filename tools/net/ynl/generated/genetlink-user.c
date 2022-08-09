@@ -22,14 +22,14 @@ extern struct ynl_policy_nest nlctrl_policy_nest;
 extern struct ynl_policy_nest nlctrl_nl_policy_nest;
 
 struct ynl_policy_attr nlctrl_main_policy[CTRL_ATTR_MAX + 1] = {
-	[CTRL_ATTR_FAMILY_ID] = { .name = "family_id", },
-	[CTRL_ATTR_FAMILY_NAME] = { .name = "family_name", },
-	[CTRL_ATTR_VERSION] = { .name = "version", },
-	[CTRL_ATTR_HDRSIZE] = { .name = "hdrsize", },
-	[CTRL_ATTR_MAXATTR] = { .name = "maxattr", },
+	[CTRL_ATTR_FAMILY_ID] = { .name = "family_id", .type = YNL_PT_U16, },
+	[CTRL_ATTR_FAMILY_NAME] = { .name = "family_name", .type = YNL_PT_NUL_STR, .len = GENL_NAMSIZ, },
+	[CTRL_ATTR_VERSION] = { .name = "version", .type = YNL_PT_U32, },
+	[CTRL_ATTR_HDRSIZE] = { .name = "hdrsize", .type = YNL_PT_U32, },
+	[CTRL_ATTR_MAXATTR] = { .name = "maxattr", .type = YNL_PT_U32, },
 	[CTRL_ATTR_OPS] = { .name = "ops", .nest = &nlctrl_operation_nest, },
 	[CTRL_ATTR_MCAST_GROUPS] = { .name = "mcast_groups", .nest = &nlctrl_mcast_group_nest, },
-	[CTRL_ATTR_OP] = { .name = "op", },
+	[CTRL_ATTR_OP] = { .name = "op", .type = YNL_PT_U32, },
 	[CTRL_ATTR_OP_POLICY] = { .name = "op_policy", .nest = &nlctrl_policy_nest, },
 	[CTRL_ATTR_POLICY] = { .name = "policy", .nest = &nlctrl_nl_policy_nest, },
 };
@@ -40,8 +40,8 @@ struct ynl_policy_nest nlctrl_main_nest = {
 };
 
 struct ynl_policy_attr nlctrl_operation_policy[CTRL_ATTR_OP_MAX + 1] = {
-	[CTRL_ATTR_OP_ID] = { .name = "id", },
-	[CTRL_ATTR_OP_FLAGS] = { .name = "flags", },
+	[CTRL_ATTR_OP_ID] = { .name = "id", .type = YNL_PT_U32, },
+	[CTRL_ATTR_OP_FLAGS] = { .name = "flags", .type = YNL_PT_U32, },
 };
 
 struct ynl_policy_nest nlctrl_operation_nest = {
@@ -50,8 +50,8 @@ struct ynl_policy_nest nlctrl_operation_nest = {
 };
 
 struct ynl_policy_attr nlctrl_mcast_group_policy[CTRL_ATTR_MCAST_GRP_MAX + 1] = {
-	[CTRL_ATTR_MCAST_GRP_ID] = { .name = "id", },
-	[CTRL_ATTR_MCAST_GRP_NAME] = { .name = "name", },
+	[CTRL_ATTR_MCAST_GRP_ID] = { .name = "id", .type = YNL_PT_U32, },
+	[CTRL_ATTR_MCAST_GRP_NAME] = { .name = "name", .type = YNL_PT_NUL_STR, .len = GENL_NAMSIZ, },
 };
 
 struct ynl_policy_nest nlctrl_mcast_group_nest = {
@@ -60,8 +60,8 @@ struct ynl_policy_nest nlctrl_mcast_group_nest = {
 };
 
 struct ynl_policy_attr nlctrl_policy_policy[CTRL_ATTR_POLICY_MAX + 1] = {
-	[CTRL_ATTR_POLICY_DO] = { .name = "do", },
-	[CTRL_ATTR_POLICY_DUMP] = { .name = "dump", },
+	[CTRL_ATTR_POLICY_DO] = { .name = "do", .type = YNL_PT_U32, },
+	[CTRL_ATTR_POLICY_DUMP] = { .name = "dump", .type = YNL_PT_U32, },
 };
 
 struct ynl_policy_nest nlctrl_policy_nest = {
@@ -70,17 +70,17 @@ struct ynl_policy_nest nlctrl_policy_nest = {
 };
 
 struct ynl_policy_attr nlctrl_nl_policy_policy[NL_POLICY_TYPE_ATTR_MAX + 1] = {
-	[NL_POLICY_TYPE_ATTR_TYPE] = { .name = "type", },
-	[NL_POLICY_TYPE_ATTR_MIN_VALUE_U] = { .name = "min_value_u", },
-	[NL_POLICY_TYPE_ATTR_MAX_VALUE_U] = { .name = "max_value_u", },
-	[NL_POLICY_TYPE_ATTR_MIN_VALUE_S] = { .name = "min_value_s", },
-	[NL_POLICY_TYPE_ATTR_MAX_VALUE_S] = { .name = "max_value_s", },
-	[NL_POLICY_TYPE_ATTR_MASK] = { .name = "mask", },
-	[NL_POLICY_TYPE_ATTR_MIN_LENGTH] = { .name = "min_length", },
-	[NL_POLICY_TYPE_ATTR_MAX_LENGTH] = { .name = "max_length", },
-	[NL_POLICY_TYPE_ATTR_POLICY_IDX] = { .name = "policy_idx", },
-	[NL_POLICY_TYPE_ATTR_POLICY_MAXTYPE] = { .name = "policy_maxtype", },
-	[NL_POLICY_TYPE_ATTR_BITFIELD32_MASK] = { .name = "bitfield32_mask", },
+	[NL_POLICY_TYPE_ATTR_TYPE] = { .name = "type", .type = YNL_PT_U32, },
+	[NL_POLICY_TYPE_ATTR_MIN_VALUE_U] = { .name = "min_value_u", .type = YNL_PT_U64, },
+	[NL_POLICY_TYPE_ATTR_MAX_VALUE_U] = { .name = "max_value_u", .type = YNL_PT_U64, },
+	[NL_POLICY_TYPE_ATTR_MIN_VALUE_S] = { .name = "min_value_s", .type = YNL_PT_U64, },
+	[NL_POLICY_TYPE_ATTR_MAX_VALUE_S] = { .name = "max_value_s", .type = YNL_PT_U64, },
+	[NL_POLICY_TYPE_ATTR_MASK] = { .name = "mask", .type = YNL_PT_U64, },
+	[NL_POLICY_TYPE_ATTR_MIN_LENGTH] = { .name = "min_length", .type = YNL_PT_U32, },
+	[NL_POLICY_TYPE_ATTR_MAX_LENGTH] = { .name = "max_length", .type = YNL_PT_U32, },
+	[NL_POLICY_TYPE_ATTR_POLICY_IDX] = { .name = "policy_idx", .type = YNL_PT_U32, },
+	[NL_POLICY_TYPE_ATTR_POLICY_MAXTYPE] = { .name = "policy_maxtype", .type = YNL_PT_U32, },
+	[NL_POLICY_TYPE_ATTR_BITFIELD32_MASK] = { .name = "bitfield32_mask", .type = YNL_PT_U32, },
 };
 
 struct ynl_policy_nest nlctrl_nl_policy_nest = {
