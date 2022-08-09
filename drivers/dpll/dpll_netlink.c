@@ -427,7 +427,7 @@ static int dpll_event_device_delete(struct param *p)
 static int dpll_event_status(struct param *p)
 {
 	if (nla_put_u32(p->msg, DPLLA_DEVICE_ID, p->dpll_id) ||
-		nla_put_u32(p->msg, DPLLA_LOCK_STATUS, p->dpll_status))
+	    nla_put_u32(p->msg, DPLLA_LOCK_STATUS, p->dpll_status))
 		return -EMSGSIZE;
 
 	return 0;
@@ -437,7 +437,7 @@ static int dpll_event_source_change(struct param *p)
 {
 	if (nla_put_u32(p->msg, DPLLA_DEVICE_ID, p->dpll_id) ||
 	    nla_put_u32(p->msg, DPLLA_SOURCE_ID, p->dpll_source_id) ||
-		nla_put_u32(p->msg, DPLLA_SOURCE_TYPE, p->dpll_source_type))
+	    nla_put_u32(p->msg, DPLLA_SOURCE_TYPE, p->dpll_source_type))
 		return -EMSGSIZE;
 
 	return 0;
@@ -447,7 +447,7 @@ static int dpll_event_output_change(struct param *p)
 {
 	if (nla_put_u32(p->msg, DPLLA_DEVICE_ID, p->dpll_id) ||
 	    nla_put_u32(p->msg, DPLLA_OUTPUT_ID, p->dpll_output_id) ||
-		nla_put_u32(p->msg, DPLLA_OUTPUT_TYPE, p->dpll_output_type))
+	    nla_put_u32(p->msg, DPLLA_OUTPUT_TYPE, p->dpll_output_type))
 		return -EMSGSIZE;
 
 	return 0;

@@ -690,8 +690,6 @@ c_kw = {
     'do'
 }
 
-# TODO: render interfaces
-
 
 def rdir(direction):
     if direction == 'reply':
