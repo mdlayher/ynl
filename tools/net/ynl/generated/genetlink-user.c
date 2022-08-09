@@ -14,6 +14,74 @@
 #include "genetlink-user.h"
 #include "ynl.h"
 
+// Policies
+struct ynl_policy_attr nlctrl_main_policy[CTRL_ATTR_MAX + 1] = {
+	[CTRL_ATTR_FAMILY_ID] = { .name = "family_id", },
+	[CTRL_ATTR_FAMILY_NAME] = { .name = "family_name", },
+	[CTRL_ATTR_VERSION] = { .name = "version", },
+	[CTRL_ATTR_HDRSIZE] = { .name = "hdrsize", },
+	[CTRL_ATTR_MAXATTR] = { .name = "maxattr", },
+	[CTRL_ATTR_OPS] = { .name = "ops", },
+	[CTRL_ATTR_MCAST_GROUPS] = { .name = "mcast_groups", },
+	[CTRL_ATTR_OP] = { .name = "op", },
+	[CTRL_ATTR_OP_POLICY] = { .name = "op_policy", },
+	[CTRL_ATTR_POLICY] = { .name = "policy", },
+};
+
+struct ynl_policy_nest nlctrl_main_nest = {
+	.max_type = CTRL_ATTR_MAX,
+	.table = nlctrl_main_policy,
+};
+
+struct ynl_policy_attr nlctrl_operation_policy[CTRL_ATTR_OP_MAX + 1] = {
+	[CTRL_ATTR_OP_ID] = { .name = "id", },
+	[CTRL_ATTR_OP_FLAGS] = { .name = "flags", },
+};
+
+struct ynl_policy_nest nlctrl_operation_nest = {
+	.max_type = CTRL_ATTR_OP_MAX,
+	.table = nlctrl_operation_policy,
+};
+
+struct ynl_policy_attr nlctrl_mcast_group_policy[CTRL_ATTR_MCAST_GRP_MAX + 1] = {
+	[CTRL_ATTR_MCAST_GRP_ID] = { .name = "id", },
+	[CTRL_ATTR_MCAST_GRP_NAME] = { .name = "name", },
+};
+
+struct ynl_policy_nest nlctrl_mcast_group_nest = {
+	.max_type = CTRL_ATTR_MCAST_GRP_MAX,
+	.table = nlctrl_mcast_group_policy,
+};
+
+struct ynl_policy_attr nlctrl_policy_policy[CTRL_ATTR_POLICY_MAX + 1] = {
+	[CTRL_ATTR_POLICY_DO] = { .name = "do", },
+	[CTRL_ATTR_POLICY_DUMP] = { .name = "dump", },
+};
+
+struct ynl_policy_nest nlctrl_policy_nest = {
+	.max_type = CTRL_ATTR_POLICY_MAX,
+	.table = nlctrl_policy_policy,
+};
+
+struct ynl_policy_attr nlctrl_nl_policy_policy[NL_POLICY_TYPE_ATTR_MAX + 1] = {
+	[NL_POLICY_TYPE_ATTR_TYPE] = { .name = "type", },
+	[NL_POLICY_TYPE_ATTR_MIN_VALUE_U] = { .name = "min_value_u", },
+	[NL_POLICY_TYPE_ATTR_MAX_VALUE_U] = { .name = "max_value_u", },
+	[NL_POLICY_TYPE_ATTR_MIN_VALUE_S] = { .name = "min_value_s", },
+	[NL_POLICY_TYPE_ATTR_MAX_VALUE_S] = { .name = "max_value_s", },
+	[NL_POLICY_TYPE_ATTR_MASK] = { .name = "mask", },
+	[NL_POLICY_TYPE_ATTR_MIN_LENGTH] = { .name = "min_length", },
+	[NL_POLICY_TYPE_ATTR_MAX_LENGTH] = { .name = "max_length", },
+	[NL_POLICY_TYPE_ATTR_POLICY_IDX] = { .name = "policy_idx", },
+	[NL_POLICY_TYPE_ATTR_POLICY_MAXTYPE] = { .name = "policy_maxtype", },
+	[NL_POLICY_TYPE_ATTR_BITFIELD32_MASK] = { .name = "bitfield32_mask", },
+};
+
+struct ynl_policy_nest nlctrl_nl_policy_nest = {
+	.max_type = NL_POLICY_TYPE_ATTR_MAX,
+	.table = nlctrl_nl_policy_policy,
+};
+
 // Common nested types
 void nlctrl_mcast_group_free(struct nlctrl_mcast_group *obj)
 {

@@ -14,6 +14,52 @@
 #include "dpll-user.h"
 #include "ynl.h"
 
+// Policies
+struct ynl_policy_attr dpll_main_policy[DPLLA_MAX + 1] = {
+	[DPLLA_UNSPEC] = { .name = "unspec", },
+	[DPLLA_DEVICE_ID] = { .name = "device_id", },
+	[DPLLA_DEVICE_NAME] = { .name = "device_name", },
+	[DPLLA_SOURCE] = { .name = "source", },
+	[DPLLA_SOURCE_ID] = { .name = "source_id", },
+	[DPLLA_SOURCE_TYPE] = { .name = "source_type", },
+	[DPLLA_SOURCE_SUPPORTED] = { .name = "source_supported", },
+	[DPLLA_OUTPUT] = { .name = "output", },
+	[DPLLA_OUTPUT_ID] = { .name = "output_id", },
+	[DPLLA_OUTPUT_TYPE] = { .name = "output_type", },
+	[DPLLA_OUTPUT_SUPPORTED] = { .name = "output_supported", },
+	[DPLLA_STATUS] = { .name = "status", },
+	[DPLLA_TEMP] = { .name = "temp", },
+	[DPLLA_LOCK_STATUS] = { .name = "lock_status", },
+	[DPLLA_FLAGS] = { .name = "flags", },
+};
+
+struct ynl_policy_nest dpll_main_nest = {
+	.max_type = DPLLA_MAX,
+	.table = dpll_main_policy,
+};
+
+struct ynl_policy_attr dpll_source_policy[DPLLA_MAX + 1] = {
+	[DPLLA_OUTPUT_ID] = { .name = "output_id", },
+	[DPLLA_OUTPUT_TYPE] = { .name = "output_type", },
+	[DPLLA_OUTPUT_SUPPORTED] = { .name = "output_supported", },
+};
+
+struct ynl_policy_nest dpll_source_nest = {
+	.max_type = DPLLA_MAX,
+	.table = dpll_source_policy,
+};
+
+struct ynl_policy_attr dpll_output_policy[DPLLA_MAX + 1] = {
+	[DPLLA_SOURCE_ID] = { .name = "source_id", },
+	[DPLLA_SOURCE_TYPE] = { .name = "source_type", },
+	[DPLLA_SOURCE_SUPPORTED] = { .name = "source_supported", },
+};
+
+struct ynl_policy_nest dpll_output_nest = {
+	.max_type = DPLLA_MAX,
+	.table = dpll_output_policy,
+};
+
 // Common nested types
 void dpll_output_free(struct dpll_output *obj)
 {

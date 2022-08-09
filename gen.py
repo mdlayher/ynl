@@ -747,7 +747,7 @@ def print_dump_prototype(ri):
     print_prototype(ri, "request")
 
 
-def put_req_nested_typol(ri, attr_space):
+def put_typol(ri, attr_space):
     type_max = f"{ri.family.attr_spaces[attr_space].name_prefix}MAX"
     ri.cw.block_start(line=f'struct ynl_policy_attr {nest_op_prefix(ri, attr_space)}_policy[{type_max} + 1] =')
 
@@ -1453,13 +1453,17 @@ def main():
         cw.p(f'#endif /* {hdr_prot} */')
     else:
         if args.mode == "user":
+            cw.p('// Policies')
+            for name, _ in parsed.attr_spaces.items():
+                ri = RenderInfo(cw, parsed, args.mode, "", "", "", name)
+                put_typol(ri, name)
+
             cw.p('// Common nested types')
             for attr_space in sorted(parsed.pure_nested_spaces.keys()):
                 ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
 
                 free_rsp_nested(ri, attr_space)
                 if 'request' in parsed.pure_nested_spaces[attr_space]:
-                    put_req_nested_typol(ri, attr_space)
                     put_req_nested(ri, attr_space)
                 if 'reply' in parsed.pure_nested_spaces[attr_space]:
                     parse_rsp_nested(ri, attr_space)

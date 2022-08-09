@@ -15,12 +15,7 @@
 #include "ethtool-user.h"
 #include "ynl.h"
 
-// Common nested types
-void ethtool_header_free(struct ethtool_header *obj)
-{
-	free(obj);
-}
-
+// Policies
 struct ynl_policy_attr ethtool_header_policy[ETHTOOL_A_HEADER_MAX + 1] = {
 	[ETHTOOL_A_HEADER_DEV_INDEX] = { .name = "dev_index", },
 	[ETHTOOL_A_HEADER_DEV_NAME] = { .name = "dev_name", },
@@ -31,6 +26,29 @@ struct ynl_policy_nest ethtool_header_nest = {
 	.max_type = ETHTOOL_A_HEADER_MAX,
 	.table = ethtool_header_policy,
 };
+
+struct ynl_policy_attr ethtool_channels_policy[ETHTOOL_A_CHANNELS_MAX + 1] = {
+	[ETHTOOL_A_CHANNELS_HEADER] = { .name = "header", },
+	[ETHTOOL_A_CHANNELS_RX_MAX] = { .name = "rx_max", },
+	[ETHTOOL_A_CHANNELS_TX_MAX] = { .name = "tx_max", },
+	[ETHTOOL_A_CHANNELS_OTHER_MAX] = { .name = "other_max", },
+	[ETHTOOL_A_CHANNELS_COMBINED_MAX] = { .name = "combined_max", },
+	[ETHTOOL_A_CHANNELS_RX_COUNT] = { .name = "rx_count", },
+	[ETHTOOL_A_CHANNELS_TX_COUNT] = { .name = "tx_count", },
+	[ETHTOOL_A_CHANNELS_OTHER_COUNT] = { .name = "other_count", },
+	[ETHTOOL_A_CHANNELS_COMBINED_COUNT] = { .name = "combined_count", },
+};
+
+struct ynl_policy_nest ethtool_channels_nest = {
+	.max_type = ETHTOOL_A_CHANNELS_MAX,
+	.table = ethtool_channels_policy,
+};
+
+// Common nested types
+void ethtool_header_free(struct ethtool_header *obj)
+{
+	free(obj);
+}
 
 int ethtool_header_put(struct nlmsghdr *nlh, unsigned int attr_type,
 		       struct ethtool_header *obj)

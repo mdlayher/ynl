@@ -14,6 +14,27 @@
 #include "fou-user.h"
 #include "ynl.h"
 
+// Policies
+struct ynl_policy_attr fou_main_policy[FOU_ATTR_MAX + 1] = {
+	[FOU_ATTR_UNSPEC] = { .name = "unspec", },
+	[FOU_ATTR_PORT] = { .name = "port", },
+	[FOU_ATTR_AF] = { .name = "af", },
+	[FOU_ATTR_IPPROTO] = { .name = "ipproto", },
+	[FOU_ATTR_TYPE] = { .name = "type", },
+	[FOU_ATTR_REMCSUM_NOPARTIAL] = { .name = "remcsum_nopartial", },
+	[FOU_ATTR_LOCAL_V4] = { .name = "local_v4", },
+	[FOU_ATTR_LOCAL_V6] = { .name = "local_v6", },
+	[FOU_ATTR_PEER_V4] = { .name = "peer_v4", },
+	[FOU_ATTR_PEER_V6] = { .name = "peer_v6", },
+	[FOU_ATTR_PEER_PORT] = { .name = "peer_port", },
+	[FOU_ATTR_IFINDEX] = { .name = "ifindex", },
+};
+
+struct ynl_policy_nest fou_main_nest = {
+	.max_type = FOU_ATTR_MAX,
+	.table = fou_main_policy,
+};
+
 // Common nested types
 /* ============== FOU_CMD_ADD ============== */
 // FOU_CMD_ADD - do
