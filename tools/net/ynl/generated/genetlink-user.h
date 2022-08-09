@@ -113,6 +113,9 @@ struct nlctrl_getfamily_rsp {
 
 void nlctrl_getfamily_rsp_free(struct nlctrl_getfamily_rsp *rsp);
 
+/*
+ * Get information about genetlink family.
+ */
 struct nlctrl_getfamily_rsp *
 nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req);
 

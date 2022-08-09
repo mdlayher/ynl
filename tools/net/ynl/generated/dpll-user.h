@@ -86,6 +86,9 @@ struct dpll_device_get_rsp {
 
 void dpll_device_get_rsp_free(struct dpll_device_get_rsp *rsp);
 
+/*
+ * Get the device info. TODO..
+ */
 struct dpll_device_get_rsp *
 dpll_device_get(struct ynl_sock *ys, struct dpll_device_get_req *req);
 
@@ -134,6 +137,9 @@ dpll_set_source_type_req_set_source_type(struct dpll_set_source_type_req *req,
 	req->source_type = source_type;
 }
 
+/*
+ * Set the source type. TODO..
+ */
 int dpll_set_source_type(struct ynl_sock *ys,
 			 struct dpll_set_source_type_req *req);
 
@@ -182,6 +188,9 @@ dpll_set_output_type_req_set_output_type(struct dpll_set_output_type_req *req,
 	req->output_type = output_type;
 }
 
+/*
+ * Set the output type. TODO..
+ */
 int dpll_set_output_type(struct ynl_sock *ys,
 			 struct dpll_set_output_type_req *req);
 

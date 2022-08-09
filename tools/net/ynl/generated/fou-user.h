@@ -94,6 +94,9 @@ fou_add_req_set_ifindex(struct fou_add_req *req, __s32 ifindex)
 	req->ifindex = ifindex;
 }
 
+/*
+ * Add port.
+ */
 int fou_add(struct ynl_sock *ys, struct fou_add_req *req);
 
 /* ============== FOU_CMD_DEL ============== */
@@ -166,6 +169,9 @@ fou_del_req_set_peer_v6(struct fou_del_req *req, const void *peer_v6)
 	memcpy(req->peer_v6, peer_v6, 16);
 }
 
+/*
+ * Delete port.
+ */
 int fou_del(struct ynl_sock *ys, struct fou_del_req *req);
 
 /* ============== FOU_CMD_GET ============== */
@@ -263,6 +269,9 @@ struct fou_get_rsp {
 
 void fou_get_rsp_free(struct fou_get_rsp *rsp);
 
+/*
+ * Get tunnel info.
+ */
 struct fou_get_rsp *fou_get(struct ynl_sock *ys, struct fou_get_req *req);
 
 // FOU_CMD_GET - dump

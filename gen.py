@@ -593,9 +593,14 @@ class CodeWriter:
         self._ind -= 1
         self.p('}' + line)
 
-    def write_func_prot(self, qual_ret, name, args=None, suffix=''):
+    def write_func_prot(self, qual_ret, name, args=None, doc=None, suffix=''):
         if not args:
             args = ['void']
+
+        if doc:
+            self.p('/*')
+            self.p(' * ' + doc)
+            self.p(' */')
 
         oneline = qual_ret
         if qual_ret[-1] != '*':
@@ -771,7 +776,7 @@ def attribute_parse_kernel(ri, attr, prototype=True, suffix=""):
     ri.cw.block_end()
 
 
-def print_prototype(ri, direction, terminate=True):
+def print_prototype(ri, direction, terminate=True, doc=None):
     suffix = ';' if terminate else ''
 
     fname = f"{ri.family['name']}_{ri.op_name}"
@@ -786,11 +791,11 @@ def print_prototype(ri, direction, terminate=True):
     if 'reply' in ri.op[ri.op_mode]:
         ret = f"{type_name(ri, rdir(direction))} *"
 
-    ri.cw.write_func_prot(ret, fname, args, suffix)
+    ri.cw.write_func_prot(ret, fname, args, doc=doc, suffix=suffix)
 
 
 def print_req_prototype(ri):
-    print_prototype(ri, "request")
+    print_prototype(ri, "request", doc=ri.op['description'])
 
 
 def print_dump_prototype(ri):

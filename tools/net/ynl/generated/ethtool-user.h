@@ -81,6 +81,9 @@ struct ethtool_channels_get_rsp {
 
 void ethtool_channels_get_rsp_free(struct ethtool_channels_get_rsp *rsp);
 
+/*
+ * Get current and max supported number of channels.
+ */
 struct ethtool_channels_get_rsp *
 ethtool_channels_get(struct ynl_sock *ys, struct ethtool_channels_get_req *req);
 
@@ -175,6 +178,9 @@ ethtool_channels_set_req_set_combined_count(struct ethtool_channels_set_req *req
 	req->combined_count = combined_count;
 }
 
+/*
+ * Set number of channels.
+ */
 int ethtool_channels_set(struct ynl_sock *ys,
 			 struct ethtool_channels_set_req *req);
 
