@@ -67,6 +67,7 @@ struct ynl_policy_nest {
 
 struct ynl_parse_arg {
 	struct ynl_sock *ys;
+	struct ynl_policy_nest *rsp_policy;
 	void *data;
 };
 
@@ -80,8 +81,7 @@ ynl_gemsg_start_req(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version);
 struct nlmsghdr *
 ynl_gemsg_start_dump(struct ynl_sock *ys, __u32 id, __u8 cmd, __u8 version);
 
-int ynl_attr_validate(struct ynl_sock *ys, const struct nlattr *attr,
-		      struct ynl_policy_nest *nest);
+int ynl_attr_validate(struct ynl_parse_arg *yarg, const struct nlattr *attr);
 
 int ynl_recv_ack(struct ynl_sock *ys, int ret);
 int ynl_cb_null(const struct nlmsghdr *nlh, void *data);

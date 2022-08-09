@@ -95,6 +95,8 @@ class Type:
             ri.cw.nl()
 
         if not self.is_multi_val():
+            ri.cw.p(f"if (ynl_attr_validate(yarg, attr))")
+            ri.cw.p(f"\treturn MNL_CB_ERROR;")
             ri.cw.p(f"{var}->{self.name}_present = 1;")
 
         for line in lines:
