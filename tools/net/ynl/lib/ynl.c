@@ -243,6 +243,10 @@ int ynl_attr_validate(struct ynl_sock *ys, const struct nlattr *attr,
 	policy = &nest->table[type];
 
 	switch (type) {
+	case YNL_PT_REJECT:
+		yerr(ys, YNL_ERROR_ATTR_INVALID,
+		     "Rejected attribute (%s)", policy->name);
+		return -1;
 	case YNL_PT_U8:
 		if (len == sizeof(__u8))
 			break;

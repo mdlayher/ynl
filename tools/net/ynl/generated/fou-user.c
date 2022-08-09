@@ -18,7 +18,7 @@
 extern struct ynl_policy_nest fou_main_nest;
 
 struct ynl_policy_attr fou_main_policy[FOU_ATTR_MAX + 1] = {
-	[FOU_ATTR_UNSPEC] = { .name = "unspec", },
+	[FOU_ATTR_UNSPEC] = { .type = YNL_PT_REJECT, .name = "unspec", },
 	[FOU_ATTR_PORT] = { .name = "port", },
 	[FOU_ATTR_AF] = { .name = "af", },
 	[FOU_ATTR_IPPROTO] = { .name = "ipproto", },

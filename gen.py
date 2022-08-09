@@ -66,12 +66,12 @@ class Type:
         for one in members:
             ri.cw.p(one + ';')
 
+    def _attr_typol(self, ri):
+        raise Exception(f"Type policy not implemented for class type {self.type}")
+
     def attr_typol(self, ri):
-        # TODO this obviously needs to be pushed down to subtypes
-        nest = ''
-        if 'nested-attributes' in self.attr:
-            nest = f".nest = &{nest_op_prefix(ri, self.attr['nested-attributes'])}_nest, "
-        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {nest}{"}"},')
+        typol = self._attr_typol(ri)
+        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {typol}{"}"},')
 
     def _attr_put_line(self, ri, var, line):
         ri.cw.p(f"if ({var}->{self.name}_present)")
@@ -124,7 +124,8 @@ class Type:
 
 
 class TypeUnused(Type):
-    pass
+    def _attr_typol(self, ri):
+        return '.type = YNL_PT_REJECT, '
 
 
 class TypeScalar(Type):
@@ -134,6 +135,13 @@ class TypeScalar(Type):
         if t[0] == 's':
             t = 'u' + t[1:]
         return t
+
+    def attr_typol(self, ri):
+        # TODO this obviously needs to be pushed down to subtypes
+        nest = ''
+        if 'nested-attributes' in self.attr:
+            nest = f".nest = &{nest_op_prefix(ri, self.attr['nested-attributes'])}_nest, "
+        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {nest}{"}"},')
 
     def arg_member(self, ri):
         if 'enum' in self.attr:
@@ -157,6 +165,13 @@ class TypeFlag(Type):
     def arg_member(self, ri):
         return []
 
+    def attr_typol(self, ri):
+        # TODO this obviously needs to be pushed down to subtypes
+        nest = ''
+        if 'nested-attributes' in self.attr:
+            nest = f".nest = &{nest_op_prefix(ri, self.attr['nested-attributes'])}_nest, "
+        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {nest}{"}"},')
+
     def attr_put(self, ri, var):
         self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {attr_enum_name(ri, self.name)}, 0, NULL)")
 
@@ -178,6 +193,13 @@ class TypeNulString(Type):
             attr_len = f"{self.len} + 1"
         ri.cw.p(f"char {self.c_name}[{attr_len}];")
 
+    def attr_typol(self, ri):
+        # TODO this obviously needs to be pushed down to subtypes
+        nest = ''
+        if 'nested-attributes' in self.attr:
+            nest = f".nest = &{nest_op_prefix(ri, self.attr['nested-attributes'])}_nest, "
+        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {nest}{"}"},')
+
     def attr_put(self, ri, var):
         self._attr_put_simple(ri, var, 'strz')
 
@@ -198,6 +220,13 @@ class TypeBinary(Type):
     def struct_member(self, ri):
         ri.cw.p(f"unsigned char {self.c_name}[{self.len}];")
 
+    def attr_typol(self, ri):
+        # TODO this obviously needs to be pushed down to subtypes
+        nest = ''
+        if 'nested-attributes' in self.attr:
+            nest = f".nest = &{nest_op_prefix(ri, self.attr['nested-attributes'])}_nest, "
+        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {nest}{"}"},')
+
     def attr_put(self, ri, var):
         self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {attr_enum_name(ri, self.name)}, " +
                             f"{self.len}, {var}->{self.name})")
@@ -212,6 +241,13 @@ class TypeBinary(Type):
 class TypeNest(Type):
     def _complex_member_type(self, ri):
         return f"struct {nest_op_prefix(ri, self.nested_attrs)}"
+
+    def attr_typol(self, ri):
+        # TODO this obviously needs to be pushed down to subtypes
+        nest = ''
+        if 'nested-attributes' in self.attr:
+            nest = f".nest = &{nest_op_prefix(ri, self.attr['nested-attributes'])}_nest, "
+        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {nest}{"}"},')
 
     def attr_put(self, ri, var):
         self._attr_put_line(ri, var, f"{nest_op_prefix(ri, self.nested_attrs)}_put(nlh, " +
@@ -244,6 +280,13 @@ class TypeMultiAttr(Type):
         else:
             raise Exception(f"Sub-type {self.attr['sub-type']} not supported yet")
 
+    def attr_typol(self, ri):
+        # TODO this obviously needs to be pushed down to subtypes
+        nest = ''
+        if 'nested-attributes' in self.attr:
+            nest = f".nest = &{nest_op_prefix(ri, self.attr['nested-attributes'])}_nest, "
+        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {nest}{"}"},')
+
     def attr_get(self, ri, var):
         self._attr_get(ri, var, f'{var}->n_{self.name}++;')
 
@@ -264,6 +307,13 @@ class TypeArrayNest(Type):
         else:
             raise Exception(f"Sub-type {self.attr['sub-type']} not supported yet")
 
+    def attr_typol(self, ri):
+        # TODO this obviously needs to be pushed down to subtypes
+        nest = ''
+        if 'nested-attributes' in self.attr:
+            nest = f".nest = &{nest_op_prefix(ri, self.attr['nested-attributes'])}_nest, "
+        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {nest}{"}"},')
+
     def attr_get(self, ri, var):
         local_vars = ['const struct nlattr *attr2;']
         get_lines = [f'attr_{self.name} = attr;',
@@ -275,6 +325,13 @@ class TypeArrayNest(Type):
 class TypeNestTypeValue(Type):
     def _complex_member_type(self, ri):
         return f"struct {nest_op_prefix(ri, self.nested_attrs)}"
+
+    def attr_typol(self, ri):
+        # TODO this obviously needs to be pushed down to subtypes
+        nest = ''
+        if 'nested-attributes' in self.attr:
+            nest = f".nest = &{nest_op_prefix(ri, self.attr['nested-attributes'])}_nest, "
+        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {nest}{"}"},')
 
     def attr_get(self, ri, var):
         prev = 'attr'

@@ -42,7 +42,8 @@ struct ynl_sock {
 };
 
 enum ynl_policy_type {
-	YNL_PT_NEST = 1,
+	YNL_PT_REJECT = 1,
+	YNL_PT_NEST,
 	YNL_PT_FLAG,
 	YNL_PT_BINARY,
 	YNL_PT_U8,

@@ -20,7 +20,7 @@ extern struct ynl_policy_nest dpll_source_nest;
 extern struct ynl_policy_nest dpll_output_nest;
 
 struct ynl_policy_attr dpll_main_policy[DPLLA_MAX + 1] = {
-	[DPLLA_UNSPEC] = { .name = "unspec", },
+	[DPLLA_UNSPEC] = { .type = YNL_PT_REJECT, .name = "unspec", },
 	[DPLLA_DEVICE_ID] = { .name = "device_id", },
 	[DPLLA_DEVICE_NAME] = { .name = "device_name", },
 	[DPLLA_SOURCE] = { .name = "source", .nest = &dpll_source_nest, },
