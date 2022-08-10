@@ -94,3 +94,10 @@ const struct nla_policy dpll_set_output_type_policy[] = {
 	[DPLLA_OUTPUT_ID] = { .type = NLA_U32 },
 	[DPLLA_OUTPUT_TYPE] = NLA_POLICY_MAX(NLA_U32, 7),
 };
+
+/* ============== DPLL_CMD_DEVICE-CREATE ============== */
+/* ============== DPLL_CMD_DEVICE-DELETE ============== */
+/* ============== DPLL_CMD_STATUS-LOCKED ============== */
+/* ============== DPLL_CMD_STATUS-UNLOCKED ============== */
+/* ============== DPLL_CMD_SOURCE-CHANGE ============== */
+/* ============== DPLL_CMD_OUTPUT-CHANGE ============== */

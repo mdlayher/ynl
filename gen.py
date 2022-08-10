@@ -1396,12 +1396,34 @@ def render_uapi(family, cw):
         cw.p(f"#define {aspace['name-prefix']}_MAX (__{aspace['name-prefix']}{family.attr_cnt_suffix} - 1)")
         cw.nl()
 
+    separate_ntf = 'async-prefix' in family['operations']
+
     uapi_enum_start(family, cw, family['operations'], 'name-enum')
     for op in family['operations']['list']:
+        if separate_ntf and ('notify' in op or 'event' in op):
+            continue
+
         op_name = family['operations']['name-prefix'] + op['name'].upper()
-        cw.p(op_name + ',')
+        suffix = ','
+        if 'value' in op:
+            suffix = f" = {op['value']},"
+        cw.p(op_name.replace('-', '_') + suffix)
     cw.block_end(line=';')
     cw.nl()
+
+    if separate_ntf:
+        uapi_enum_start(family, cw, family['operations'], 'async-enum')
+        for op in family['operations']['list']:
+            if separate_ntf and not ('notify' in op or 'event' in op):
+                continue
+
+            op_name = family['operations']['async-prefix'] + op['name'].upper()
+            suffix = ','
+            if 'value' in op:
+                suffix = f" = {op['value']},"
+            cw.p(op_name.replace('-', '_') + suffix)
+        cw.block_end(line=';')
+        cw.nl()
 
     cw.p(f'#endif /* {hdr_prot} */')
 

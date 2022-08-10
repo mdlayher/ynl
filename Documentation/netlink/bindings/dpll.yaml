@@ -125,6 +125,8 @@ attribute-spaces:
 operations:
   name-prefix: DPLL_CMD_
   name-enum: genl_cmd
+  async-prefix: DPLL_EVENT_
+  async-enum: genl_event
   list:
     -
       name: unspec
@@ -183,6 +185,7 @@ operations:
     -
       name: device-create
       description: New device appeared.
+      value: 1
       attribute-space: main
       mcgrp: config
       event:

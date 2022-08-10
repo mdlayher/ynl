@@ -362,3 +362,10 @@ int dpll_set_output_type(struct ynl_sock *ys,
 err_free:
 	return -1;
 }
+
+/* ============== DPLL_CMD_DEVICE-CREATE ============== */
+/* ============== DPLL_CMD_DEVICE-DELETE ============== */
+/* ============== DPLL_CMD_STATUS-LOCKED ============== */
+/* ============== DPLL_CMD_STATUS-UNLOCKED ============== */
+/* ============== DPLL_CMD_SOURCE-CHANGE ============== */
+/* ============== DPLL_CMD_OUTPUT-CHANGE ============== */

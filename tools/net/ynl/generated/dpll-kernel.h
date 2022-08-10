@@ -91,4 +91,11 @@ dpll_set_output_type_req_parse(const struct nlattr **tb,
 			       struct dpll_set_output_type_req *req);
 const struct nla_policy dpll_set_output_type_policy[];
 
+/* ============== DPLL_CMD_DEVICE-CREATE ============== */
+/* ============== DPLL_CMD_DEVICE-DELETE ============== */
+/* ============== DPLL_CMD_STATUS-LOCKED ============== */
+/* ============== DPLL_CMD_STATUS-UNLOCKED ============== */
+/* ============== DPLL_CMD_SOURCE-CHANGE ============== */
+/* ============== DPLL_CMD_OUTPUT-CHANGE ============== */
+
 #endif /* _LINUX_DPLL_GEN_H */

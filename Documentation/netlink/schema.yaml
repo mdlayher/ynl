@@ -141,6 +141,12 @@ properties:
       name-enum:
         description: Name for the enum type with commands.
         type: string
+      async-prefix:
+        description: Same as name-prefix but used to render notifications and events to separate enum.
+        type: string
+      async-enum:
+        description: Name for the enum type with notifications/events.
+        type: string
       list:
         decription: List of commands
         type: array
