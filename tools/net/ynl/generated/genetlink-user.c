@@ -618,7 +618,7 @@ struct ynl_ntf_base_type *nlctrl_ntf_parse(struct ynl_sock *ys)
 		return NULL;
 	}
 
-	yarg.data = rsp;
+	yarg.data = rsp->data;
 
 	err = mnl_cb_run2(ys->rx_buf, len, 0, 0, parse, &yarg,
 			 ynl_cb_array, NLMSG_MIN_TYPE);

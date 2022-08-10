@@ -1313,7 +1313,7 @@ def print_ntf_type_parse(family, cw, ku_mode):
     cw.p('return NULL;')
     cw.block_end()
     cw.nl()
-    cw.p('yarg.data = rsp;')
+    cw.p('yarg.data = rsp->data;')
     cw.nl()
     cw.p(f"err = {cw.nlib.parse_cb_run('parse', '&yarg', True)};")
     cw.p('if (err)')
