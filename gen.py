@@ -23,7 +23,8 @@ class BaseNlLib:
 
 
 class Type:
-    def __init__(self, attr):
+    def __init__(self, family, attr_space, attr):
+        self.family = family
         self.attr = attr
         self.name = attr['name']
         self.type = attr['type']
@@ -32,8 +33,10 @@ class Type:
             self.len = attr['len']
         if 'nested-attributes' in attr:
             self.nested_attrs = attr['nested-attributes']
+            self.nested_render_name = f"{family['name']}_{self.nested_attrs.replace('-', '_')}"
 
-        self.c_name = self.name
+        self.enum_name = f"{attr_space.name_prefix}{self.name.upper()}"
+        self.c_name = self.name.replace('-', '_')
         if self.c_name in c_kw:
             self.c_name += '_'
 
@@ -76,12 +79,12 @@ class Type:
         for one in members:
             ri.cw.p(one + ';')
 
-    def _attr_typol(self, ri):
+    def _attr_typol(self):
         raise Exception(f"Type policy not implemented for class type {self.type}")
 
-    def attr_typol(self, ri):
-        typol = self._attr_typol(ri)
-        ri.cw.p(f'[{attr_enum_name(ri, self.name)}] = {"{"} .name = "{self.name}", {typol}{"}"},')
+    def attr_typol(self, cw):
+        typol = self._attr_typol()
+        cw.p(f'[{self.enum_name}] = {"{"} .name = "{self.name}", {typol}{"}"},')
 
     def _attr_put_line(self, ri, var, line):
         ri.cw.p(f"if ({var}->{self.name}_present)")
@@ -143,7 +146,7 @@ class Type:
 
 
 class TypeUnused(Type):
-    def _attr_typol(self, ri):
+    def _attr_typol(self):
         return '.type = YNL_PT_REJECT, '
 
 
@@ -155,7 +158,7 @@ class TypeScalar(Type):
             t = 'u' + t[1:]
         return t
 
-    def _attr_typol(self, ri):
+    def _attr_typol(self):
         return f'.type = YNL_PT_U{self.type[1:]}, '
 
     def arg_member(self, ri):
@@ -180,7 +183,7 @@ class TypeFlag(Type):
     def arg_member(self, ri):
         return []
 
-    def _attr_typol(self, ri):
+    def _attr_typol(self):
         return '.type = YNL_PT_FLAG, '
 
     def attr_put(self, ri, var):
@@ -206,7 +209,7 @@ class TypeNulString(Type):
     def struct_member(self, ri):
         ri.cw.p(f"char {self.c_name}[{self._byte_len()}];")
 
-    def _attr_typol(self, ri):
+    def _attr_typol(self):
         return f'.type = YNL_PT_NUL_STR, .len = {self._byte_len()}, '
 
     def attr_put(self, ri, var):
@@ -229,7 +232,7 @@ class TypeBinary(Type):
     def struct_member(self, ri):
         ri.cw.p(f"unsigned char {self.c_name}[{self.len}];")
 
-    def _attr_typol(self, ri):
+    def _attr_typol(self):
         return f'.type = YNL_PT_NUL_STR, .len = {self.len}, '
 
     def attr_put(self, ri, var):
@@ -245,19 +248,18 @@ class TypeBinary(Type):
 
 class TypeNest(Type):
     def _complex_member_type(self, ri):
-        return f"struct {nest_op_prefix(ri, self.nested_attrs)}"
+        return f"struct {self.nested_render_name}"
 
-    def _attr_typol(self, ri):
-        return f'.type = YNL_PT_NEST, .nest = &{nest_op_prefix(ri, self.nested_attrs)}_nest, '
+    def _attr_typol(self):
+        return f'.type = YNL_PT_NEST, .nest = &{self.nested_render_name}_nest, '
 
     def attr_put(self, ri, var):
-        self._attr_put_line(ri, var, f"{nest_op_prefix(ri, self.nested_attrs)}_put(nlh, " +
-                            f"{attr_enum_name(ri, self.name)}, &{var}->{self.name})")
+        self._attr_put_line(ri, var, f"{self.nested_render_name}_put(nlh, " +
+                            f"{self.enum_name}, &{var}->{self.name})")
 
     def attr_get(self, ri, var):
-        nn_pfx = nest_op_prefix(ri, self.nested_attrs)
-        get_lines = [f"{nn_pfx}_parse(&parg, attr);"]
-        init_lines = [f"parg.rsp_policy = &{nn_pfx}_nest;",
+        get_lines = [f"{self.nested_render_name}_parse(&parg, attr);"]
+        init_lines = [f"parg.rsp_policy = &{self.nested_render_name}_nest;",
                       f"parg.data = &{var}->{self.name};"]
         self._attr_get(ri, var, get_lines, init_lines=init_lines)
 
@@ -277,16 +279,16 @@ class TypeMultiAttr(Type):
 
     def _complex_member_type(self, ri):
         if 'sub-type' not in self.attr or self.attr['sub-type'] == 'nest':
-            return f"struct {nest_op_prefix(ri, self.nested_attrs)}"
+            return f"struct {self.nested_render_name}"
         elif self.attr['sub-type'] in scalars:
             scalar_pfx = '__' if ri.ku_space == 'user' else ''
             return scalar_pfx + self.attr['sub-type']
         else:
             raise Exception(f"Sub-type {self.attr['sub-type']} not supported yet")
 
-    def _attr_typol(self, ri):
+    def _attr_typol(self):
         if 'sub-type' not in self.attr or self.attr['sub-type'] == 'nest':
-            return f'.type = YNL_PT_NEST, .nest = &{nest_op_prefix(ri, self.nested_attrs)}_nest, '
+            return f'.type = YNL_PT_NEST, .nest = &{self.nested_render_name}_nest, '
         elif self.attr['sub-type'] in scalars:
             return f".type = YNL_PT_U{self.attr['sub-type'][1:]}, "
         else:
@@ -305,15 +307,15 @@ class TypeArrayNest(Type):
 
     def _complex_member_type(self, ri):
         if 'sub-type' not in self.attr or self.attr['sub-type'] == 'nest':
-            return f"struct {nest_op_prefix(ri, self.nested_attrs)}"
+            return f"struct {self.nested_render_name}"
         elif self.attr['sub-type'] in scalars:
             scalar_pfx = '__' if ri.ku_space == 'user' else ''
             return scalar_pfx + self.attr['sub-type']
         else:
             raise Exception(f"Sub-type {self.attr['sub-type']} not supported yet")
 
-    def _attr_typol(self, ri):
-        return f'.type = YNL_PT_NEST, .nest = &{nest_op_prefix(ri, self.nested_attrs)}_nest, '
+    def _attr_typol(self):
+        return f'.type = YNL_PT_NEST, .nest = &{self.nested_render_name}_nest, '
 
     def attr_get(self, ri, var):
         local_vars = ['const struct nlattr *attr2;']
@@ -325,18 +327,17 @@ class TypeArrayNest(Type):
 
 class TypeNestTypeValue(Type):
     def _complex_member_type(self, ri):
-        return f"struct {nest_op_prefix(ri, self.nested_attrs)}"
+        return f"struct {self.nested_render_name}"
 
-    def _attr_typol(self, ri):
-        return f'.type = YNL_PT_NEST, .nest = &{nest_op_prefix(ri, self.nested_attrs)}_nest, '
+    def _attr_typol(self):
+        return f'.type = YNL_PT_NEST, .nest = &{self.nested_render_name}_nest, '
 
     def attr_get(self, ri, var):
-        nn_pfx = nest_op_prefix(ri, self.nested_attrs)
         prev = 'attr'
         tv_args = ''
         get_lines = []
         local_vars = []
-        init_lines = [f"parg.rsp_policy = &{nn_pfx}_nest;",
+        init_lines = [f"parg.rsp_policy = &{self.nested_render_name}_nest;",
                       f"parg.data = &{var}->{self.name};"]
         if 'type-value' in self.attr:
             local_vars += [f'const struct nlattr *attr_{", *attr_".join(self.attr["type-value"])};']
@@ -348,7 +349,7 @@ class TypeNestTypeValue(Type):
 
             tv_args = f", {', '.join(self.attr['type-value'])}"
 
-        get_lines += [f"{nn_pfx}_parse(&parg, {prev}{tv_args});"]
+        get_lines += [f"{self.nested_render_name}_parse(&parg, {prev}{tv_args});"]
         self._attr_get(ri, var, get_lines, init_lines=init_lines, local_vars=local_vars)
 
 
@@ -394,7 +395,7 @@ class Struct:
 
 
 class AttrSpace:
-    def __init__(self, yaml):
+    def __init__(self, family, yaml):
         self.yaml = yaml
 
         self.attrs = dict()
@@ -402,25 +403,29 @@ class AttrSpace:
         self.name_prefix = self.yaml['name-prefix']
         self.subspace_of = self.yaml['subspace-of'] if 'subspace-of' in self.yaml else None
 
+        self.c_name = self.name.replace('-', '_')
+        if self.c_name in c_kw:
+            self.c_name += '_'
+
         for elem in self.yaml['attributes']:
             if elem['type'] in scalars:
-                attr = TypeScalar(elem)
+                attr = TypeScalar(family, self, elem)
             elif elem['type'] == 'unused':
-                attr = TypeUnused(elem)
+                attr = TypeUnused(family, self, elem)
             elif elem['type'] == 'flag':
-                attr = TypeFlag(elem)
+                attr = TypeFlag(family, self, elem)
             elif elem['type'] == 'nul-string':
-                attr = TypeNulString(elem)
+                attr = TypeNulString(family, self, elem)
             elif elem['type'] == 'binary':
-                attr = TypeBinary(elem)
+                attr = TypeBinary(family, self, elem)
             elif elem['type'] == 'nest':
-                attr = TypeNest(elem)
+                attr = TypeNest(family, self, elem)
             elif elem['type'] == 'multi-attr':
-                attr = TypeMultiAttr(elem)
+                attr = TypeMultiAttr(family, self, elem)
             elif elem['type'] == 'array-nest':
-                attr = TypeArrayNest(elem)
+                attr = TypeArrayNest(family, self, elem)
             elif elem['type'] == 'nest-type-value':
-                attr = TypeNestTypeValue(elem)
+                attr = TypeNestTypeValue(family, self, elem)
             else:
                 raise Exception(f"No typed class for type {elem['type']}")
 
@@ -504,7 +509,7 @@ class Family:
             self.consts[elem['name']] = elem
 
         for elem in self.yaml['attribute-spaces']:
-            self.attr_spaces[elem['name']] = AttrSpace(elem)
+            self.attr_spaces[elem['name']] = AttrSpace(self, elem)
 
         ntf = []
         for elem in self.yaml['operations']['list']:
@@ -834,25 +839,25 @@ def print_dump_prototype(ri):
     print_prototype(ri, "request")
 
 
-def put_typol_fwd(ri, attr_space):
-    ri.cw.p(f'extern struct ynl_policy_nest {nest_op_prefix(ri, attr_space)}_nest;')
+def put_typol_fwd(cw, struct):
+    cw.p(f'extern struct ynl_policy_nest {struct.render_name}_nest;')
 
 
-def put_typol(ri, attr_space):
-    type_max = f"{ri.family.attr_spaces[attr_space].name_prefix}MAX"
-    ri.cw.block_start(line=f'struct ynl_policy_attr {nest_op_prefix(ri, attr_space)}_policy[{type_max} + 1] =')
+def put_typol(cw, struct):
+    type_max = f"{struct.attr_space.name_prefix}MAX"
+    cw.block_start(line=f'struct ynl_policy_attr {struct.render_name}_policy[{type_max} + 1] =')
 
-    for _, arg in ri.family.attr_spaces[attr_space].items():
-        arg.attr_typol(ri)
+    for _, arg in struct.member_list():
+        arg.attr_typol(cw)
 
-    ri.cw.block_end(line=';')
-    ri.cw.nl()
+    cw.block_end(line=';')
+    cw.nl()
 
-    ri.cw.block_start(line=f'struct ynl_policy_nest {nest_op_prefix(ri, attr_space)}_nest =')
-    ri.cw.p(f'.max_attr = {type_max},')
-    ri.cw.p(f'.table = {nest_op_prefix(ri, attr_space)}_policy,')
-    ri.cw.block_end(line=';')
-    ri.cw.nl()
+    cw.block_start(line=f'struct ynl_policy_nest {struct.render_name}_nest =')
+    cw.p(f'.max_attr = {type_max},')
+    cw.p(f'.table = {struct.render_name}_policy,')
+    cw.block_end(line=';')
+    cw.nl()
 
 
 def put_req_nested(ri, struct):
@@ -1545,13 +1550,13 @@ def main():
         if args.mode == "user":
             cw.p('// Policies')
             for name, _ in parsed.attr_spaces.items():
-                ri = RenderInfo(cw, parsed, args.mode, "", "", "", name)
-                put_typol_fwd(ri, name)
+                struct = Struct(parsed, name)
+                put_typol_fwd(cw, struct)
             cw.nl()
 
             for name, _ in parsed.attr_spaces.items():
-                ri = RenderInfo(cw, parsed, args.mode, "", "", "", name)
-                put_typol(ri, name)
+                struct = Struct(parsed, name)
+                put_typol(cw, struct)
 
             cw.p('// Common nested types')
             for attr_space, struct in sorted(parsed.pure_nested_structs.items()):
