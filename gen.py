@@ -360,6 +360,7 @@ class Struct:
         # Use list to catch comparisons with empty sets
         self.inherited = inherited if inherited is not None else []
 
+        self.nested = type_list is None
         self.render_name = f"{family['name']}_{space_name.replace('-', '_')}"
         self.struct_name = 'struct ' + self.render_name
         self.ptr_name = self.struct_name + ' *'
@@ -895,17 +896,14 @@ def prep_multi_parse(struct, array_nests, multi_attrs, lines, local_vars):
         lines.append('parg.ys = yarg->ys;')
 
 
-def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
-    if attr_space is None:
-        attr_space = ri.attr_space
-
-    if nested:
+def finalize_multi_parse(ri, struct, array_nests, multi_attrs):
+    if struct.nested:
         iter_line = "mnl_attr_for_each_nested(attr, nested)"
     else:
         iter_line = "mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr))"
 
     for anest in sorted(array_nests):
-        aspec = ri.family.attr_spaces[attr_space][anest]
+        aspec = struct[anest]
         nn_pfx = nest_op_prefix(ri, aspec['nested-attributes'])
 
         ri.cw.block_start(line=f"if (dst->n_{anest})")
@@ -921,7 +919,7 @@ def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
     ri.cw.nl()
 
     for anest in sorted(multi_attrs):
-        aspec = ri.family.attr_spaces[attr_space][anest]
+        aspec = struct[anest]
         ri.cw.block_start(line=f"if (dst->n_{anest})")
         ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, sizeof(*dst->{anest}));")
         ri.cw.p('i = 0;')
@@ -980,7 +978,7 @@ def parse_rsp_nested(ri, struct):
     ri.cw.block_end()
     ri.cw.nl()
 
-    finalize_multi_parse(ri, True, array_nests, multi_attrs, struct.space_name)
+    finalize_multi_parse(ri, struct, array_nests, multi_attrs)
 
     ri.cw.p('return 0;')
     ri.cw.block_end()
@@ -1020,7 +1018,7 @@ def parse_rsp_msg(ri, deref=False):
     ri.cw.block_end()
     ri.cw.nl()
 
-    finalize_multi_parse(ri, False, array_nests, multi_attrs)
+    finalize_multi_parse(ri, ri.struct["reply"], array_nests, multi_attrs)
 
     ri.cw.p('return MNL_CB_OK;')
     ri.cw.block_end()
