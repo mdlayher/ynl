@@ -1016,8 +1016,7 @@ def print_req(ri):
 
     ri.cw.p(f"ys->req_policy = &{ri.struct['request'].render_name}_nest;")
     ri.cw.nl()
-    for arg in ri.op[ri.op_mode]["request"]['attributes']:
-        attr = ri.family.attr_spaces[ri.attr_space][arg]
+    for _, attr in ri.struct["request"].member_list():
         attr.attr_put(ri, "req")
     ri.cw.nl()
 
@@ -1074,8 +1073,7 @@ def print_dump(ri):
     if "request" in ri.op[ri.op_mode]:
         ri.cw.p(f"ys->req_policy = &{ri.struct['request'].render_name}_nest;")
         ri.cw.nl()
-        for arg in ri.op[ri.op_mode]["request"]['attributes']:
-            attr = ri.family.attr_spaces[ri.attr_space][arg]
+        for _, attr in ri.struct["request"].member_list():
             attr.attr_put(ri, "req")
     ri.cw.nl()
 
