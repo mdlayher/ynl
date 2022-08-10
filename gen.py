@@ -353,10 +353,11 @@ class TypeNestTypeValue(Type):
 
 
 class Struct:
-    def __init__(self, family, attr_space, type_list=None):
+    def __init__(self, family, attr_space, type_list=None, inherited=None):
         self.family = family
         self.space_name = attr_space
         self.attr_space = family.attr_spaces[attr_space]
+        self.inherited = inherited
 
         self.render_name = f"{family['name']}_{attr_space.replace('-', '_')}"
         self.struct_name = 'struct ' + self.render_name
@@ -373,6 +374,10 @@ class Struct:
 
     def members(self):
         return self.attr_space.items()
+
+    def set_inherited(self, new_inherited):
+        if self.inherited != new_inherited:
+            raise Exception("Inheriting different members not supported")
 
 
 class AttrSpace:
@@ -468,7 +473,6 @@ class Family:
         self.root_spaces = dict()
         # dict space-name -> set('request', 'reply')
         self.pure_nested_structs = dict()
-        self.inherited_members = dict()
         self.all_notify = dict()
 
         self._dictify()
@@ -523,24 +527,22 @@ class Family:
         for root_space, rs_members in self.root_spaces.items():
             for attr, spec in self.attr_spaces[root_space].items():
                 if 'nested-attributes' in spec:
+                    inherit = set()
                     nested = spec['nested-attributes']
                     if nested not in self.root_spaces:
-                        self.pure_nested_structs[nested] = Struct(self, nested)
+                        self.pure_nested_structs[nested] = Struct(self, nested, inherited=inherit)
                     if attr in rs_members['request']:
                         self.pure_nested_structs[nested].request = True
                     if attr in rs_members['reply']:
                         self.pure_nested_structs[nested].reply = True
+
                     if 'type-value' in spec:
-                        tv_set = set(spec['type-value'])
                         if nested in self.root_spaces:
                             raise Exception("Inheriting members to a space used as root not supported")
-                        if nested in self.inherited_members and self.inherited_members[nested] != tv_set:
-                            raise Exception("Inheriting different members not supported")
-                        self.inherited_members[nested] = tv_set
+                        inherit.update(set(spec['type-value']))
                     elif spec['type'] == 'array-nest':
-                        self.inherited_members[nested] = {'idx'}
-                    else:
-                        self.inherited_members[nested] = set()
+                        inherit.add('idx')
+                    self.pure_nested_structs[nested].set_inherited(inherit)
 
     def _load_all_notify(self):
         for op_name, op in self.ops.items():
@@ -936,7 +938,7 @@ def parse_rsp_nested(ri, struct):
 
     func_args = ['struct ynl_parse_arg *yarg',
                  'const struct nlattr *nested']
-    for arg in sorted(ri.family.inherited_members[struct.space_name]):
+    for arg in sorted(struct.inherited):
         func_args.append('__u32 ' + arg)
 
     local_vars = ['const struct nlattr *attr;',
@@ -956,7 +958,7 @@ def parse_rsp_nested(ri, struct):
         ri.cw.p(line)
     ri.cw.nl()
 
-    for arg in sorted(ri.family.inherited_members[struct.space_name]):
+    for arg in sorted(struct.inherited):
         ri.cw.p(f'dst->{arg} = {arg};')
     ri.cw.nl()
 
@@ -1171,7 +1173,7 @@ def print_type(ri, direction):
 
 
 def print_type_full(ri, struct):
-    _print_type(ri, "", struct.attr_space, ri.family.inherited_members[struct.space_name])
+    _print_type(ri, "", struct.attr_space, struct.inherited)
 
 
 def print_type_helpers(ri, direction, deref=False):
