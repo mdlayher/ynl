@@ -266,7 +266,7 @@ class TypeNest(Type):
     def setter(self, ri, space, direction, deref=False, ref=None):
         ref = (ref if ref else []) + [self.c_name]
 
-        for _, attr in ri.family.attr_spaces[self.nested_attrs].items():
+        for _, attr in ri.family.pure_nested_structs[self.nested_attrs].member_list():
             attr.setter(ri, self.nested_attrs, direction, deref=deref, ref=ref)
 
 
@@ -767,10 +767,6 @@ def type_name(ri, direction, deref=False):
     return f"struct {op_prefix(ri, direction, deref=deref)}"
 
 
-def nest_op_prefix(ri, attr_space):
-    return f"{ri.family['name']}_{attr_space.replace('-', '_')}"
-
-
 def attribute_policy(ri, attr, prototype=True, suffix=""):
     aspace = ri.family.attr_spaces[ri.attr_space]
     spec = aspace[attr]
@@ -1018,7 +1014,7 @@ def print_req(ri):
 
     ri.cw.p(f"nlh = ynl_gemsg_start_req(ys, {ri.nl.get_family_id()}, {ri.op.enum_name}, 1);")
 
-    ri.cw.p(f"ys->req_policy = &{nest_op_prefix(ri, ri.attr_space)}_nest;")
+    ri.cw.p(f"ys->req_policy = &{ri.struct['request'].render_name}_nest;")
     ri.cw.nl()
     for arg in ri.op[ri.op_mode]["request"]['attributes']:
         attr = ri.family.attr_spaces[ri.attr_space][arg]
@@ -1076,7 +1072,7 @@ def print_dump(ri):
     ri.cw.p(f"nlh = ynl_gemsg_start_dump(ys, {ri.nl.get_family_id()}, {ri.op.enum_name}, 1);")
 
     if "request" in ri.op[ri.op_mode]:
-        ri.cw.p(f"ys->req_policy = &{nest_op_prefix(ri, ri.attr_space)}_nest;")
+        ri.cw.p(f"ys->req_policy = &{ri.struct['request'].render_name}_nest;")
         ri.cw.nl()
         for arg in ri.op[ri.op_mode]["request"]['attributes']:
             attr = ri.family.attr_spaces[ri.attr_space][arg]
