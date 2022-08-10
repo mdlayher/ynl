@@ -589,7 +589,7 @@ class RenderInfo:
             self.attr_space = op['attribute-space']
 
         if op:
-            self.type_name = op_name
+            self.type_name = op_name.replace('-', '_')
         else:
             self.type_name = attr_space.replace('-', '_')
 
@@ -744,7 +744,7 @@ def attr_enum_name(ri, attr):
 
 
 def op_prefix(ri, direction, deref=False):
-    suffix = f"_{ri.type_name.replace('-', '_')}"
+    suffix = f"_{ri.type_name}"
 
     if not ri.op_mode or ri.op_mode == 'do':
         suffix += f"{direction_to_suffix[direction]}"
@@ -770,10 +770,6 @@ def type_name(ri, direction, deref=False):
 
 def nest_op_prefix(ri, attr_space):
     return f"{ri.family['name']}_{attr_space.replace('-', '_')}"
-
-
-def nest_type_name(ri, attr_space):
-    return f"struct {nest_op_prefix(ri, attr_space)}"
 
 
 def attribute_policy(ri, attr, prototype=True, suffix=""):
@@ -951,15 +947,13 @@ def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
 
 
 def parse_rsp_nested(ri, struct):
-    struct_type = nest_type_name(ri, struct.space_name)
-
     func_args = ['struct ynl_parse_arg *yarg',
                  'const struct nlattr *nested']
     for arg in sorted(struct.inherited):
         func_args.append('__u32 ' + arg)
 
     local_vars = ['const struct nlattr *attr;',
-                  f'{struct_type} *dst = yarg->data;']
+                  f'{struct.ptr_name}dst = yarg->data;']
     init_lines = []
 
     array_nests = set()
