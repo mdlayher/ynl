@@ -353,27 +353,42 @@ class TypeNestTypeValue(Type):
 
 
 class Struct:
-    def __init__(self, family, attr_space, type_list=None, inherited=None):
+    def __init__(self, family, space_name, type_list=None, inherited=None):
         self.family = family
-        self.space_name = attr_space
-        self.attr_space = family.attr_spaces[attr_space]
-        self.inherited = inherited
+        self.space_name = space_name
+        self.attr_space = family.attr_spaces[space_name]
+        # Use list to catch comparisons with empty sets
+        self.inherited = inherited if inherited is not None else []
 
-        self.render_name = f"{family['name']}_{attr_space.replace('-', '_')}"
+        self.render_name = f"{family['name']}_{space_name.replace('-', '_')}"
         self.struct_name = 'struct ' + self.render_name
         self.ptr_name = self.struct_name + ' *'
 
         self.request = False
         self.reply = False
 
+        self.attr_list = []
+        self.attrs = dict()
+        if type_list:
+            for t in type_list:
+                self.attr_list.append((t, self.attr_space[t]),)
+        else:
+            for t in self.attr_space:
+                self.attr_list.append((t, self.attr_space[t]),)
+        for name, attr in self.attr_list:
+            self.attrs[name] = attr
+
     def __iter__(self):
-        yield from self.attr_space
+        yield from self.attrs
 
     def __getitem__(self, key):
-        return self.attr_space[key]
+        return self.attrs[key]
+
+    def member_list(self):
+        return self.attr_list
 
     def members(self):
-        return self.attr_space.items()
+        return self.attrs.items()
 
     def set_inherited(self, new_inherited):
         if self.inherited != new_inherited:
@@ -1145,23 +1160,21 @@ def print_free_prototype(ri, direction, suffix=';'):
     ri.cw.write_func_prot('void', f"{name}_free", [f"struct {name} *{arg}"], suffix=suffix)
 
 
-def _print_type(ri, direction, type_list, inherited_list={}):
+def _print_type(ri, direction, struct):
     suffix = f'_{ri.type_name}{direction_to_suffix[direction]}'
 
     if ri.op_mode == 'dump':
         suffix += '_dump'
 
     ri.cw.block_start(line=f"struct {ri.family['name']}{suffix}")
-    for arg in type_list:
-        attr = ri.family.attr_spaces[ri.attr_space][arg]
+    for _, attr in struct.member_list():
         attr.presence_member(ri)
     ri.cw.nl()
 
-    for arg in sorted(inherited_list):
+    for arg in sorted(struct.inherited):
         ri.cw.p(f"__u32 {arg};")
 
-    for arg in type_list:
-        attr = ri.family.attr_spaces[ri.attr_space][arg]
+    for _, attr in struct.member_list():
         attr.struct_member(ri)
 
     ri.cw.block_end(line=';')
@@ -1169,11 +1182,12 @@ def _print_type(ri, direction, type_list, inherited_list={}):
 
 
 def print_type(ri, direction):
-    _print_type(ri, direction, ri.op[ri.op_mode][direction]['attributes'])
+    struct = Struct(ri.family, ri.attr_space, type_list=ri.op[ri.op_mode][direction]['attributes'])
+    _print_type(ri, direction, struct)
 
 
 def print_type_full(ri, struct):
-    _print_type(ri, "", struct.attr_space, struct.inherited)
+    _print_type(ri, "", struct)
 
 
 def print_type_helpers(ri, direction, deref=False):
