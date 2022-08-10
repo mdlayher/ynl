@@ -358,6 +358,10 @@ class Struct:
         self.space_name = attr_space
         self.attr_space = family.attr_spaces[attr_space]
 
+        self.render_name = f"{family['name']}_{attr_space.replace('-', '_')}"
+        self.struct_name = 'struct ' + self.render_name
+        self.ptr_name = self.struct_name + ' *'
+
         self.request = False
         self.reply = False
 
@@ -834,19 +838,18 @@ def put_typol(ri, attr_space):
     ri.cw.nl()
 
 
-def put_req_nested(ri, attr_space):
-    struct_type = nest_type_name(ri, attr_space)
+def put_req_nested(ri, struct):
     func_args = ['struct nlmsghdr *nlh',
                  'unsigned int attr_type',
-                 f'{struct_type} *obj']
+                 f'{struct.ptr_name}obj']
 
-    ri.cw.write_func_prot('int', f'{nest_op_prefix(ri, attr_space)}_put', func_args)
+    ri.cw.write_func_prot('int', f'{struct.render_name}_put', func_args)
     ri.cw.block_start()
     ri.cw.write_func_lvar('struct nlattr *nest;')
 
     ri.cw.p("nest = mnl_attr_nest_start(nlh, attr_type);")
 
-    for _, arg in ri.family.attr_spaces[attr_space].items():
+    for _, arg in struct.members():
         arg.attr_put(ri, "obj")
 
     ri.cw.p("mnl_attr_nest_end(nlh, nest);")
@@ -1254,9 +1257,8 @@ def _free_type(ri, direction, type_list):
     ri.cw.nl()
 
 
-def free_rsp_nested(ri, attr_space):
-    types = ri.family.attr_spaces[attr_space]
-    _free_type(ri, "", types)
+def free_rsp_nested(ri, struct):
+    _free_type(ri, "", struct.attr_space)
 
 
 def print_rsp_free(ri):
@@ -1510,8 +1512,7 @@ def main():
     if args.header:
         if args.mode == "user":
             cw.p('// Common nested types')
-            for attr_space in sorted(parsed.pure_nested_structs.keys()):
-                struct = parsed.pure_nested_structs[attr_space]
+            for attr_space, struct in sorted(parsed.pure_nested_structs.items()):
                 ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
                 print_type_full(ri, struct)
 
@@ -1577,13 +1578,13 @@ def main():
                 put_typol(ri, name)
 
             cw.p('// Common nested types')
-            for attr_space in sorted(parsed.pure_nested_structs.keys()):
+            for attr_space, struct in sorted(parsed.pure_nested_structs.items()):
                 ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
 
-                free_rsp_nested(ri, attr_space)
-                if parsed.pure_nested_structs[attr_space].request:
-                    put_req_nested(ri, attr_space)
-                if parsed.pure_nested_structs[attr_space].reply:
+                free_rsp_nested(ri, struct)
+                if struct.request:
+                    put_req_nested(ri, struct)
+                if struct.reply:
                     parse_rsp_nested(ri, attr_space)
 
         for op_name, op in parsed.ops.items():
