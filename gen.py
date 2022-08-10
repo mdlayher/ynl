@@ -883,7 +883,7 @@ def put_req_nested(ri, struct):
     ri.cw.nl()
 
 
-def prep_multi_parse(ri, struct, array_nests, multi_attrs, lines, local_vars, attr_space=None):
+def prep_multi_parse(struct, array_nests, multi_attrs, lines, local_vars):
     needs_parg = False
     for arg, aspec in struct.member_list():
         if aspec['type'] == 'array-nest':
@@ -964,8 +964,7 @@ def parse_rsp_nested(ri, struct):
 
     array_nests = set()
     multi_attrs = set()
-    prep_multi_parse(ri, struct,
-                     array_nests, multi_attrs, init_lines, local_vars, attr_space=struct.space_name)
+    prep_multi_parse(struct, array_nests, multi_attrs, init_lines, local_vars)
 
     ri.cw.write_func_prot('int', f'{struct.render_name}_parse', func_args)
     ri.cw.block_start()
@@ -1009,7 +1008,7 @@ def parse_rsp_msg(ri, deref=False):
 
     array_nests = set()
     multi_attrs = set()
-    prep_multi_parse(ri, ri.struct["reply"], array_nests, multi_attrs, init_lines, local_vars)
+    prep_multi_parse(ri.struct["reply"], array_nests, multi_attrs, init_lines, local_vars)
 
     ri.cw.write_func_prot('int', f'{op_prefix(ri, "reply", deref=deref)}_parse', func_args)
     ri.cw.block_start()
@@ -1251,32 +1250,31 @@ def print_wrapped_type(ri):
     ri.cw.nl()
 
 
-def _free_type_members(ri, var, type_list, ref=''):
-    for arg in type_list:
-        spec = ri.family.attr_spaces[ri.attr_space][arg]
-        if spec.is_multi_val():
+def _free_type_members(ri, var, struct, ref=''):
+    for arg, attr in struct.member_list():
+        if attr.is_multi_val():
             ri.cw.p(f'free({var}->{ref}{arg});')
     ri.cw.p(f'free({var});')
 
 
-def _free_type(ri, direction, type_list):
+def _free_type(ri, direction, struct):
     var = free_arg_name(ri, direction)
 
     print_free_prototype(ri, direction, suffix='')
     ri.cw.block_start()
-    _free_type_members(ri, var, type_list)
+    _free_type_members(ri, var, struct)
     ri.cw.block_end()
     ri.cw.nl()
 
 
 def free_rsp_nested(ri, struct):
-    _free_type(ri, "", struct.attr_space)
+    _free_type(ri, "", struct)
 
 
 def print_rsp_free(ri):
     if 'reply' not in ri.op[ri.op_mode]:
         return
-    _free_type(ri, 'reply', ri.op[ri.op_mode]['reply']['attributes'])
+    _free_type(ri, 'reply', ri.struct['reply'])
 
 
 def print_dump_type_free(ri):
@@ -1291,7 +1289,7 @@ def print_dump_type_free(ri):
     ri.cw.p('next = rsp->next;')
     ri.cw.nl()
 
-    _free_type_members(ri, 'rsp', ri.op[ri.op_mode]['reply']['attributes'], ref='obj.')
+    _free_type_members(ri, 'rsp', ri.struct['reply'], ref='obj.')
     ri.cw.block_end()
     ri.cw.block_end()
     ri.cw.nl()
@@ -1300,7 +1298,7 @@ def print_dump_type_free(ri):
 def print_ntf_type_free(ri):
     print_free_prototype(ri, 'reply', suffix='')
     ri.cw.block_start()
-    _free_type_members(ri, 'rsp', ri.op[ri.op_mode]['reply']['attributes'], ref='obj.')
+    _free_type_members(ri, 'rsp', ri.struct['reply'], ref='obj.')
     ri.cw.block_end()
     ri.cw.nl()
 
