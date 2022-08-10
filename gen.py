@@ -91,7 +91,7 @@ class Type:
         ri.cw.p(f"{line};", add_ind=1)
 
     def _attr_put_simple(self, ri, var, put_type):
-        line = f"mnl_attr_put_{put_type}(nlh, {attr_enum_name(ri, self.name)}, {var}->{self.name})"
+        line = f"mnl_attr_put_{put_type}(nlh, {self.enum_name}, {var}->{self.name})"
         self._attr_put_line(ri, var, line)
 
     def attr_put(self, ri, var):
@@ -103,7 +103,7 @@ class Type:
         if type(init_lines) is str:
             init_lines = [init_lines]
 
-        ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {attr_enum_name(ri, self.name)})")
+        ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {self.enum_name})")
         if local_vars:
             for local in local_vars:
                 ri.cw.p(local)
@@ -187,7 +187,7 @@ class TypeFlag(Type):
         return '.type = YNL_PT_FLAG, '
 
     def attr_put(self, ri, var):
-        self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {attr_enum_name(ri, self.name)}, 0, NULL)")
+        self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {self.enum_name}, 0, NULL)")
 
     def attr_get(self, ri, var):
         self._attr_get(ri, var, [])
@@ -236,7 +236,7 @@ class TypeBinary(Type):
         return f'.type = YNL_PT_NUL_STR, .len = {self.len}, '
 
     def attr_put(self, ri, var):
-        self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {attr_enum_name(ri, self.name)}, " +
+        self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {self.enum_name}, " +
                             f"{self.len}, {var}->{self.name})")
 
     def attr_get(self, ri, var):
@@ -742,10 +742,6 @@ def rdir(direction):
     return direction
 
 
-def attr_enum_name(ri, attr):
-    return f"{ri.family.attr_spaces[ri.attr_space].name_prefix}{attr.upper()}"
-
-
 def op_prefix(ri, direction, deref=False):
     suffix = f"_{ri.type_name}"
 
@@ -946,7 +942,7 @@ def _multi_parse(ri, struct, init_lines, local_vars):
         if 'nested-attributes' in aspec:
             ri.cw.p(f"parg.rsp_policy = &{aspec.nested_render_name}_nest;")
         ri.cw.block_start(line=iter_line)
-        ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {attr_enum_name(ri, anest)})")
+        ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {aspec.enum_name})")
         if 'nested-attributes' in aspec:
             ri.cw.p(f"parg.data = &dst->{anest}[i];")
             ri.cw.p(f"{aspec.nested_render_name}_parse(&parg, attr);")
