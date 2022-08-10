@@ -931,12 +931,12 @@ def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
     ri.cw.nl()
 
 
-def parse_rsp_nested(ri, attr_space):
-    struct_type = nest_type_name(ri, attr_space)
+def parse_rsp_nested(ri, struct):
+    struct_type = nest_type_name(ri, struct.space_name)
 
     func_args = ['struct ynl_parse_arg *yarg',
                  'const struct nlattr *nested']
-    for arg in sorted(ri.family.inherited_members[attr_space]):
+    for arg in sorted(ri.family.inherited_members[struct.space_name]):
         func_args.append('__u32 ' + arg)
 
     local_vars = ['const struct nlattr *attr;',
@@ -945,10 +945,10 @@ def parse_rsp_nested(ri, attr_space):
 
     array_nests = set()
     multi_attrs = set()
-    prep_multi_parse(ri, ri.family.attr_spaces[attr_space],
-                     array_nests, multi_attrs, init_lines, local_vars, attr_space=attr_space)
+    prep_multi_parse(ri, struct.attr_space,
+                     array_nests, multi_attrs, init_lines, local_vars, attr_space=struct.space_name)
 
-    ri.cw.write_func_prot('int', f'{nest_op_prefix(ri, attr_space)}_parse', func_args)
+    ri.cw.write_func_prot('int', f'{struct.render_name}_parse', func_args)
     ri.cw.block_start()
     ri.cw.write_func_lvar(local_vars)
 
@@ -956,20 +956,19 @@ def parse_rsp_nested(ri, attr_space):
         ri.cw.p(line)
     ri.cw.nl()
 
-    for arg in sorted(ri.family.inherited_members[attr_space]):
+    for arg in sorted(ri.family.inherited_members[struct.space_name]):
         ri.cw.p(f'dst->{arg} = {arg};')
-    if ri.family.inherited_members[attr_space]:
-        ri.cw.nl()
+    ri.cw.nl()
 
     ri.cw.block_start(line="mnl_attr_for_each_nested(attr, nested)")
 
-    for _, arg in ri.family.attr_spaces[attr_space].items():
+    for _, arg in struct.members():
         arg.attr_get(ri, 'dst')
 
     ri.cw.block_end()
     ri.cw.nl()
 
-    finalize_multi_parse(ri, True, array_nests, multi_attrs, attr_space)
+    finalize_multi_parse(ri, True, array_nests, multi_attrs, struct.space_name)
 
     ri.cw.p('return 0;')
     ri.cw.block_end()
@@ -1585,7 +1584,7 @@ def main():
                 if struct.request:
                     put_req_nested(ri, struct)
                 if struct.reply:
-                    parse_rsp_nested(ri, attr_space)
+                    parse_rsp_nested(ri, struct)
 
         for op_name, op in parsed.ops.items():
             cw.p(f"/* ============== {parsed['operations']['name-prefix']}{op_name.upper()} ============== */")
