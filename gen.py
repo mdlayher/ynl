@@ -353,9 +353,22 @@ class TypeNestTypeValue(Type):
 
 
 class Struct:
-    def __init__(self, attr_space, type_list=None):
+    def __init__(self, family, attr_space, type_list=None):
+        self.family = family
+        self.space_name = attr_space
+        self.attr_space = family.attr_spaces[attr_space]
+
         self.request = False
         self.reply = False
+
+    def __iter__(self):
+        yield from self.attr_space
+
+    def __getitem__(self, key):
+        return self.attr_space[key]
+
+    def members(self):
+        return self.attr_space.items()
 
 
 class AttrSpace:
@@ -450,7 +463,7 @@ class Family:
         # dict space-name -> 'request': set(attrs), 'reply': set(attrs)
         self.root_spaces = dict()
         # dict space-name -> set('request', 'reply')
-        self.pure_nested_spaces = dict()
+        self.pure_nested_structs = dict()
         self.inherited_members = dict()
         self.all_notify = dict()
 
@@ -508,11 +521,11 @@ class Family:
                 if 'nested-attributes' in spec:
                     nested = spec['nested-attributes']
                     if nested not in self.root_spaces:
-                        self.pure_nested_spaces[nested] = Struct(self.attr_spaces[nested])
+                        self.pure_nested_structs[nested] = Struct(self, nested)
                     if attr in rs_members['request']:
-                        self.pure_nested_spaces[nested].request = True
+                        self.pure_nested_structs[nested].request = True
                     if attr in rs_members['reply']:
-                        self.pure_nested_spaces[nested].reply = True
+                        self.pure_nested_structs[nested].reply = True
                     if 'type-value' in spec:
                         tv_set = set(spec['type-value'])
                         if nested in self.root_spaces:
@@ -1155,9 +1168,8 @@ def print_type(ri, direction):
     _print_type(ri, direction, ri.op[ri.op_mode][direction]['attributes'])
 
 
-def print_type_full(ri, attr_space):
-    types = ri.family.attr_spaces[attr_space]
-    _print_type(ri, "", types, ri.family.inherited_members[attr_space])
+def print_type_full(ri, struct):
+    _print_type(ri, "", struct.attr_space, ri.family.inherited_members[struct.space_name])
 
 
 def print_type_helpers(ri, direction, deref=False):
@@ -1498,9 +1510,10 @@ def main():
     if args.header:
         if args.mode == "user":
             cw.p('// Common nested types')
-            for attr_space in sorted(parsed.pure_nested_spaces.keys()):
+            for attr_space in sorted(parsed.pure_nested_structs.keys()):
+                struct = parsed.pure_nested_structs[attr_space]
                 ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
-                print_type_full(ri, attr_space)
+                print_type_full(ri, struct)
 
         for op_name, op in parsed.ops.items():
             cw.p(f"/* ============== {parsed['operations']['name-prefix']}{op_name.upper()} ============== */")
@@ -1564,13 +1577,13 @@ def main():
                 put_typol(ri, name)
 
             cw.p('// Common nested types')
-            for attr_space in sorted(parsed.pure_nested_spaces.keys()):
+            for attr_space in sorted(parsed.pure_nested_structs.keys()):
                 ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
 
                 free_rsp_nested(ri, attr_space)
-                if parsed.pure_nested_spaces[attr_space].request:
+                if parsed.pure_nested_structs[attr_space].request:
                     put_req_nested(ri, attr_space)
-                if parsed.pure_nested_spaces[attr_space].reply:
+                if parsed.pure_nested_structs[attr_space].reply:
                     parse_rsp_nested(ri, attr_space)
 
         for op_name, op in parsed.ops.items():
