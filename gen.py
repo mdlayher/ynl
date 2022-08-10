@@ -925,15 +925,14 @@ def _multi_parse(ri, struct, init_lines, local_vars):
 
     for anest in sorted(array_nests):
         aspec = struct[anest]
-        nn_pfx = nest_op_prefix(ri, aspec['nested-attributes'])
 
         ri.cw.block_start(line=f"if (dst->n_{anest})")
         ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, sizeof(*dst->{anest}));")
         ri.cw.p('i = 0;')
-        ri.cw.p(f"parg.rsp_policy = &{nn_pfx}_nest;")
+        ri.cw.p(f"parg.rsp_policy = &{aspec.nested_render_name}_nest;")
         ri.cw.block_start(line=f"mnl_attr_for_each_nested(attr, attr_{anest})")
         ri.cw.p(f"parg.data = &dst->{anest}[i];")
-        ri.cw.p(f"{nn_pfx}_parse(&parg, attr, mnl_attr_get_type(attr));")
+        ri.cw.p(f"{aspec.nested_render_name}_parse(&parg, attr, mnl_attr_get_type(attr));")
         ri.cw.p('i++;')
         ri.cw.block_end()
         ri.cw.block_end()
@@ -945,12 +944,12 @@ def _multi_parse(ri, struct, init_lines, local_vars):
         ri.cw.p(f"dst->{anest} = calloc(dst->n_{anest}, sizeof(*dst->{anest}));")
         ri.cw.p('i = 0;')
         if 'nested-attributes' in aspec:
-            ri.cw.p(f"parg.rsp_policy = &{nest_op_prefix(ri, aspec['nested-attributes'])}_nest;")
+            ri.cw.p(f"parg.rsp_policy = &{aspec.nested_render_name}_nest;")
         ri.cw.block_start(line=iter_line)
         ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {attr_enum_name(ri, anest)})")
         if 'nested-attributes' in aspec:
             ri.cw.p(f"parg.data = &dst->{anest}[i];")
-            ri.cw.p(f"{nest_op_prefix(ri, aspec['nested-attributes'])}_parse(&parg, attr);")
+            ri.cw.p(f"{aspec.nested_render_name}_parse(&parg, attr);")
         elif aspec['sub-type'] in scalars:
             t = aspec['sub-type']
             if t[0] == 's':
