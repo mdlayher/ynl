@@ -595,6 +595,12 @@ class RenderInfo:
 
         self.cw = cw
 
+        self.struct = dict()
+        for op_dir in ['request', 'reply']:
+            if op and op_dir in op[op_mode]:
+                self.struct[op_dir] = Struct(family, self.attr_space,
+                                             type_list=op[op_mode][op_dir]['attributes'])
+
 
 class CodeWriter:
     def __init__(self, nlib):
@@ -877,13 +883,9 @@ def put_req_nested(ri, struct):
     ri.cw.nl()
 
 
-def prep_multi_parse(ri, type_list, array_nests, multi_attrs, lines, local_vars, attr_space=None):
-    if attr_space is None:
-        attr_space = ri.attr_space
-
+def prep_multi_parse(ri, struct, array_nests, multi_attrs, lines, local_vars, attr_space=None):
     needs_parg = False
-    for arg in type_list:
-        aspec = ri.family.attr_spaces[attr_space][arg]
+    for arg, aspec in struct.member_list():
         if aspec['type'] == 'array-nest':
             local_vars.append(f'const struct nlattr *attr_{arg};')
             array_nests.add(arg)
@@ -962,7 +964,7 @@ def parse_rsp_nested(ri, struct):
 
     array_nests = set()
     multi_attrs = set()
-    prep_multi_parse(ri, struct.attr_space,
+    prep_multi_parse(ri, struct,
                      array_nests, multi_attrs, init_lines, local_vars, attr_space=struct.space_name)
 
     ri.cw.write_func_prot('int', f'{struct.render_name}_parse', func_args)
@@ -1007,8 +1009,7 @@ def parse_rsp_msg(ri, deref=False):
 
     array_nests = set()
     multi_attrs = set()
-    prep_multi_parse(ri, ri.op[ri.op_mode]["reply"]['attributes'],
-                     array_nests, multi_attrs, init_lines, local_vars)
+    prep_multi_parse(ri, ri.struct["reply"], array_nests, multi_attrs, init_lines, local_vars)
 
     ri.cw.write_func_prot('int', f'{op_prefix(ri, "reply", deref=deref)}_parse', func_args)
     ri.cw.block_start()
@@ -1182,8 +1183,7 @@ def _print_type(ri, direction, struct):
 
 
 def print_type(ri, direction):
-    struct = Struct(ri.family, ri.attr_space, type_list=ri.op[ri.op_mode][direction]['attributes'])
-    _print_type(ri, direction, struct)
+    _print_type(ri, direction, ri.struct[direction])
 
 
 def print_type_full(ri, struct):
@@ -1193,11 +1193,8 @@ def print_type_full(ri, struct):
 def print_type_helpers(ri, direction, deref=False):
     print_free_prototype(ri, direction)
 
-    type_list = ri.op[ri.op_mode][direction]['attributes']
-
     if ri.ku_space == 'user' and direction == 'request':
-        for arg in type_list:
-            attr = ri.family.attr_spaces[ri.attr_space][arg]
+        for _, attr in ri.struct[direction].member_list():
             attr.setter(ri, ri.attr_space, direction, deref=deref)
     ri.cw.nl()
 
