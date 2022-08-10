@@ -179,3 +179,75 @@ operations:
             - device_name
             - output_id
             - output_type
+
+    -
+      name: device-create
+      description: New device appeared.
+      attribute-space: main
+      mcgrp: config
+      event:
+        - device_id
+        - device_name
+
+    -
+      name: device-delete
+      description: New device appeared.
+      attribute-space: main
+      mcgrp: config
+      event:
+        - device_id
+        - device_name
+
+    -
+      name: status-locked
+      description: Device lock status has changed.
+      attribute-space: main
+      mcgrp: monitor
+      event:
+        - device_id
+        - lock_status
+
+    -
+      name: status-unlocked
+      description: Device lock status has changed.
+      attribute-space: main
+      mcgrp: monitor
+      event:
+        - device_id
+        - lock_status
+
+    -
+      name: source-change
+      description: Device source has changed.
+      attribute-space: main
+      mcgrp: config-source
+      event:
+        - device_id
+        - source_id
+        - source_type
+
+    -
+      name: output-change
+      description: Device output has changed.
+      attribute-space: main
+      mcgrp: config-output
+      event:
+        - device_id
+        - output_id
+        - output_type
+
+mcast-groups:
+  name-prefix: DPLL_
+  name-suffix: _GROUP_NAME
+  list:
+    -
+      name: config-device
+      value: config
+    -
+      name: config-source
+      value: source
+    -
+      name: config-output
+      value: output
+    -
+      name: monitor

@@ -163,7 +163,7 @@ properties:
                 Attribute space from which attributes directly in the requests and replies
                 to this command are defined.
               type: string
-            flags:
+            flags: &cmd_flags
               description: Command flags.
               type: array
               items:
@@ -193,5 +193,44 @@ properties:
                 reply: *subop-attr-list
             dump: *subop-type
             notify:
-              description: Name of the command sharing the reply type with this notification
+              description: Name of the command sharing the reply type with this notification.
               type: string
+            event:
+              description: Explicit list of the attributes for the notification.
+              type: array
+              items:
+                type: string
+            mcgrp:
+              description: Name of the multicast group generating given notification.
+              type: string
+  mcast-groups:
+    description: List of multicast groups.
+    type: object
+    required: [ name-prefix, list ]
+    additionalProperties: False
+    properties:
+      name-prefix:
+        description: Name prefix for the define associated with the group.
+        type: string
+      name-suffix:
+        description: |
+          Name suffix for the define associated with the group. Multicast group defines seem to be unique
+          in having a name-prefix as well as suffix.
+        type: string
+      list:
+        description: List of groups.
+        type: array
+        items:
+          type: object
+          required: [ name ]
+          additionalProperties: False
+          properties:
+            name:
+              description: |
+                The name for the group, used to form the define and the value of the define, unless value
+                is specified separately.
+              type: string
+            value:
+              description: String value for the define and group name.
+              type: string
+            flags: *cmd_flags
