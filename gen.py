@@ -26,12 +26,22 @@ class Type:
     def __init__(self, attr):
         self.attr = attr
         self.name = attr['name']
-        self.c_name = attr['c_name']
         self.type = attr['type']
+
         if 'len' in attr:
             self.len = attr['len']
         if 'nested-attributes' in attr:
             self.nested_attrs = attr['nested-attributes']
+
+        self.c_name = self.name
+        if self.c_name in c_kw:
+            self.c_name += '_'
+
+    def __getitem__(self, key):
+        return self.attr[key]
+
+    def __contains__(self, key):
+        return key in self.attr
 
     def is_multi_val(self):
         return None
@@ -255,7 +265,7 @@ class TypeNest(Type):
         ref = (ref if ref else []) + [self.c_name]
 
         for _, attr in ri.family.attr_spaces[self.nested_attrs].items():
-            attr.typed.setter(ri, self.nested_attrs, direction, deref=deref, ref=ref)
+            attr.setter(ri, self.nested_attrs, direction, deref=deref, ref=ref)
 
 
 class TypeMultiAttr(Type):
@@ -342,43 +352,6 @@ class TypeNestTypeValue(Type):
         self._attr_get(ri, var, get_lines, init_lines=init_lines, local_vars=local_vars)
 
 
-class Attribute:
-    def __init__(self, yaml):
-        self.yaml = yaml
-
-        c_name = yaml['name']
-        if c_name in c_kw:
-            c_name += '_'
-        self.yaml['c_name'] = c_name
-
-        if yaml['type'] in scalars:
-            self.typed = TypeScalar(self)
-        elif yaml['type'] == 'unused':
-            self.typed = TypeUnused(self)
-        elif yaml['type'] == 'flag':
-            self.typed = TypeFlag(self)
-        elif yaml['type'] == 'nul-string':
-            self.typed = TypeNulString(self)
-        elif yaml['type'] == 'binary':
-            self.typed = TypeBinary(self)
-        elif yaml['type'] == 'nest':
-            self.typed = TypeNest(self)
-        elif yaml['type'] == 'multi-attr':
-            self.typed = TypeMultiAttr(self)
-        elif yaml['type'] == 'array-nest':
-            self.typed = TypeArrayNest(self)
-        elif yaml['type'] == 'nest-type-value':
-            self.typed = TypeNestTypeValue(self)
-        else:
-            raise Exception(f"No typed class for type {yaml['type']}")
-
-    def __getitem__(self, key):
-        return self.yaml[key]
-
-    def __contains__(self, key):
-        return key in self.yaml
-
-
 class AttrSpace:
     def __init__(self, yaml):
         self.yaml = yaml
@@ -389,7 +362,28 @@ class AttrSpace:
         self.subspace_of = self.yaml['subspace-of'] if 'subspace-of' in self.yaml else None
 
         for elem in self.yaml['attributes']:
-            self.attrs[elem['name']] = Attribute(elem)
+            if elem['type'] in scalars:
+                attr = TypeScalar(elem)
+            elif elem['type'] == 'unused':
+                attr = TypeUnused(elem)
+            elif elem['type'] == 'flag':
+                attr = TypeFlag(elem)
+            elif elem['type'] == 'nul-string':
+                attr = TypeNulString(elem)
+            elif elem['type'] == 'binary':
+                attr = TypeBinary(elem)
+            elif elem['type'] == 'nest':
+                attr = TypeNest(elem)
+            elif elem['type'] == 'multi-attr':
+                attr = TypeMultiAttr(elem)
+            elif elem['type'] == 'array-nest':
+                attr = TypeArrayNest(elem)
+            elif elem['type'] == 'nest-type-value':
+                attr = TypeNestTypeValue(elem)
+            else:
+                raise Exception(f"No typed class for type {elem['type']}")
+
+            self.attrs[elem['name']] = attr
 
     def __getitem__(self, key):
         return self.attrs[key]
@@ -809,7 +803,7 @@ def put_typol(ri, attr_space):
     ri.cw.block_start(line=f'struct ynl_policy_attr {nest_op_prefix(ri, attr_space)}_policy[{type_max} + 1] =')
 
     for _, arg in ri.family.attr_spaces[attr_space].items():
-        arg.typed.attr_typol(ri)
+        arg.attr_typol(ri)
 
     ri.cw.block_end(line=';')
     ri.cw.nl()
@@ -834,7 +828,7 @@ def put_req_nested(ri, attr_space):
     ri.cw.p("nest = mnl_attr_nest_start(nlh, attr_type);")
 
     for _, arg in ri.family.attr_spaces[attr_space].items():
-        arg.typed.attr_put(ri, "obj")
+        arg.attr_put(ri, "obj")
 
     ri.cw.p("mnl_attr_nest_end(nlh, nest);")
 
@@ -905,7 +899,7 @@ def finalize_multi_parse(ri, nested, array_nests, multi_attrs, attr_space=None):
             t = aspec['sub-type']
             if t[0] == 's':
                 t = 'u' + t[1:]
-            ri.cw.p(f"dst->{aspec['c_name']}[i] = mnl_attr_get_{t}(attr);")
+            ri.cw.p(f"dst->{aspec.c_name}[i] = mnl_attr_get_{t}(attr);")
         else:
             raise Exception('Nest parsing type not supported yet')
         ri.cw.p('i++;')
@@ -948,7 +942,7 @@ def parse_rsp_nested(ri, attr_space):
     ri.cw.block_start(line="mnl_attr_for_each_nested(attr, nested)")
 
     for _, arg in ri.family.attr_spaces[attr_space].items():
-        arg.typed.attr_get(ri, 'dst')
+        arg.attr_get(ri, 'dst')
 
     ri.cw.block_end()
     ri.cw.nl()
@@ -989,7 +983,7 @@ def parse_rsp_msg(ri, deref=False):
 
     for arg in ri.op[ri.op_mode]["reply"]['attributes']:
         attr = ri.family.attr_spaces[ri.attr_space][arg]
-        attr.typed.attr_get(ri, "dst")
+        attr.attr_get(ri, "dst")
 
     ri.cw.block_end()
     ri.cw.nl()
@@ -1024,7 +1018,7 @@ def print_req(ri):
     ri.cw.nl()
     for arg in ri.op[ri.op_mode]["request"]['attributes']:
         attr = ri.family.attr_spaces[ri.attr_space][arg]
-        attr.typed.attr_put(ri, "req")
+        attr.attr_put(ri, "req")
     ri.cw.nl()
 
     ri.cw.p(f"""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
@@ -1082,7 +1076,7 @@ def print_dump(ri):
         ri.cw.nl()
         for arg in ri.op[ri.op_mode]["request"]['attributes']:
             attr = ri.family.attr_spaces[ri.attr_space][arg]
-            attr.typed.attr_put(ri, "req")
+            attr.attr_put(ri, "req")
     ri.cw.nl()
 
     ri.cw.p(f"""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
@@ -1137,7 +1131,7 @@ def _print_type(ri, direction, type_list, inherited_list={}):
     ri.cw.block_start(line=f"struct {ri.family['name']}{suffix}")
     for arg in type_list:
         attr = ri.family.attr_spaces[ri.attr_space][arg]
-        attr.typed.presence_member(ri)
+        attr.presence_member(ri)
     ri.cw.nl()
 
     for arg in sorted(inherited_list):
@@ -1145,7 +1139,7 @@ def _print_type(ri, direction, type_list, inherited_list={}):
 
     for arg in type_list:
         attr = ri.family.attr_spaces[ri.attr_space][arg]
-        attr.typed.struct_member(ri)
+        attr.struct_member(ri)
 
     ri.cw.block_end(line=';')
     ri.cw.nl()
@@ -1168,7 +1162,7 @@ def print_type_helpers(ri, direction, deref=False):
     if ri.ku_space == 'user' and direction == 'request':
         for arg in type_list:
             attr = ri.family.attr_spaces[ri.attr_space][arg]
-            attr.typed.setter(ri, ri.attr_space, direction, deref=deref)
+            attr.setter(ri, ri.attr_space, direction, deref=deref)
     ri.cw.nl()
 
 
@@ -1227,7 +1221,7 @@ def print_wrapped_type(ri):
 def _free_type_members(ri, var, type_list, ref=''):
     for arg in type_list:
         spec = ri.family.attr_spaces[ri.attr_space][arg]
-        if spec.typed.is_multi_val():
+        if spec.is_multi_val():
             ri.cw.p(f'free({var}->{ref}{arg});')
     ri.cw.p(f'free({var});')
 
