@@ -388,9 +388,6 @@ class Struct:
     def member_list(self):
         return self.attr_list
 
-    def members(self):
-        return self.attrs.items()
-
     def set_inherited(self, new_inherited):
         if self.inherited != new_inherited:
             raise Exception("Inheriting different members not supported")
@@ -869,7 +866,7 @@ def put_req_nested(ri, struct):
 
     ri.cw.p("nest = mnl_attr_nest_start(nlh, attr_type);")
 
-    for _, arg in struct.members():
+    for _, arg in struct.member_list():
         arg.attr_put(ri, "obj")
 
     ri.cw.p("mnl_attr_nest_end(nlh, nest);")
@@ -880,7 +877,14 @@ def put_req_nested(ri, struct):
     ri.cw.nl()
 
 
-def prep_multi_parse(struct, array_nests, multi_attrs, lines, local_vars):
+def _multi_parse(ri, struct, init_lines, local_vars):
+    if struct.nested:
+        iter_line = "mnl_attr_for_each_nested(attr, nested)"
+    else:
+        iter_line = "mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr))"
+
+    array_nests = set()
+    multi_attrs = set()
     needs_parg = False
     for arg, aspec in struct.member_list():
         if aspec['type'] == 'array-nest':
@@ -893,14 +897,26 @@ def prep_multi_parse(struct, array_nests, multi_attrs, lines, local_vars):
         local_vars.append('int i;')
     if needs_parg:
         local_vars.append('struct ynl_parse_arg parg;')
-        lines.append('parg.ys = yarg->ys;')
+        init_lines.append('parg.ys = yarg->ys;')
 
+    ri.cw.block_start()
+    ri.cw.write_func_lvar(local_vars)
 
-def finalize_multi_parse(ri, struct, array_nests, multi_attrs):
-    if struct.nested:
-        iter_line = "mnl_attr_for_each_nested(attr, nested)"
-    else:
-        iter_line = "mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr))"
+    for line in init_lines:
+        ri.cw.p(line)
+    ri.cw.nl()
+
+    for arg in sorted(struct.inherited):
+        ri.cw.p(f'dst->{arg} = {arg};')
+
+    ri.cw.nl()
+    ri.cw.block_start(line=iter_line)
+
+    for _, arg in struct.member_list():
+        arg.attr_get(ri, 'dst')
+
+    ri.cw.block_end()
+    ri.cw.nl()
 
     for anest in sorted(array_nests):
         aspec = struct[anest]
@@ -943,6 +959,13 @@ def finalize_multi_parse(ri, struct, array_nests, multi_attrs):
         ri.cw.block_end()
     ri.cw.nl()
 
+    if struct.nested:
+        ri.cw.p('return 0;')
+    else:
+        ri.cw.p('return MNL_CB_OK;')
+    ri.cw.block_end()
+    ri.cw.nl()
+
 
 def parse_rsp_nested(ri, struct):
     func_args = ['struct ynl_parse_arg *yarg',
@@ -954,75 +977,26 @@ def parse_rsp_nested(ri, struct):
                   f'{struct.ptr_name}dst = yarg->data;']
     init_lines = []
 
-    array_nests = set()
-    multi_attrs = set()
-    prep_multi_parse(struct, array_nests, multi_attrs, init_lines, local_vars)
-
     ri.cw.write_func_prot('int', f'{struct.render_name}_parse', func_args)
-    ri.cw.block_start()
-    ri.cw.write_func_lvar(local_vars)
 
-    for line in init_lines:
-        ri.cw.p(line)
-    ri.cw.nl()
-
-    for arg in sorted(struct.inherited):
-        ri.cw.p(f'dst->{arg} = {arg};')
-    ri.cw.nl()
-
-    ri.cw.block_start(line="mnl_attr_for_each_nested(attr, nested)")
-
-    for _, arg in struct.members():
-        arg.attr_get(ri, 'dst')
-
-    ri.cw.block_end()
-    ri.cw.nl()
-
-    finalize_multi_parse(ri, struct, array_nests, multi_attrs)
-
-    ri.cw.p('return 0;')
-    ri.cw.block_end()
-    ri.cw.nl()
+    _multi_parse(ri, struct, init_lines, local_vars)
 
 
 def parse_rsp_msg(ri, deref=False):
     if 'reply' not in ri.op[ri.op_mode]:
         return
-    struct_type = type_name(ri, "reply", deref=deref)
 
     func_args = ['const struct nlmsghdr *nlh',
                  'void *data']
 
-    local_vars = [f'{struct_type} *dst;',
+    local_vars = [f'{type_name(ri, "reply", deref=deref)} *dst;',
                   'struct ynl_parse_arg *yarg = data;',
                   'const struct nlattr *attr;']
     init_lines = ['dst = yarg->data;']
 
-    array_nests = set()
-    multi_attrs = set()
-    prep_multi_parse(ri.struct["reply"], array_nests, multi_attrs, init_lines, local_vars)
-
     ri.cw.write_func_prot('int', f'{op_prefix(ri, "reply", deref=deref)}_parse', func_args)
-    ri.cw.block_start()
-    ri.cw.write_func_lvar(local_vars)
 
-    for line in init_lines:
-        ri.cw.p(line)
-    ri.cw.nl()
-    ri.cw.block_start(line="mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr))")
-
-    for arg in ri.op[ri.op_mode]["reply"]['attributes']:
-        attr = ri.family.attr_spaces[ri.attr_space][arg]
-        attr.attr_get(ri, "dst")
-
-    ri.cw.block_end()
-    ri.cw.nl()
-
-    finalize_multi_parse(ri, ri.struct["reply"], array_nests, multi_attrs)
-
-    ri.cw.p('return MNL_CB_OK;')
-    ri.cw.block_end()
-    ri.cw.nl()
+    _multi_parse(ri, ri.struct["reply"], init_lines, local_vars)
 
 
 def print_req(ri):
