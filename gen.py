@@ -352,6 +352,12 @@ class TypeNestTypeValue(Type):
         self._attr_get(ri, var, get_lines, init_lines=init_lines, local_vars=local_vars)
 
 
+class Struct:
+    def __init__(self, attr_space, type_list=None):
+        self.request = False
+        self.reply = False
+
+
 class AttrSpace:
     def __init__(self, yaml):
         self.yaml = yaml
@@ -502,11 +508,11 @@ class Family:
                 if 'nested-attributes' in spec:
                     nested = spec['nested-attributes']
                     if nested not in self.root_spaces:
-                        self.pure_nested_spaces[nested] = set()
+                        self.pure_nested_spaces[nested] = Struct(self.attr_spaces[nested])
                     if attr in rs_members['request']:
-                        self.pure_nested_spaces[nested].add('request')
+                        self.pure_nested_spaces[nested].request = True
                     if attr in rs_members['reply']:
-                        self.pure_nested_spaces[nested].add('reply')
+                        self.pure_nested_spaces[nested].reply = True
                     if 'type-value' in spec:
                         tv_set = set(spec['type-value'])
                         if nested in self.root_spaces:
@@ -1562,9 +1568,9 @@ def main():
                 ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
 
                 free_rsp_nested(ri, attr_space)
-                if 'request' in parsed.pure_nested_spaces[attr_space]:
+                if parsed.pure_nested_spaces[attr_space].request:
                     put_req_nested(ri, attr_space)
-                if 'reply' in parsed.pure_nested_spaces[attr_space]:
+                if parsed.pure_nested_spaces[attr_space].reply:
                     parse_rsp_nested(ri, attr_space)
 
         for op_name, op in parsed.ops.items():
