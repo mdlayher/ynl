@@ -12,7 +12,7 @@ attribute-spaces:
     attributes:
       -
         name: dev_index
-        val: 1
+        value: 1
         type: u32
       -
         name: dev_name
@@ -27,7 +27,7 @@ attribute-spaces:
     attributes:
       -
         name: header
-        val: 1
+        value: 1
         type: nest
         nested-attributes: header
       -
@@ -65,7 +65,7 @@ operations:
   list:
     -
       name: channels_get
-      val: 17
+      value: 17
       description: Get current and max supported number of channels.
       attribute-space: channels
       do:

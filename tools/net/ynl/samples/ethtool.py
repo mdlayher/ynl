@@ -14,7 +14,7 @@ def main():
     parser.add_argument('--ifindex', dest='ifindex', type=str)
     args = parser.parse_args()
 
-    ynl = YnlFamily(args.spec)
+    ynl = YnlFamily(args.spec, args.schema)
 
     if args.dev_name:
         channels = ynl.channels_get({'header': {'dev_name': args.dev_name}})

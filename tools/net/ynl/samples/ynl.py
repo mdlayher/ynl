@@ -214,10 +214,10 @@ class YnlAttrSpace:
         val = 0
         max_val = 0
         for elem in self.yaml['attributes']:
-            if 'val' in elem:
-                val = elem['val']
+            if 'value' in elem:
+                val = elem['value']
             else:
-                elem['val'] = val
+                elem['value'] = val
             if val > max_val:
                 max_val = val
             val += 1
@@ -226,7 +226,7 @@ class YnlAttrSpace:
 
         self.attr_list = [None] * (max_val + 1)
         for elem in self.yaml['attributes']:
-            self.attr_list[elem['val']] = elem
+            self.attr_list[elem['value']] = elem
 
     def __getitem__(self, key):
         return self.attrs[key]
@@ -247,7 +247,7 @@ class YnlFamily:
             self.yaml = yaml.safe_load(stream)
 
         if schema:
-            with open(os.path.dirname(os.path.dirname(file_name)) + '/schema.yaml', "r") as stream:
+            with open(schema, "r") as stream:
                 schema = yaml.safe_load(stream)
 
             jsonschema.validate(self.yaml, schema)
@@ -265,10 +265,10 @@ class YnlFamily:
         val = 0
         for elem in self.yaml['operations']['list']:
             if not (async_separation and ('notify' in elem or 'event' in elem)):
-                if 'val' in elem:
-                    val = elem['val']
+                if 'value' in elem:
+                    val = elem['value']
                 else:
-                    elem['val'] = val
+                    elem['value'] = val
                 val += 1
 
             self._ops[elem['name']] = elem
@@ -280,7 +280,7 @@ class YnlFamily:
 
     def _add_attr(self, space, name, value):
         attr = self._spaces[space][name]
-        nl_type = attr['val']
+        nl_type = attr['value']
         if attr["type"] == 'nest':
             nl_type |= Netlink.NLA_F_NESTED
             attr_payload = b''
@@ -316,7 +316,7 @@ class YnlFamily:
         op = self._ops[method]
 
         msg = _genl_msg(self.family.family_id, Netlink.NLM_F_REQUEST | Netlink.NLM_F_ACK,
-                        op['val'], 1)
+                        op['value'], 1)
         for name, value in vals.items():
             msg += self._add_attr(op['attribute-space'], name, value)
         msg = _genl_msg_finalize(msg)

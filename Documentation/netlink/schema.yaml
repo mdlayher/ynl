@@ -110,6 +110,9 @@ properties:
               description:
                 description: Documentation of the attribute.
                 type: string
+              value:
+                description: Value for the enum item representing this attribute in the uAPI.
+                type: integer
               type-value:
                 description: Name of the value extracted from the type of a nest-type-value attribute.
                 type: array
