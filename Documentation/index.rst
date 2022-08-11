@@ -112,6 +112,7 @@ needed).
    infiniband/index
    leds/index
    netlabel/index
+   netlink/index
    networking/index
    pcmcia/index
    power/index
