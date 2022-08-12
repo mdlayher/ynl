@@ -82,7 +82,7 @@ sends a request and kernel replies. Each operation may contain any combination
 of the two modes familiar to netlink users - ``do`` and ``dump``.
 ``do`` and ``dump`` in turn contain a combination of ``request`` and ``response``
 properties. If no explicit message with attributes is passed in a given
-direction (e.g. a ``dump`` which doesn't not accept filter, or a ``do``
+direction (e.g. a ``dump`` which does not accept filter, or a ``do``
 of a SET operation to which the kernel responds with just the netlink error code)
 ``request`` or ``response`` section can be skipped. ``request`` and ``response``
 sections list the attributes allowed in a message. The list contains only

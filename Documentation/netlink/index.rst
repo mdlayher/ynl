@@ -1,8 +1,10 @@
+.. SPDX-License-Identifier: BSD-3-Clause
+
 ====================
 Netlink API Handbook
 ====================
 
-This document is the humble beginning of a full netlink documentation.
+Netlink documentation.
 
 .. toctree::
    :maxdepth: 2

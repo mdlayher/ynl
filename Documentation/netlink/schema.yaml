@@ -23,7 +23,7 @@ properties:
     description: Suffix for last member of attribute enum, default is "MAX".
     type: string
   headers:
-    decription: C headers defining the protocol
+    description: C headers defining the protocol
     type: object
     additionalProperties: False
     properties:
@@ -43,7 +43,7 @@ properties:
         description: Additional headers on which the protocol definition depends (user side)
         anyOf: *str-or-arrstr
   constants:
-    decription: Enums and defines of the protocol
+    description: Enums and defines of the protocol
     type: array
     items:
       type: object
@@ -131,7 +131,7 @@ properties:
                 description: Name of the flags constant on which to base mask (unsigned scalar types only).
                 type: string
   operations:
-    decription: Operations supported by the protocol.
+    description: Operations supported by the protocol.
     type: object
     required: [ name-prefix, list ]
     additionalProperties: False
@@ -151,7 +151,7 @@ properties:
         description: Name for the enum type with notifications/events.
         type: string
       list:
-        decription: List of commands
+        description: List of commands
         type: array
         items:
           type: object
