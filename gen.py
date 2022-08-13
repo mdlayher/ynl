@@ -23,7 +23,7 @@ class BaseNlLib:
 
 
 class Type:
-    def __init__(self, family, attr_space, attr):
+    def __init__(self, family, attr_set, attr):
         self.family = family
         self.attr = attr
         self.name = attr['name']
@@ -35,7 +35,7 @@ class Type:
             self.nested_attrs = attr['nested-attributes']
             self.nested_render_name = f"{family['name']}_{self.nested_attrs.replace('-', '_')}"
 
-        self.enum_name = f"{attr_space.name_prefix}{self.name.upper()}"
+        self.enum_name = f"{attr_set.name_prefix}{self.name.upper()}"
         self.c_name = self.name.replace('-', '_')
         if self.c_name in c_kw:
             self.c_name += '_'
@@ -357,7 +357,7 @@ class Struct:
     def __init__(self, family, space_name, type_list=None, inherited=None):
         self.family = family
         self.space_name = space_name
-        self.attr_space = family.attr_spaces[space_name]
+        self.attr_set = family.attr_sets[space_name]
         # Use list to catch comparisons with empty sets
         self.inherited = inherited if inherited is not None else []
 
@@ -373,10 +373,10 @@ class Struct:
         self.attrs = dict()
         if type_list:
             for t in type_list:
-                self.attr_list.append((t, self.attr_space[t]),)
+                self.attr_list.append((t, self.attr_set[t]),)
         else:
-            for t in self.attr_space:
-                self.attr_list.append((t, self.attr_space[t]),)
+            for t in self.attr_set:
+                self.attr_list.append((t, self.attr_set[t]),)
         for name, attr in self.attr_list:
             self.attrs[name] = attr
 
@@ -485,17 +485,17 @@ class Family:
 
         self.consts = dict()
         self.ops = dict()
-        self.attr_spaces = dict()
+        self.attr_sets = dict()
 
         # dict space-name -> 'request': set(attrs), 'reply': set(attrs)
-        self.root_spaces = dict()
+        self.root_sets = dict()
         # dict space-name -> set('request', 'reply')
         self.pure_nested_structs = dict()
         self.all_notify = dict()
 
         self._dictify()
-        self._load_root_spaces()
-        self._load_nested_spaces()
+        self._load_root_sets()
+        self._load_nested_sets()
         self._load_all_notify()
 
     def __getitem__(self, key):
@@ -509,7 +509,7 @@ class Family:
             self.consts[elem['name']] = elem
 
         for elem in self.yaml['attribute-sets']:
-            self.attr_spaces[elem['name']] = AttrSpace(self, elem)
+            self.attr_sets[elem['name']] = AttrSpace(self, elem)
 
         ntf = []
         for elem in self.yaml['operations']['list']:
@@ -522,7 +522,7 @@ class Family:
         for n in ntf:
             self.ops[n['notify']].add_notification(n)
 
-    def _load_root_spaces(self):
+    def _load_root_sets(self):
         for op_name, op in self.ops.items():
             if 'attribute-set' not in op:
                 continue
@@ -535,19 +535,19 @@ class Family:
                 if op_mode in op and 'reply' in op[op_mode]:
                     rsp_attrs.update(set(op[op_mode]['reply']['attributes']))
 
-            if op['attribute-set'] not in self.root_spaces:
-                self.root_spaces[op['attribute-set']] = {'request': req_attrs, 'reply': rsp_attrs}
+            if op['attribute-set'] not in self.root_sets:
+                self.root_sets[op['attribute-set']] = {'request': req_attrs, 'reply': rsp_attrs}
             else:
-                self.root_spaces[op['attribute-set']]['request'].update(req_attrs)
-                self.root_spaces[op['attribute-set']]['reply'].update(rsp_attrs)
+                self.root_sets[op['attribute-set']]['request'].update(req_attrs)
+                self.root_sets[op['attribute-set']]['reply'].update(rsp_attrs)
 
-    def _load_nested_spaces(self):
-        for root_space, rs_members in self.root_spaces.items():
-            for attr, spec in self.attr_spaces[root_space].items():
+    def _load_nested_sets(self):
+        for root_set, rs_members in self.root_sets.items():
+            for attr, spec in self.attr_sets[root_set].items():
                 if 'nested-attributes' in spec:
                     inherit = set()
                     nested = spec['nested-attributes']
-                    if nested not in self.root_spaces:
+                    if nested not in self.root_sets:
                         self.pure_nested_structs[nested] = Struct(self, nested, inherited=inherit)
                     if attr in rs_members['request']:
                         self.pure_nested_structs[nested].request = True
@@ -555,7 +555,7 @@ class Family:
                         self.pure_nested_structs[nested].reply = True
 
                     if 'type-value' in spec:
-                        if nested in self.root_spaces:
+                        if nested in self.root_sets:
                             raise Exception("Inheriting members to a space used as root not supported")
                         inherit.update(set(spec['type-value']))
                     elif spec['type'] == 'array-nest':
@@ -572,7 +572,7 @@ class Family:
 
 
 class RenderInfo:
-    def __init__(self, cw, family, ku_space, op, op_name, op_mode, attr_space=None):
+    def __init__(self, cw, family, ku_space, op, op_name, op_mode, attr_set=None):
         self.family = family
         self.nl = cw.nlib
         self.ku_space = ku_space
@@ -587,21 +587,21 @@ class RenderInfo:
         else:
             self.type_consistent = False
 
-        self.attr_space = attr_space
-        if not self.attr_space:
-            self.attr_space = op['attribute-set']
+        self.attr_set = attr_set
+        if not self.attr_set:
+            self.attr_set = op['attribute-set']
 
         if op:
             self.type_name = op_name.replace('-', '_')
         else:
-            self.type_name = attr_space.replace('-', '_')
+            self.type_name = attr_set.replace('-', '_')
 
         self.cw = cw
 
         self.struct = dict()
         for op_dir in ['request', 'reply']:
             if op and op_dir in op[op_mode]:
-                self.struct[op_dir] = Struct(family, self.attr_space,
+                self.struct[op_dir] = Struct(family, self.attr_set,
                                              type_list=op[op_mode][op_dir]['attributes'])
 
 
@@ -768,7 +768,7 @@ def type_name(ri, direction, deref=False):
 
 
 def attribute_policy(ri, attr, prototype=True, suffix=""):
-    aspace = ri.family.attr_spaces[ri.attr_space]
+    aspace = ri.family.attr_sets[ri.attr_set]
     spec = aspace[attr]
 
     policy = 'NLA_' + spec['type'].upper()
@@ -792,7 +792,7 @@ def attribute_policy(ri, attr, prototype=True, suffix=""):
 
 
 def attribute_parse_kernel(ri, attr, prototype=True, suffix=""):
-    aspace = ri.family.attr_spaces[ri.attr_space]
+    aspace = ri.family.attr_sets[ri.attr_set]
     spec = aspace[attr]
 
     t = spec['type']
@@ -836,7 +836,7 @@ def put_typol_fwd(cw, struct):
 
 
 def put_typol(cw, struct):
-    type_max = f"{struct.attr_space.name_prefix}MAX"
+    type_max = f"{struct.attr_set.name_prefix}MAX"
     cw.block_start(line=f'struct ynl_policy_attr {struct.render_name}_policy[{type_max} + 1] =')
 
     for _, arg in struct.member_list():
@@ -1154,7 +1154,7 @@ def print_type_helpers(ri, direction, deref=False):
 
     if ri.ku_space == 'user' and direction == 'request':
         for _, attr in ri.struct[direction].member_list():
-            attr.setter(ri, ri.attr_space, direction, deref=deref)
+            attr.setter(ri, ri.attr_set, direction, deref=deref)
     ri.cw.nl()
 
 
@@ -1482,8 +1482,8 @@ def main():
     if args.header:
         if args.mode == "user":
             cw.p('// Common nested types')
-            for attr_space, struct in sorted(parsed.pure_nested_structs.items()):
-                ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
+            for attr_set, struct in sorted(parsed.pure_nested_structs.items()):
+                ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_set)
                 print_type_full(ri, struct)
 
         for op_name, op in parsed.ops.items():
@@ -1538,18 +1538,18 @@ def main():
     else:
         if args.mode == "user":
             cw.p('// Policies')
-            for name, _ in parsed.attr_spaces.items():
+            for name, _ in parsed.attr_sets.items():
                 struct = Struct(parsed, name)
                 put_typol_fwd(cw, struct)
             cw.nl()
 
-            for name, _ in parsed.attr_spaces.items():
+            for name, _ in parsed.attr_sets.items():
                 struct = Struct(parsed, name)
                 put_typol(cw, struct)
 
             cw.p('// Common nested types')
-            for attr_space, struct in sorted(parsed.pure_nested_structs.items()):
-                ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_space)
+            for attr_set, struct in sorted(parsed.pure_nested_structs.items()):
+                ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_set)
 
                 free_rsp_nested(ri, struct)
                 if struct.request:
