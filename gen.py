@@ -26,7 +26,7 @@ class Type:
     def __init__(self, family, attr_set, attr):
         self.family = family
         self.attr = attr
-        self.name = attr['name']
+        self.name = attr['name'].replace('-', '_')
         self.type = attr['type']
 
         if 'len' in attr:
@@ -795,41 +795,35 @@ def type_name(ri, direction, deref=False):
     return f"struct {op_prefix(ri, direction, deref=deref)}"
 
 
-def attribute_policy(ri, attr, prototype=True, suffix=""):
-    aspace = ri.family.attr_sets[ri.attr_set]
-    spec = aspace[attr]
-
-    policy = 'NLA_' + spec['type'].upper()
+def attribute_policy(ri, attr):
+    policy = 'NLA_' + attr['type'].upper()
     policy = policy.replace('-', '_')
 
-    if 'flags-mask' in spec:
-        flags = ri.family.consts[spec['flags-mask']]
+    if 'flags-mask' in attr:
+        flags = ri.family.consts[attr['flags-mask']]
         flag_cnt = len(flags['values'])
         mem = f"NLA_POLICY_MASK({policy}, 0x{(1 << flag_cnt) - 1:x})"
-    elif 'enum' in spec:
-        enum = ri.family.consts[spec['enum']]
+    elif 'enum' in attr:
+        enum = ri.family.consts[attr['enum']]
         cnt = len(enum['values'])
         mem = f"NLA_POLICY_MAX({policy}, {cnt})"
     else:
         mem = '{ .type = ' + policy
-        if 'len' in spec:
-            mem += ', .len = ' + str(spec['len'])
+        if 'len' in attr:
+            mem += ', .len = ' + str(attr['len'])
         mem += ' }'
 
-    ri.cw.p(f"\t[{aspace.name_prefix}{attr.upper()}] = {mem},")
+    ri.cw.p(f"\t[{attr.enum_name}] = {mem},")
 
 
-def attribute_parse_kernel(ri, attr, prototype=True, suffix=""):
-    aspace = ri.family.attr_sets[ri.attr_set]
-    spec = aspace[attr]
-
-    t = spec['type']
-    ri.cw.block_start(line=f"if (tb[{aspace.name_prefix}{attr.upper()}])")
-    ri.cw.p(f"req->{attr}_present = 1;")
+def attribute_parse_kernel(ri, attr):
+    t = attr['type']
+    ri.cw.block_start(line=f"if (tb[{attr.enum_name}])")
+    ri.cw.p(f"req->{attr.name}_present = 1;")
     if t in scalars:
-        ri.cw.p(f"req->{attr} = nla_get_{t}(tb[{aspace.name_prefix}{attr.upper()}]);")
+        ri.cw.p(f"req->{attr.name} = nla_get_{t}(tb[{attr.enum_name}]);")
     elif t == 'nul-string':
-        ri.cw.p(f"strcpy(req->{attr}, nla_data(tb[{aspace.name_prefix}{attr.upper()}]));")
+        ri.cw.p(f"strcpy(req->{attr.name}, nla_data(tb[{attr.enum_name}]));")
     ri.cw.block_end()
 
 
@@ -1209,8 +1203,8 @@ def print_parse_prototype(ri, direction, terminate=True):
 def print_parse_kernel(ri, direction):
     print_parse_prototype(ri, direction, terminate=False)
     ri.cw.block_start()
-    for arg in ri.op[ri.op_mode][direction]['attributes']:
-        attribute_parse_kernel(ri, arg, prototype=False, suffix=';')
+    for _, arg in ri.struct['request'].member_list():
+        attribute_parse_kernel(ri, arg)
     ri.cw.block_end()
 
 
@@ -1349,7 +1343,7 @@ def print_req_policy_fwd(ri, terminate=True):
 
 def print_req_policy(ri):
     print_req_policy_fwd(ri, terminate=False)
-    for arg in ri.op[ri.op_mode]["request"]['attributes']:
+    for _, arg in ri.struct['request'].member_list():
         attribute_policy(ri, arg)
     ri.cw.p("};")
 

@@ -12,11 +12,11 @@ attribute-sets:
     name: header
     attributes:
       -
-        name: dev_index
+        name: dev-index
         value: 1
         type: u32
       -
-        name: dev_name
+        name: dev-name
         type: nul-string
         len: ALTIFNAMSIZ - 1
       -
@@ -31,28 +31,28 @@ attribute-sets:
         type: nest
         nested-attributes: header
       -
-        name: rx_max
+        name: rx-max
         type: u32
       -
-        name: tx_max
+        name: tx-max
         type: u32
       -
-        name: other_max
+        name: other-max
         type: u32
       -
-        name: combined_max
+        name: combined-max
         type: u32
       -
-        name: rx_count
+        name: rx-count
         type: u32
       -
-        name: tx_count
+        name: tx-count
         type: u32
       -
-        name: other_count
+        name: other-count
         type: u32
       -
-        name: combined_count
+        name: combined-count
         type: u32
 
 headers:
@@ -75,14 +75,14 @@ operations:
         reply: &channel_reply
           attributes:
             - header
-            - rx_max
-            - tx_max
-            - other_max
-            - combined_max
-            - rx_count
-            - tx_count
-            - other_count
-            - combined_count
+            - rx-max
+            - tx-max
+            - other-max
+            - combined-max
+            - rx-count
+            - tx-count
+            - other-count
+            - combined-count
       dump:
         reply: *channel_reply
 
@@ -100,10 +100,10 @@ operations:
         request:
           attributes:
             - header
-            - rx_count
-            - tx_count
-            - other_count
-            - combined_count
+            - rx-count
+            - tx-count
+            - other-count
+            - combined-count
 
 mcast-groups:
   name-prefix: ETHTOOL_MCGRP_
