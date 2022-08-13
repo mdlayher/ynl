@@ -28,9 +28,9 @@ Those properties should not be used in new families.
 Attribute Spaces
 ~~~~~~~~~~~~~~~~
 
-First of the main two sections is ``attribute-spaces``. This property contains
+First of the main two sections is ``attribute-sets``. This property contains
 information about netlink attributes of the family. All families have at least
-one attribute space, most have multiple. ``attribute-spaces`` is an array/list,
+one attribute space, most have multiple. ``attribute-sets`` is an array/list,
 with each entry describing a single space. The ``name`` of the space is not used
 in uAPI/C codegen, it's internal to the spec itself, used by operations and nested
 attributes to refer to a space.
@@ -86,7 +86,7 @@ direction (e.g. a ``dump`` which does not accept filter, or a ``do``
 of a SET operation to which the kernel responds with just the netlink error code)
 ``request`` or ``response`` section can be skipped. ``request`` and ``response``
 sections list the attributes allowed in a message. The list contains only
-the names of attributes from a space referred to by the ``attribute-space``
+the names of attributes from a space referred to by the ``attribute-set``
 property.
 
 An astute reader will notice that there are two ways of defining sub-spaces.

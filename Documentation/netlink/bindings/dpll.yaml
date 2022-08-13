@@ -28,7 +28,7 @@ constants:
     value-prefix: DPLL_LOCK_STATUS_
     values: [ unlocked, ext_1pps, ext_10mhz, synce, int_oscillator, gnss ]
 
-attribute-spaces:
+attribute-sets:
   -
     name: main
     name-prefix: DPLLA_
@@ -135,7 +135,7 @@ operations:
     -
       name: device_get
       description: Get the device info. TODO..
-      attribute-space: main
+      attribute-set: main
 
       do:
         request:
@@ -157,7 +157,7 @@ operations:
     -
       name: set_source_type
       description: Set the source type. TODO..
-      attribute-space: main
+      attribute-set: main
       flags: [ admin-perm ]
 
       do:
@@ -171,7 +171,7 @@ operations:
     -
       name: set_output_type
       description: Set the output type. TODO..
-      attribute-space: main
+      attribute-set: main
       flags: [ admin-perm ]
 
       do:
@@ -186,7 +186,7 @@ operations:
       name: device-create
       description: New device appeared.
       value: 1
-      attribute-space: main
+      attribute-set: main
       mcgrp: config
       event:
         - device_id
@@ -195,7 +195,7 @@ operations:
     -
       name: device-delete
       description: New device appeared.
-      attribute-space: main
+      attribute-set: main
       mcgrp: config
       event:
         - device_id
@@ -204,7 +204,7 @@ operations:
     -
       name: status-locked
       description: Device lock status has changed.
-      attribute-space: main
+      attribute-set: main
       mcgrp: monitor
       event:
         - device_id
@@ -213,7 +213,7 @@ operations:
     -
       name: status-unlocked
       description: Device lock status has changed.
-      attribute-space: main
+      attribute-set: main
       mcgrp: monitor
       event:
         - device_id
@@ -222,7 +222,7 @@ operations:
     -
       name: source-change
       description: Device source has changed.
-      attribute-space: main
+      attribute-set: main
       mcgrp: config-source
       event:
         - device_id
@@ -232,7 +232,7 @@ operations:
     -
       name: output-change
       description: Device output has changed.
-      attribute-space: main
+      attribute-set: main
       mcgrp: config-output
       event:
         - device_id

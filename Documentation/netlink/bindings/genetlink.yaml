@@ -8,7 +8,7 @@ description: |
 headers:
   uapi: linux/genetlink.h
 
-attribute-spaces:
+attribute-sets:
   -
     name: main
     name-prefix: CTRL_ATTR_
@@ -129,7 +129,7 @@ operations:
     -
       name: getfamily
       description: Get information about genetlink family.
-      attribute-space: main
+      attribute-set: main
       dont-validate: [ strict, dump ]
 
       do:
@@ -167,7 +167,7 @@ operations:
     -
       name: getpolicy
       description: Get attribute policy for a genetlink family.
-      attribute-space: main
+      attribute-set: main
 
       dump:
         request:

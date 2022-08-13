@@ -508,7 +508,7 @@ class Family:
         for elem in self.yaml['constants']:
             self.consts[elem['name']] = elem
 
-        for elem in self.yaml['attribute-spaces']:
+        for elem in self.yaml['attribute-sets']:
             self.attr_spaces[elem['name']] = AttrSpace(self, elem)
 
         ntf = []
@@ -516,7 +516,7 @@ class Family:
             if 'notify' in elem:
                 ntf.append(elem)
                 continue
-            if 'attribute-space' not in elem:
+            if 'attribute-set' not in elem:
                 continue
             self.ops[elem['name']] = Operation(self, elem)
         for n in ntf:
@@ -524,7 +524,7 @@ class Family:
 
     def _load_root_spaces(self):
         for op_name, op in self.ops.items():
-            if 'attribute-space' not in op:
+            if 'attribute-set' not in op:
                 continue
 
             req_attrs = set()
@@ -535,11 +535,11 @@ class Family:
                 if op_mode in op and 'reply' in op[op_mode]:
                     rsp_attrs.update(set(op[op_mode]['reply']['attributes']))
 
-            if op['attribute-space'] not in self.root_spaces:
-                self.root_spaces[op['attribute-space']] = {'request': req_attrs, 'reply': rsp_attrs}
+            if op['attribute-set'] not in self.root_spaces:
+                self.root_spaces[op['attribute-set']] = {'request': req_attrs, 'reply': rsp_attrs}
             else:
-                self.root_spaces[op['attribute-space']]['request'].update(req_attrs)
-                self.root_spaces[op['attribute-space']]['reply'].update(rsp_attrs)
+                self.root_spaces[op['attribute-set']]['request'].update(req_attrs)
+                self.root_spaces[op['attribute-set']]['reply'].update(rsp_attrs)
 
     def _load_nested_spaces(self):
         for root_space, rs_members in self.root_spaces.items():
@@ -589,7 +589,7 @@ class RenderInfo:
 
         self.attr_space = attr_space
         if not self.attr_space:
-            self.attr_space = op['attribute-space']
+            self.attr_space = op['attribute-set']
 
         if op:
             self.type_name = op_name.replace('-', '_')
@@ -1366,7 +1366,7 @@ def render_uapi(family, cw):
             cw.block_end(line=';')
             cw.nl()
 
-    for aspace in family['attribute-spaces']:
+    for aspace in family['attribute-sets']:
         if 'subspace-of' in aspace:
             continue
 

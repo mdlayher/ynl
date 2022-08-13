@@ -13,7 +13,7 @@ constants:
     value-prefix: FOU_ENCAP_
     values: [ UNSPEC, DIRECT, GUE ]
 
-attribute-spaces:
+attribute-sets:
   -
     name: main
     name-prefix: FOU_ATTR_
@@ -67,7 +67,7 @@ operations:
     -
       name: add
       description: Add port.
-      attribute-space: main
+      attribute-set: main
 
       dont-validate: [ strict, dump ]
       flags: [ admin-perm ]
@@ -89,7 +89,7 @@ operations:
     -
       name: del
       description: Delete port.
-      attribute-space: main
+      attribute-set: main
 
       dont-validate: [ strict, dump ]
       flags: [ admin-perm ]
@@ -109,7 +109,7 @@ operations:
     -
       name: get
       description: Get tunnel info.
-      attribute-space: main
+      attribute-set: main
       dont-validate: [ strict, dump ]
 
       do:

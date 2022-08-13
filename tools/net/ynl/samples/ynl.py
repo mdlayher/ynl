@@ -258,7 +258,7 @@ class YnlFamily:
         self._ops = dict()
         self._spaces = dict()
 
-        for elem in self.yaml['attribute-spaces']:
+        for elem in self.yaml['attribute-sets']:
             self._spaces[elem['name']] = YnlAttrSpace(self, elem)
 
         async_separation = 'async-prefix' in self.yaml['operations']
@@ -318,7 +318,7 @@ class YnlFamily:
         msg = _genl_msg(self.family.family_id, Netlink.NLM_F_REQUEST | Netlink.NLM_F_ACK,
                         op['value'], 1)
         for name, value in vals.items():
-            msg += self._add_attr(op['attribute-space'], name, value)
+            msg += self._add_attr(op['attribute-set'], name, value)
         msg = _genl_msg_finalize(msg)
 
         self.sock.send(msg, 0)
@@ -337,6 +337,6 @@ class YnlFamily:
                     break
 
                 gm = GenlMsg(nl_msg)
-                rsp = self._decode(gm.raw_attrs, op['attribute-space'])
+                rsp = self._decode(gm.raw_attrs, op['attribute-set'])
 
         return rsp

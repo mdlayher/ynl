@@ -7,7 +7,7 @@ $schema: "http://kernel.org/meta-schemas/core.yaml#"
 title: Protocol
 description: Specification of a genetlink protocol
 type: object
-required: [ name, description, attribute-spaces, operations ]
+required: [ name, description, attribute-sets, operations ]
 additionalProperties: False
 properties:
   name:
@@ -66,7 +66,7 @@ properties:
           items:
             type: string
 
-  attribute-spaces:
+  attribute-sets:
     description: Definition of attribute spaces for this family.
     type: array
     items:
@@ -167,7 +167,7 @@ properties:
             value:
               description: Value for the enum in the uAPI.
               type: integer
-            attribute-space:
+            attribute-set:
               description: |
                 Attribute space from which attributes directly in the requests and replies
                 to this command are defined.
@@ -194,7 +194,7 @@ properties:
                   properties:
                     attributes:
                       description: |
-                        Names of attributes from the attribute-space (not full attribute
+                        Names of attributes from the attribute-set (not full attribute
                         definitions, just names).
                       type: array
                       items:

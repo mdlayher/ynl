@@ -7,7 +7,7 @@ description: |
 
 attr-cnt-suffix: CNT
 
-attribute-spaces:
+attribute-sets:
   -
     name: header
     name-prefix: ETHTOOL_A_HEADER_
@@ -69,7 +69,7 @@ operations:
       name: channels_get
       value: 17
       description: Get current and max supported number of channels.
-      attribute-space: channels
+      attribute-set: channels
       do:
         request:
           attributes:
@@ -97,7 +97,7 @@ operations:
     -
       name: channels_set
       description: Set number of channels.
-      attribute-space: channels
+      attribute-set: channels
       do:
         request:
           attributes:
