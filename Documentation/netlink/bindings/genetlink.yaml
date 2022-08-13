@@ -11,7 +11,7 @@ headers:
 attribute-sets:
   -
     name: main
-    name-prefix: CTRL_ATTR_
+    name-prefix: ctrl-attr-
     attributes:
       -
         name: family_id
@@ -56,7 +56,7 @@ attribute-sets:
         nested-attributes: nl-policy
   -
     name: operation
-    name-prefix: CTRL_ATTR_OP_
+    name-prefix: ctrl-attr-op-
     attributes:
       -
         name: id
@@ -77,7 +77,7 @@ attribute-sets:
         len: GENL_NAMSIZ - 1
   -
     name: policy
-    name-prefix: CTRL_ATTR_POLICY_
+    name-prefix: ctrl-attr-policy-
     attributes:
       -
         name: do
@@ -87,7 +87,7 @@ attribute-sets:
         type: u32
   -
     name: nl-policy
-    name-prefix: NL_POLICY_TYPE_ATTR_
+    name-prefix: nl-policy-type-attr-
     attributes:
       -
         name: type

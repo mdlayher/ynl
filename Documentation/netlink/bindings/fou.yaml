@@ -16,7 +16,7 @@ constants:
 attribute-sets:
   -
     name: main
-    name-prefix: FOU_ATTR_
+    name-prefix: fou-attr-
     attributes:
       -
         name: unspec

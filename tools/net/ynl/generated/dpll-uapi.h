@@ -59,7 +59,7 @@ enum dpll_genl_attr {
 
 	__DPLLA_MAX
 };
-#define DPLLA__MAX (__DPLLA_MAX - 1)
+#define DPLLA_MAX (__DPLLA_MAX - 1)
 
 enum dpll_genl_cmd {
 	DPLL_CMD_UNSPEC,

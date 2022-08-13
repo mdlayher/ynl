@@ -31,7 +31,7 @@ enum {
 
 	__FOU_ATTR_MAX
 };
-#define FOU_ATTR__MAX (__FOU_ATTR_MAX - 1)
+#define FOU_ATTR_MAX (__FOU_ATTR_MAX - 1)
 
 enum {
 	FOU_CMD_UNSPEC,

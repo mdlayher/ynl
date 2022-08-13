@@ -31,7 +31,7 @@ constants:
 attribute-sets:
   -
     name: main
-    name-prefix: DPLLA_
+    name-prefix: dplla-
     name-enum: genl_attr
     attributes:
       -
@@ -92,7 +92,7 @@ attribute-sets:
   -
     name: source
     subspace-of: main
-    name-prefix: DPLLA_
+    name-prefix: dplla-
     attributes:
       -
         name: output_id
@@ -108,7 +108,7 @@ attribute-sets:
   -
     name: output
     subspace-of: main
-    name-prefix: DPLLA_
+    name-prefix: dplla-
     attributes:
       -
         name: source_id

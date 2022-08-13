@@ -35,7 +35,8 @@ class Type:
             self.nested_attrs = attr['nested-attributes']
             self.nested_render_name = f"{family['name']}_{self.nested_attrs.replace('-', '_')}"
 
-        self.enum_name = f"{attr_set.name_prefix}{self.name.upper()}"
+        self.enum_name = f"{attr_set.name_prefix}{self.name}"
+        self.enum_name = self.enum_name.upper().replace('-', '_')
         self.c_name = self.name.replace('-', '_')
         if self.c_name in c_kw:
             self.c_name += '_'
@@ -400,7 +401,7 @@ class AttrSpace:
 
         self.attrs = dict()
         self.name = self.yaml['name']
-        self.name_prefix = self.yaml['name-prefix']
+        self.name_prefix = self.yaml['name-prefix'].upper().replace('-', '_')
         self.subspace_of = self.yaml['subspace-of'] if 'subspace-of' in self.yaml else None
 
         self.c_name = self.name.replace('-', '_')
@@ -1353,7 +1354,7 @@ def render_uapi(family, cw):
             for item in const['values']:
                 item_name = item
                 if 'value-prefix' in const:
-                    item_name = const['value-prefix'] + item.upper()
+                    item_name = (const['value-prefix'] + item).upper().replace('-', '_')
                 cw.p(item_name + ',')
             cw.block_end(line=';')
             cw.nl()
@@ -1363,7 +1364,7 @@ def render_uapi(family, cw):
             for item in const['values']:
                 item_name = item
                 if 'value-prefix' in const:
-                    item_name = const['value-prefix'] + item.upper()
+                    item_name = (const['value-prefix'] + item).upper().replace('-', '_')
                 cw.p(f'{item_name} = {1 << i},')
                 i += 1
             cw.block_end(line=';')
@@ -1373,14 +1374,15 @@ def render_uapi(family, cw):
         if 'subspace-of' in aspace:
             continue
 
+        pfx = aspace['name-prefix'].upper().replace('-', '_')
         uapi_enum_start(family, cw, aspace, 'name-enum')
         for attr in aspace['attributes']:
-            attr_name = aspace['name-prefix'] + attr['name'].upper()
+            attr_name = pfx + attr['name'].upper().replace('-', '_')
             cw.p(attr_name + ',')
         cw.nl()
-        cw.p(f"__{aspace['name-prefix']}{family.attr_cnt_suffix}")
+        cw.p(f"__{pfx}{family.attr_cnt_suffix}")
         cw.block_end(line=';')
-        cw.p(f"#define {aspace['name-prefix']}_MAX (__{aspace['name-prefix']}{family.attr_cnt_suffix} - 1)")
+        cw.p(f"#define {pfx}MAX (__{pfx}{family.attr_cnt_suffix} - 1)")
         cw.nl()
 
     separate_ntf = 'async-prefix' in family['operations']
