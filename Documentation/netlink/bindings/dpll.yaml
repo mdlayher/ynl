@@ -121,7 +121,6 @@ attribute-sets:
         sub-type: u32
 
 operations:
-  name-prefix: DPLL_CMD_
   name-enum: genl_cmd
   async-prefix: DPLL_EVENT_
   async-enum: genl_event

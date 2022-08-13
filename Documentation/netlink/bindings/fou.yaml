@@ -58,7 +58,6 @@ attribute-sets:
         type: s32
 
 operations:
-  name-prefix: FOU_CMD_
   list:
     -
       name: unspec

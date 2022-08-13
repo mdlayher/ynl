@@ -138,7 +138,7 @@ properties:
   operations:
     description: Operations supported by the protocol.
     type: object
-    required: [ name-prefix, list ]
+    required: [ list ]
     additionalProperties: False
     properties:
       name-prefix:
