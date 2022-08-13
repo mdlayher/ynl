@@ -471,12 +471,12 @@ class Operation:
     def __contains__(self, key):
         return key in self.yaml
 
-    def add_notification(self, op_yaml):
+    def add_notification(self, op):
         if 'notify' not in self.yaml:
             self.yaml['notify'] = dict()
             self.yaml['notify']['reply'] = self.yaml['do']['reply']
             self.yaml['notify']['cmds'] = []
-        self.yaml['notify']['cmds'].append(op_yaml['name'])
+        self.yaml['notify']['cmds'].append(op)
 
 
 class Family:
@@ -543,7 +543,7 @@ class Family:
             op = Operation(self, elem)
             self.ops_list.append((elem['name'], op),)
             if 'notify' in elem:
-                ntf.append(elem)
+                ntf.append(op)
                 continue
             if 'attribute-set' not in elem:
                 continue
@@ -1312,7 +1312,7 @@ def print_ntf_type_parse(family, cw, ku_mode):
         op = family.ops[ntf_op]
         ri = RenderInfo(cw, family, ku_mode, op, ntf_op, "notify")
         for ntf in op['notify']['cmds']:
-            cw.p(f"case {family.op_prefix}{ntf.upper()}:")
+            cw.p(f"case {ntf.enum_name}:")
         cw.p(f"rsp = calloc(1, sizeof({type_name(ri, 'notify')}));")
         cw.p(f"parse = {op_prefix(ri, 'reply', deref=True)}_parse;")
         cw.p('break;')

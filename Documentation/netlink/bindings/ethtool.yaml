@@ -87,13 +87,13 @@ operations:
         reply: *channel_reply
 
     -
-      name: channels_ntf
+      name: channels-ntf
       description: Notification for device changing its number of channels.
       notify: channels-get
       mcgrp: monitor
 
     -
-      name: channels_set
+      name: channels-set
       description: Set number of channels.
       attribute-set: channels
       do:
