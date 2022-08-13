@@ -401,11 +401,11 @@ class AttrSpace:
 
         self.attrs = dict()
         self.name = self.yaml['name']
-        if 'subspace-of' not in yaml:
+        if 'subset-of' not in yaml:
             self.subspace_of = None
             self.name_prefix = self.yaml['name-prefix'].upper().replace('-', '_')
         else:
-            self.subspace_of = self.yaml['subspace-of']
+            self.subspace_of = self.yaml['subset-of']
             self.name_prefix = family.attr_sets[self.subspace_of].name_prefix
 
         self.c_name = self.name.replace('-', '_')
@@ -1375,7 +1375,7 @@ def render_uapi(family, cw):
             cw.nl()
 
     for aspace in family['attribute-sets']:
-        if 'subspace-of' in aspace:
+        if 'subset-of' in aspace:
             continue
 
         pfx = aspace['name-prefix'].upper().replace('-', '_')

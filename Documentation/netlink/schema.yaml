@@ -83,7 +83,7 @@ properties:
           description: |
             Name used when referring to this space in other definitions, not used outside of YAML.
           type: string
-        # Strictly speaking 'name-prefix' and 'subspace-of' should be mutually exclusive.
+        # Strictly speaking 'name-prefix' and 'subset-of' should be mutually exclusive.
         name-prefix:
           description: Prefix for the C enum name of the attributes.
           type: string
@@ -93,7 +93,7 @@ properties:
         description:
           description: Documentation of the space.
           type: string
-        subspace-of:
+        subset-of:
           description: |
             Name of another space which this is a logical part of. Sub-spaces can be used to define
             a limitted group of attributes which are used in a nest.

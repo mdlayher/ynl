@@ -51,7 +51,7 @@ Note that attribute spaces do not themselves nest, nested attributes refer to th
 space via a ``nested-attributes`` property, so the YAML spec does not resemble the format
 of the netlink messages directly.
 
-YAML spec may also contain fractional spaces - spaces which contain a ``subspace-of``
+YAML spec may also contain fractional spaces - spaces which contain a ``subset-of``
 property. Such spaces describe a section of a full space, allowing narrowing down which
 attributes are allowed in a nest or refining the validation criteria. Fractional spaces
 can only be used in nests. They are not rendered to the uAPI in any fashion.
@@ -90,7 +90,7 @@ the names of attributes from a space referred to by the ``attribute-set``
 property.
 
 An astute reader will notice that there are two ways of defining sub-spaces.
-A full fractional space with a ``subspace-of`` property and a de facto subspace
+A full fractional space with a ``subset-of`` property and a de facto subspace
 created by list attributes for an operation. This is only for convenience.
 The abilities to refine the selection of attributes and change their definition
 afforded by the fractional space result in much more verbose YAML, and the full

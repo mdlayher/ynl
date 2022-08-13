@@ -91,7 +91,7 @@ attribute-sets:
         flags-mask: genl_get_flags
   -
     name: source
-    subspace-of: main
+    subset-of: main
     attributes:
       -
         name: output_id
@@ -106,7 +106,7 @@ attribute-sets:
         sub-type: u32
   -
     name: output
-    subspace-of: main
+    subset-of: main
     attributes:
       -
         name: source_id

@@ -209,7 +209,7 @@ class YnlAttrSpace:
         self.attrs = dict()
         self.name = self.yaml['name']
         self.name_prefix = self.yaml['name-prefix']
-        self.subspace_of = self.yaml['subspace-of'] if 'subspace-of' in self.yaml else None
+        self.subspace_of = self.yaml['subset-of'] if 'subspace-of' in self.yaml else None
 
         val = 0
         max_val = 0
