@@ -10,7 +10,6 @@ attr-cnt-suffix: CNT
 attribute-sets:
   -
     name: header
-    name-prefix: ethtool-a-header-
     attributes:
       -
         name: dev_index
@@ -25,7 +24,6 @@ attribute-sets:
         type: u32
   -
     name: channels
-    name-prefix: ethtool-a-channels-
     attributes:
       -
         name: header

@@ -85,7 +85,8 @@ properties:
           type: string
         # Strictly speaking 'name-prefix' and 'subset-of' should be mutually exclusive.
         name-prefix:
-          description: Prefix for the C enum name of the attributes.
+          description: |
+            Prefix for the C enum name of the attributes. Default family[name]-set[name]-a-
           type: string
         name-enum:
           description: Name for the enum type of the attribute.

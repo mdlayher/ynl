@@ -395,18 +395,22 @@ class Struct:
             raise Exception("Inheriting different members not supported")
 
 
-class AttrSpace:
+class AttrSet:
     def __init__(self, family, yaml):
         self.yaml = yaml
 
         self.attrs = dict()
         self.name = self.yaml['name']
         if 'subset-of' not in yaml:
-            self.subspace_of = None
-            self.name_prefix = self.yaml['name-prefix'].upper().replace('-', '_')
+            self.subset_of = None
+            if 'name-prefix' in self.yaml:
+                self.name_prefix = self.yaml['name-prefix']
+            else:
+                self.name_prefix = f"{family.name}-a-{self.name}-"
+            self.name_prefix = self.name_prefix.upper().replace('-', '_')
         else:
-            self.subspace_of = self.yaml['subset-of']
-            self.name_prefix = family.attr_sets[self.subspace_of].name_prefix
+            self.subset_of = self.yaml['subset-of']
+            self.name_prefix = family.attr_sets[self.subset_of].name_prefix
 
         self.c_name = self.name.replace('-', '_')
         if self.c_name in c_kw:
@@ -517,7 +521,7 @@ class Family:
             self.consts[elem['name']] = elem
 
         for elem in self.yaml['attribute-sets']:
-            self.attr_sets[elem['name']] = AttrSpace(self, elem)
+            self.attr_sets[elem['name']] = AttrSet(self, elem)
 
         ntf = []
         for elem in self.yaml['operations']['list']:
@@ -1374,19 +1378,17 @@ def render_uapi(family, cw):
             cw.block_end(line=';')
             cw.nl()
 
-    for aspace in family['attribute-sets']:
-        if 'subset-of' in aspace:
+    for name, attr_set in family.attr_sets.items():
+        if attr_set.subset_of:
             continue
 
-        pfx = aspace['name-prefix'].upper().replace('-', '_')
-        uapi_enum_start(family, cw, aspace, 'name-enum')
-        for attr in aspace['attributes']:
-            attr_name = pfx + attr['name'].upper().replace('-', '_')
-            cw.p(attr_name + ',')
+        uapi_enum_start(family, cw, attr_set.yaml, 'name-enum')
+        for _, attr in attr_set.items():
+            cw.p(attr.enum_name + ',')
         cw.nl()
-        cw.p(f"__{pfx}{family.attr_cnt_suffix}")
+        cw.p(f"__{attr_set.name_prefix}{family.attr_cnt_suffix}")
         cw.block_end(line=';')
-        cw.p(f"#define {pfx}MAX (__{pfx}{family.attr_cnt_suffix} - 1)")
+        cw.p(f"#define {attr_set.name_prefix}MAX (__{attr_set.name_prefix}{family.attr_cnt_suffix} - 1)")
         cw.nl()
 
     separate_ntf = 'async-prefix' in family['operations']
