@@ -401,8 +401,12 @@ class AttrSpace:
 
         self.attrs = dict()
         self.name = self.yaml['name']
-        self.name_prefix = self.yaml['name-prefix'].upper().replace('-', '_')
-        self.subspace_of = self.yaml['subspace-of'] if 'subspace-of' in self.yaml else None
+        if 'subspace-of' not in yaml:
+            self.subspace_of = None
+            self.name_prefix = self.yaml['name-prefix'].upper().replace('-', '_')
+        else:
+            self.subspace_of = self.yaml['subspace-of']
+            self.name_prefix = family.attr_sets[self.subspace_of].name_prefix
 
         self.c_name = self.name.replace('-', '_')
         if self.c_name in c_kw:
