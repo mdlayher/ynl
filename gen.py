@@ -33,7 +33,7 @@ class Type:
             self.len = attr['len']
         if 'nested-attributes' in attr:
             self.nested_attrs = attr['nested-attributes']
-            self.nested_render_name = f"{family['name']}_{self.nested_attrs.replace('-', '_')}"
+            self.nested_render_name = f"{family.name}_{self.nested_attrs.replace('-', '_')}"
 
         self.enum_name = f"{attr_set.name_prefix}{self.name}"
         self.enum_name = self.enum_name.upper().replace('-', '_')
@@ -363,7 +363,7 @@ class Struct:
         self.inherited = inherited if inherited is not None else []
 
         self.nested = type_list is None
-        self.render_name = f"{family['name']}_{space_name.replace('-', '_')}"
+        self.render_name = f"{family.name}_{space_name.replace('-', '_')}"
         self.struct_name = 'struct ' + self.render_name
         self.ptr_name = self.struct_name + ' *'
 
@@ -458,6 +458,7 @@ class Operation:
         self.yaml = yaml
 
         self.name = self.yaml['name']
+        self.render_name = family.name + '_' + self.name.replace('-', '_')
         self.is_async = 'notify' in yaml or 'event' in yaml
         if not self.is_async:
             self.enum_name = family.op_prefix + self.name.upper().replace('-', '_')
@@ -503,7 +504,7 @@ class Family:
             self.async_op_prefix = self.yaml['operations']['async-prefix'].upper().replace('-', '_')
         else:
             self.async_op_prefix = self.op_prefix
-        self.attr_cnt_suffix = self.yaml.get('attr-cnt-suffix', 'MAX')
+        self.attr_cnt_suffix = self.yaml.get('attr-cnt-suffix', 'max').upper().replace('-', '_')
 
         self.consts = dict()
         self.ops = dict()
@@ -830,7 +831,7 @@ def attribute_parse_kernel(ri, attr):
 def print_prototype(ri, direction, terminate=True, doc=None):
     suffix = ';' if terminate else ''
 
-    fname = f"{ri.family['name']}_{ri.op_name}"
+    fname = ri.op.render_name
     if ri.op_mode == 'dump':
         fname += '_dump'
 
@@ -1194,9 +1195,9 @@ def print_parse_prototype(ri, direction, terminate=True):
     suffix = "_rsp" if direction == "reply" else "_req"
     term = ';' if terminate else ''
 
-    ri.cw.write_func_prot('void', f"{ri.family['name']}_{ri.op_name}{suffix}_parse",
+    ri.cw.write_func_prot('void', f"{ri.op.render_name}{suffix}_parse",
                           ['const struct nlattr **tb',
-                           f"struct {ri.family['name']}_{ri.op_name}{suffix} *req"],
+                           f"struct {ri.op.render_name}{suffix} *req"],
                           suffix=term)
 
 
@@ -1338,7 +1339,7 @@ def print_ntf_type_parse(family, cw, ku_mode):
 
 def print_req_policy_fwd(ri, terminate=True):
     suffix = ';' if terminate else ' = {'
-    ri.cw.p(f"const struct nla_policy {ri.family['name']}_{ri.op_name}_policy[]{suffix}")
+    ri.cw.p(f"const struct nla_policy {ri.op.render_name}_policy[]{suffix}")
 
 
 def print_req_policy(ri):

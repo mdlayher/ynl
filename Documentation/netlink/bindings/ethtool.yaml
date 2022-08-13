@@ -5,7 +5,7 @@ name: ethtool
 description: |
   Ethernet device configuration interface.
 
-attr-cnt-suffix: CNT
+attr-cnt-suffix: cnt
 
 attribute-sets:
   -
@@ -64,7 +64,7 @@ operations:
   async-prefix: ethtool-msg-
   list:
     -
-      name: channels_get
+      name: channels-get
       value: 17
       description: Get current and max supported number of channels.
       attribute-set: channels
@@ -89,7 +89,7 @@ operations:
     -
       name: channels_ntf
       description: Notification for device changing its number of channels.
-      notify: channels_get
+      notify: channels-get
       mcgrp: monitor
 
     -
