@@ -60,8 +60,8 @@ headers:
   uapi: linux/ethtool_netlink.h
 
 operations:
-  name-prefix: ETHTOOL_MSG_
-  async-prefix: ETHTOOL_MSG_
+  name-prefix: ethtool-msg-
+  async-prefix: ethtool-msg-
   list:
     -
       name: channels_get

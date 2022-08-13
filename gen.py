@@ -458,7 +458,11 @@ class Operation:
         self.yaml = yaml
 
         self.name = self.yaml['name']
-        self.enum_name = family.op_prefix + self.name.upper()
+        self.is_async = 'notify' in yaml or 'event' in yaml
+        if not self.is_async:
+            self.enum_name = family.op_prefix + self.name.upper().replace('-', '_')
+        else:
+            self.enum_name = family.async_op_prefix + self.name.upper().replace('-', '_')
 
     def __getitem__(self, key):
         return self.yaml[key]
@@ -491,13 +495,21 @@ class Family:
             self.yaml['constants'] = []
 
         self.name = self.yaml['name']
-        self.op_prefix = self.yaml['operations']['name-prefix']
-
+        if 'name-prefix' in self.yaml['operations']:
+            self.op_prefix = self.yaml['operations']['name-prefix'].upper().replace('-', '_')
+        else:
+            self.op_prefix = (self.yaml['name'] + '-cmd-').upper().replace('-', '_')
+        if 'async-prefix' in self.yaml['operations']:
+            self.async_op_prefix = self.yaml['operations']['async-prefix'].upper().replace('-', '_')
+        else:
+            self.async_op_prefix = self.op_prefix
         self.attr_cnt_suffix = self.yaml.get('attr-cnt-suffix', 'MAX')
 
         self.consts = dict()
         self.ops = dict()
+        self.ops_list = []
         self.attr_sets = dict()
+        self.attr_sets_list = []
 
         # dict space-name -> 'request': set(attrs), 'reply': set(attrs)
         self.root_sets = dict()
@@ -521,16 +533,20 @@ class Family:
             self.consts[elem['name']] = elem
 
         for elem in self.yaml['attribute-sets']:
-            self.attr_sets[elem['name']] = AttrSet(self, elem)
+            attr_set = AttrSet(self, elem)
+            self.attr_sets[elem['name']] = attr_set
+            self.attr_sets_list.append((elem['name'], attr_set), )
 
         ntf = []
         for elem in self.yaml['operations']['list']:
+            op = Operation(self, elem)
+            self.ops_list.append((elem['name'], op),)
             if 'notify' in elem:
                 ntf.append(elem)
                 continue
             if 'attribute-set' not in elem:
                 continue
-            self.ops[elem['name']] = Operation(self, elem)
+            self.ops[elem['name']] = op
         for n in ntf:
             self.ops[n['notify']].add_notification(n)
 
@@ -1378,7 +1394,7 @@ def render_uapi(family, cw):
             cw.block_end(line=';')
             cw.nl()
 
-    for name, attr_set in family.attr_sets.items():
+    for _, attr_set in family.attr_sets_list:
         if attr_set.subset_of:
             continue
 
@@ -1394,29 +1410,27 @@ def render_uapi(family, cw):
     separate_ntf = 'async-prefix' in family['operations']
 
     uapi_enum_start(family, cw, family['operations'], 'name-enum')
-    for op in family['operations']['list']:
+    for _, op in family.ops_list:
         if separate_ntf and ('notify' in op or 'event' in op):
             continue
 
-        op_name = family['operations']['name-prefix'] + op['name'].upper()
         suffix = ','
         if 'value' in op:
             suffix = f" = {op['value']},"
-        cw.p(op_name.replace('-', '_') + suffix)
+        cw.p(op.enum_name + suffix)
     cw.block_end(line=';')
     cw.nl()
 
     if separate_ntf:
         uapi_enum_start(family, cw, family['operations'], 'async-enum')
-        for op in family['operations']['list']:
+        for _, op in family.ops_list:
             if separate_ntf and not ('notify' in op or 'event' in op):
                 continue
 
-            op_name = family['operations']['async-prefix'] + op['name'].upper()
             suffix = ','
             if 'value' in op:
                 suffix = f" = {op['value']},"
-            cw.p(op_name.replace('-', '_') + suffix)
+            cw.p(op.enum_name + suffix)
         cw.block_end(line=';')
         cw.nl()
 
@@ -1498,10 +1512,10 @@ def main():
                 print_type_full(ri, struct)
 
         for op_name, op in parsed.ops.items():
-            cw.p(f"/* ============== {parsed['operations']['name-prefix']}{op_name.upper()} ============== */")
+            cw.p(f"/* ============== {op.enum_name} ============== */")
 
             if 'do' in op:
-                cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()} - do")
+                cw.p(f"// {op.enum_name} - do")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
 
                 print_req_type(ri)
@@ -1519,7 +1533,7 @@ def main():
                 cw.nl()
 
             if 'dump' in op:
-                cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()} - dump")
+                cw.p(f"// {op.enum_name} - dump")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'dump')
                 if args.mode == "user":
                     if 'request' in op['dump']:
@@ -1532,7 +1546,7 @@ def main():
                     cw.nl()
 
             if 'notify' in op:
-                cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()} - notify")
+                cw.p(f"// {op.enum_name} - notify")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'notify')
                 if args.mode == "user":
                     has_ntf = True
@@ -1569,10 +1583,10 @@ def main():
                     parse_rsp_nested(ri, struct)
 
         for op_name, op in parsed.ops.items():
-            cw.p(f"/* ============== {parsed['operations']['name-prefix']}{op_name.upper()} ============== */")
+            cw.p(f"/* ============== {op.enum_name} ============== */")
 
             if 'do' in op:
-                cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()} - do")
+                cw.p(f"// {op.enum_name} - do")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
                 if args.mode == "user":
                     print_rsp_free(ri)
@@ -1585,7 +1599,7 @@ def main():
                 cw.nl()
 
             if 'dump' in op:
-                cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()} - dump")
+                cw.p(f"// {op.enum_name} - dump")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "dump")
                 if args.mode == "user":
                     if not ri.type_consistent:
@@ -1595,7 +1609,7 @@ def main():
                     cw.nl()
 
             if 'notify' in op:
-                cw.p(f"// {parsed['operations']['name-prefix']}{op_name.upper()} - notify")
+                cw.p(f"// {op.enum_name} - notify")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'notify')
                 if args.mode == "user":
                     has_ntf = True

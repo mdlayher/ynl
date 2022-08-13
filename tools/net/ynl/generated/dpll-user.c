@@ -363,9 +363,9 @@ err_free:
 	return -1;
 }
 
-/* ============== DPLL_CMD_DEVICE-CREATE ============== */
-/* ============== DPLL_CMD_DEVICE-DELETE ============== */
-/* ============== DPLL_CMD_STATUS-LOCKED ============== */
-/* ============== DPLL_CMD_STATUS-UNLOCKED ============== */
-/* ============== DPLL_CMD_SOURCE-CHANGE ============== */
-/* ============== DPLL_CMD_OUTPUT-CHANGE ============== */
+/* ============== DPLL_EVENT_DEVICE_CREATE ============== */
+/* ============== DPLL_EVENT_DEVICE_DELETE ============== */
+/* ============== DPLL_EVENT_STATUS_LOCKED ============== */
+/* ============== DPLL_EVENT_STATUS_UNLOCKED ============== */
+/* ============== DPLL_EVENT_SOURCE_CHANGE ============== */
+/* ============== DPLL_EVENT_OUTPUT_CHANGE ============== */
