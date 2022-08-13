@@ -475,6 +475,9 @@ class Family:
 
         jsonschema.validate(self.yaml, schema)
 
+        if 'proto' in self.yaml and self.yaml['proto'] != 'genetlink':
+            raise Exception("Codegen only supported for genetlink")
+
         if 'constants' not in self.yaml:
             self.yaml['constants'] = []
 

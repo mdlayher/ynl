@@ -22,6 +22,10 @@ properties:
   attr-cnt-suffix:
     description: Suffix for last member of attribute enum, default is "MAX".
     type: string
+  proto:
+    description: |
+      Name of the netlink protocol (default: genetlink).
+    enum: [ genetlink ]
   headers:
     description: C headers defining the protocol
     type: object
