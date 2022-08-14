@@ -12,7 +12,7 @@ KHDRS=$(patsubst %,%-kernel.h,${GENS})
 UAPI=$(patsubst %,%-uapi.h,${GENS})
 OBJS=$(patsubst %,%-user.o,${GENS})
 
-all: protos.a $(HDRS) $(SRCS) $(KHDRS) $(KSRCS) $(UAPI)
+all: protos.a $(HDRS) $(SRCS) $(KHDRS) $(KSRCS) $(UAPI) regen
 
 protos.a: $(OBJS)
 	@echo -e "\tAR $@"
@@ -49,5 +49,8 @@ clean:
 hardclean: clean
 	rm -f *.c *.h *.a
 
-.PHONY: all clean hardclean
+regen:
+	@../ynl-regen.sh -f
+
+.PHONY: all clean hardclean regen
 .DEFAULT_GOAL: all
