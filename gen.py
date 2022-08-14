@@ -1446,6 +1446,16 @@ def render_uapi(family, cw):
     cw.p(f'#endif /* {hdr_prot} */')
 
 
+def find_kernel_root(full_path):
+    sub_path = ''
+    while True:
+        sub_path = os.path.join(os.path.basename(full_path), sub_path)
+        full_path = os.path.dirname(full_path)
+        maintainers = os.path.join(full_path, "MAINTAINERS")
+        if os.path.exists(maintainers):
+            return full_path, sub_path
+
+
 def main():
     parser = argparse.ArgumentParser(description='Netlink simple parsing generator')
     parser.add_argument('--mode', dest='mode', type=str, required=True)
@@ -1467,9 +1477,10 @@ def main():
 
     cw = CodeWriter(BaseNlLib())
 
+    _, spec_kernel = find_kernel_root(args.spec)
     cw.p(f"// SPDX-License-Identifier: MIT")
     cw.p("// Do not edit directly, auto-generated from:")
-    cw.p(f"//\t{args.spec}")
+    cw.p(f"//\t{spec_kernel}")
     cw.p(f"// {' '.join(os.sys.argv)}")
     cw.nl()
 
