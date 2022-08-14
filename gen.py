@@ -80,6 +80,20 @@ class Type:
         for one in members:
             ri.cw.p(one + ';')
 
+    def _attr_policy(self, policy):
+        mem = '{ .type = ' + policy
+        if 'len' in self.attr:
+            mem += ', .len = ' + str(self.attr['len'])
+        mem += ' }'
+        return mem
+
+    def attr_policy(self, cw):
+        policy = 'NLA_' + self.attr['type'].upper()
+        policy = policy.replace('-', '_')
+
+        spec = self._attr_policy(policy)
+        cw.p(f"\t[{self.enum_name}] = {spec},")
+
     def _attr_typol(self):
         raise Exception(f"Type policy not implemented for class type {self.type}")
 
@@ -158,6 +172,18 @@ class TypeScalar(Type):
         if t[0] == 's':
             t = 'u' + t[1:]
         return t
+
+    def _attr_policy(self, policy):
+        spec = policy
+        if 'flags-mask' in self.attr:
+            flags = self.family.consts[self.attr['flags-mask']]
+            flag_cnt = len(flags['values'])
+            return f"NLA_POLICY_MASK({policy}, 0x{(1 << flag_cnt) - 1:x})"
+        elif 'enum' in self.attr:
+            enum = self.family.consts[self.attr['enum']]
+            cnt = len(enum['values'])
+            return f"NLA_POLICY_MAX({policy}, {cnt})"
+        return super()._attr_policy(policy)
 
     def _attr_typol(self):
         return f'.type = YNL_PT_U{self.type[1:]}, '
@@ -806,27 +832,6 @@ def type_name(ri, direction, deref=False):
     return f"struct {op_prefix(ri, direction, deref=deref)}"
 
 
-def attribute_policy(ri, attr):
-    policy = 'NLA_' + attr['type'].upper()
-    policy = policy.replace('-', '_')
-
-    if 'flags-mask' in attr:
-        flags = ri.family.consts[attr['flags-mask']]
-        flag_cnt = len(flags['values'])
-        mem = f"NLA_POLICY_MASK({policy}, 0x{(1 << flag_cnt) - 1:x})"
-    elif 'enum' in attr:
-        enum = ri.family.consts[attr['enum']]
-        cnt = len(enum['values'])
-        mem = f"NLA_POLICY_MAX({policy}, {cnt})"
-    else:
-        mem = '{ .type = ' + policy
-        if 'len' in attr:
-            mem += ', .len = ' + str(attr['len'])
-        mem += ' }'
-
-    ri.cw.p(f"\t[{attr.enum_name}] = {mem},")
-
-
 def attribute_parse_kernel(ri, attr):
     t = attr['type']
     ri.cw.block_start(line=f"if (tb[{attr.enum_name}])")
@@ -1358,7 +1363,7 @@ def print_req_policy_fwd(ri, terminate=True):
 def print_req_policy(ri):
     print_req_policy_fwd(ri, terminate=False)
     for _, arg in ri.struct['request'].member_list():
-        attribute_policy(ri, arg)
+        arg.attr_policy(ri.cw)
     ri.cw.p("};")
 
 
