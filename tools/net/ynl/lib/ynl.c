@@ -394,14 +394,52 @@ int ynl_cb_null(const struct nlmsghdr *nlh, void *data)
 }
 
 /* Init/fini and genetlink boiler plate */
+static int
+ynl_get_family_info_mcast(struct ynl_sock *ys, const struct nlattr *mcasts)
+{
+	const struct nlattr *entry, *attr;
+	unsigned int i;
 
-static int ynl_get_family_id_cb(const struct nlmsghdr *nlh, void *data)
+	mnl_attr_for_each_nested(attr, mcasts)
+		ys->n_mcast_groups++;
+
+	if (!ys->n_mcast_groups)
+		return 0;
+
+	ys->mcast_groups = calloc(ys->n_mcast_groups,
+				  sizeof(*ys->mcast_groups));
+	if (!ys->mcast_groups)
+		return MNL_CB_ERROR;
+
+	i = 0;
+	mnl_attr_for_each_nested(entry, mcasts) {
+		mnl_attr_for_each_nested(attr, entry) {
+			if (mnl_attr_get_type(attr) == CTRL_ATTR_MCAST_GRP_ID)
+				ys->mcast_groups[i].id = mnl_attr_get_u32(attr);
+			if (mnl_attr_get_type(attr) == CTRL_ATTR_MCAST_GRP_NAME) {
+				strncpy(ys->mcast_groups[i].name,
+					mnl_attr_get_str(attr),
+					GENL_NAMSIZ - 1);
+				ys->mcast_groups[i].name[GENL_NAMSIZ - 1] = 0;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int ynl_get_family_info_cb(const struct nlmsghdr *nlh, void *data)
 {
 	struct ynl_parse_arg *yarg = data;
 	struct ynl_sock *ys = yarg->ys;
 	const struct nlattr *attr;
+	bool found_id = true;
 
 	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
+		if (mnl_attr_get_type(attr) == CTRL_ATTR_MCAST_GROUPS)
+			if (ynl_get_family_info_mcast(ys, attr))
+				return MNL_CB_ERROR;
+
 		if (mnl_attr_get_type(attr) != CTRL_ATTR_FAMILY_ID)
 			continue;
 
@@ -411,11 +449,14 @@ static int ynl_get_family_id_cb(const struct nlmsghdr *nlh, void *data)
 		}
 
 		ys->family_id = mnl_attr_get_u16(attr);
-		return MNL_CB_OK;
+		found_id = true;
 	}
 
-	yerr(ys, YNL_ERROR_ATTR_MISSING, "Family ID missing");
-	return MNL_CB_ERROR;
+	if (!found_id) {
+		yerr(ys, YNL_ERROR_ATTR_MISSING, "Family ID missing");
+		return MNL_CB_ERROR;
+	}
+	return MNL_CB_OK;
 }
 
 static int ynl_sock_read_family(struct ynl_sock *ys, const char *family_name)
@@ -439,9 +480,10 @@ static int ynl_sock_read_family(struct ynl_sock *ys, const char *family_name)
 		return err;
 	}
 	err = mnl_cb_run2(ys->rx_buf, err, ys->seq, ys->portid,
-			  ynl_get_family_id_cb, &yarg,
+			  ynl_get_family_info_cb, &yarg,
 			  ynl_cb_array, ARRAY_SIZE(ynl_cb_array));
 	if (err < 0) {
+		free(ys->mcast_groups);
 		perr(ys, "failed to receive the socket family info 2");
 		return err;
 	}
@@ -500,7 +542,44 @@ err_free_sock:
 void ynl_sock_destroy(struct ynl_sock *ys)
 {
 	mnl_socket_close(ys->sock);
+	free(ys->mcast_groups);
 	free(ys);
+}
+
+/* YNL multicast handling */
+
+void ynl_ntf_free(struct ynl_ntf_base_type *ntf)
+{
+	ntf->free(ntf);
+}
+
+int ynl_subscribe(struct ynl_sock *ys, const char *grp_name)
+{
+	unsigned int i;
+	int err;
+
+	for (i = 0; i < ys->n_mcast_groups; i++)
+		if (!strcmp(ys->mcast_groups[i].name, grp_name))
+			break;
+	if (i == ys->n_mcast_groups) {
+		yerr(ys, ENOENT, "Multicast group '%s' not found", grp_name);
+		return -1;
+	}
+
+	err = mnl_socket_setsockopt(ys->sock, NETLINK_ADD_MEMBERSHIP,
+                                    &ys->mcast_groups[i].id,
+				    sizeof(ys->mcast_groups[i].id));
+        if (err < 0) {
+		perr(ys, "Subscribing to multicast group failed");
+                return -1;
+	}
+
+	return 0;
+}
+
+int ynl_mnl_socket_get_fd(struct ynl_sock *ys)
+{
+	return mnl_socket_get_fd(ys->sock);
 }
 
 /* YNL specific helpers used by the auto-generated code */

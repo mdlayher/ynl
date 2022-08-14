@@ -2,6 +2,7 @@
 #define __USER_MY_H 1
 
 #include <libmnl/libmnl.h>
+#include <linux/genetlink.h>
 #include <linux/types.h>
 
 struct mnl_socket;
@@ -31,6 +32,12 @@ struct ynl_sock {
 	__u32 seq;
 	__u32 portid;
 	__u16 family_id;
+
+	unsigned int n_mcast_groups;
+	struct {
+		unsigned int id;
+		char name[GENL_NAMSIZ];
+	} *mcast_groups;
 
 	struct ynl_error err;
 
@@ -71,6 +78,11 @@ struct ynl_parse_arg {
 	void *data;
 };
 
+struct ynl_dump_list_type {
+	struct ynl_dump_list_type *next;
+	unsigned char data[];
+};
+
 extern mnl_cb_t ynl_cb_array[NLMSG_MIN_TYPE];
 
 struct ynl_sock *ynl_sock_create(const char *family_name, struct ynl_error *e);
@@ -86,18 +98,19 @@ int ynl_attr_validate(struct ynl_parse_arg *yarg, const struct nlattr *attr);
 int ynl_recv_ack(struct ynl_sock *ys, int ret);
 int ynl_cb_null(const struct nlmsghdr *nlh, void *data);
 
-/* YNL specific helpers used by the auto-generated code */
-
 struct ynl_ntf_base_type {
 	__u16 family;
 	__u8 cmd;
+	void (*free)(struct ynl_ntf_base_type *ntf);
 	unsigned char data[];
 };
 
-struct ynl_dump_list_type {
-	struct ynl_dump_list_type *next;
-	unsigned char data[];
-};
+void ynl_ntf_free(struct ynl_ntf_base_type *ntf);
+
+int ynl_subscribe(struct ynl_sock *ys, const char *grp_name);
+int ynl_mnl_socket_get_fd(struct ynl_sock *ys);
+
+/* YNL specific helpers used by the auto-generated code */
 
 struct ynl_dump_state {
 	struct ynl_sock *ys;

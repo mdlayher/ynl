@@ -9,6 +9,7 @@ int main(int argc, char **argv)
 {
 	struct ethtool_channels_get_rsp *rsp;
 	struct ethtool_channels_get_req req;
+	struct ynl_ntf_base_type *ntf;
 	struct ynl_sock *ys;
 
 	if (argc < 2) {
@@ -46,6 +47,34 @@ int main(int argc, char **argv)
 	printf("\n");
 
 	ethtool_channels_get_rsp_free(rsp);
+
+	if (argc == 2)
+		goto done;
+
+	if (ynl_subscribe(ys, ETHTOOL_MCGRP_MONITOR_NAME))
+		goto out;
+
+	ntf = ethtool_ntf_parse(ys);
+	if (!ntf)
+		goto out;
+
+	if (ntf->cmd == ETHTOOL_MSG_CHANNELS_NTF) {
+		rsp = (struct ethtool_channels_get_rsp *)&ntf->data;
+
+		printf("%s:", rsp->header.dev_name);
+		if (rsp->rx_count_present && rsp->tx_count_present)
+			printf("\trx: %u\ttx:%u", rsp->rx_count, rsp->tx_count);
+		if (rsp->combined_count)
+			printf("\tcombined: %u", rsp->combined_count);
+		if (rsp->other_count)
+			printf("\tother: %u", rsp->other_count);
+		printf("\n");
+	} else {
+		fprintf(stderr, "Unknown msg type: %d\n", ntf->cmd);
+	}
+	ynl_ntf_free(ntf);
+
+done:
 	ynl_sock_destroy(ys);
 	return 0;
 
