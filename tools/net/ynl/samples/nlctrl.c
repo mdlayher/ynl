@@ -28,8 +28,10 @@ int main(int argc, char **argv)
 	nlctrl_getfamily_req_set_family_name(&req, argv[1]);
 
 	rsp = nlctrl_getfamily(ys, &req);
-	if (!rsp || !rsp->family_id_present)
+	if (!rsp || !rsp->family_id_present) {
+		fprintf(stderr, "Getting family failed: %s\n", ys->err.msg);
 		goto out;
+	}
 
 	fam_id = rsp->family_id;
 
@@ -50,8 +52,11 @@ int main(int argc, char **argv)
 	nlctrl_getfamily_rsp_free(rsp);
 
 	families = nlctrl_getfamily_dump(ys);
-	if (!families)
+	if (!families) {
+		fprintf(stderr, "Getting family dump failed: %s\n",
+			ys->err.msg);
 		goto out;
+	}
 
 	printf("\nFAMILIES:\n");
 	for (f = families; f; f = f->next) {
@@ -71,8 +76,11 @@ int main(int argc, char **argv)
 	nlctrl_getpolicy_req_dump_set_family_id(&pdr, fam_id);
 
 	policies = nlctrl_getpolicy_dump(ys, &pdr);
-	if (!policies)
+	if (!policies) {
+		fprintf(stderr, "Getting policy dump failed: %s\n",
+			ys->err.msg);
 		goto out;
+	}
 
 	for (p = policies; p; p = p->next) {
 		if (!p->obj.policy_present)
