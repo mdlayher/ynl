@@ -1144,7 +1144,7 @@ def call_free(ri, direction, var):
     return f"{op_prefix(ri, direction)}_free({var});"
 
 
-def free_arg_name(ri, direction):
+def free_arg_name(direction):
     if direction:
         return direction_to_suffix[direction][1:]
     return 'obj'
@@ -1152,7 +1152,7 @@ def free_arg_name(ri, direction):
 
 def print_free_prototype(ri, direction, suffix=';'):
     name = op_prefix(ri, direction)
-    arg = free_arg_name(ri, direction)
+    arg = free_arg_name(direction)
     ri.cw.write_func_prot('void', f"{name}_free", [f"struct {name} *{arg}"], suffix=suffix)
 
 
@@ -1254,7 +1254,7 @@ def _free_type_members(ri, var, struct, ref=''):
 
 
 def _free_type(ri, direction, struct):
-    var = free_arg_name(ri, direction)
+    var = free_arg_name(direction)
 
     print_free_prototype(ri, direction, suffix='')
     ri.cw.block_start()
