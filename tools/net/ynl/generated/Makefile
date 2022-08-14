@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-std=gnu99 -O2 -W -Wall -Wextra -Wno-unused-parameter -Wshadow -g -I../lib/ -fsanitize=address -static-libasan
 
-TOOL:=/home/kicinski/devel/linux/gen.py
+TOOL:=../ynl-gen-c.py
 
 YAML:=$(wildcard ../../../../Documentation/netlink/bindings/*.yaml)
 GENS:=$(patsubst ../../../../Documentation/netlink/bindings/%.yaml,%,${YAML})
