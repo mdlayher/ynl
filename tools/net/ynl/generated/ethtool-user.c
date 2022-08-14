@@ -240,13 +240,12 @@ void ethtool_channels_get_list_free(struct ethtool_channels_get_list *rsp)
 struct ethtool_channels_get_list *
 ethtool_channels_get_dump(struct ynl_sock *ys)
 {
-	struct ethtool_channels_get_list *rsp, *cur;
 	struct ynl_dump_state yds = {};
 	struct nlmsghdr *nlh;
 	int len, err;
 
 	yds.ys = ys;
-	yds.alloc_sz = sizeof(*rsp);
+	yds.alloc_sz = sizeof(struct ethtool_channels_get_list);
 	yds.cb = ethtool_channels_get_rsp_parse;
 	yds.rsp_policy = &ethtool_channels_nest;
 
@@ -271,12 +270,7 @@ ethtool_channels_get_dump(struct ynl_sock *ys)
 	return yds.first;
 
 free_list:
-	rsp = yds.first;
-	while (rsp) {
-		cur = rsp;
-		rsp = rsp->next;
-		ethtool_channels_get_list_free(cur);
-	}
+	ethtool_channels_get_list_free(yds.first);
 	return NULL;
 }
 

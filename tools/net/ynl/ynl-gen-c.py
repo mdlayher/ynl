@@ -1100,8 +1100,7 @@ def print_dump(ri):
     direction = "request"
     print_prototype(ri, direction, terminate=False)
     ri.cw.block_start()
-    local_vars = [f'{type_name(ri, rdir(direction))} *rsp, *cur;',
-                  'struct ynl_dump_state yds = {};',
+    local_vars = ['struct ynl_dump_state yds = {};',
                   'struct nlmsghdr *nlh;',
                   'int len, err;']
 
@@ -1110,7 +1109,7 @@ def print_dump(ri):
     ri.cw.nl()
 
     ri.cw.p('yds.ys = ys;')
-    ri.cw.p('yds.alloc_sz = sizeof(*rsp);')
+    ri.cw.p(f"yds.alloc_sz = sizeof({type_name(ri, rdir(direction))});")
     ri.cw.p(f"yds.cb = {op_prefix(ri, 'reply', deref=True)}_parse;")
     ri.cw.p(f"yds.rsp_policy = &{ri.struct['reply'].render_name}_nest;")
     ri.cw.nl()
@@ -1142,12 +1141,7 @@ def print_dump(ri):
     ri.cw.p('return yds.first;')
     ri.cw.nl()
     ri.cw.p('free_list:')
-    ri.cw.p('rsp = yds.first;')
-    ri.cw.block_start(line='while (rsp)')
-    ri.cw.p('cur = rsp;')
-    ri.cw.p('rsp = rsp->next;')
-    ri.cw.p(call_free(ri, rdir(direction), 'cur'))
-    ri.cw.block_end()
+    ri.cw.p(call_free(ri, rdir(direction), 'yds.first'))
     ri.cw.p('return NULL;')
     ri.cw.block_end()
 

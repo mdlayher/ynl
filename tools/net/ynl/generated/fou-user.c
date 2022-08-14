@@ -283,13 +283,12 @@ void fou_get_list_free(struct fou_get_list *rsp)
 
 struct fou_get_list *fou_get_dump(struct ynl_sock *ys)
 {
-	struct fou_get_list *rsp, *cur;
 	struct ynl_dump_state yds = {};
 	struct nlmsghdr *nlh;
 	int len, err;
 
 	yds.ys = ys;
-	yds.alloc_sz = sizeof(*rsp);
+	yds.alloc_sz = sizeof(struct fou_get_list);
 	yds.cb = fou_get_rsp_parse;
 	yds.rsp_policy = &fou_main_nest;
 
@@ -314,11 +313,6 @@ struct fou_get_list *fou_get_dump(struct ynl_sock *ys)
 	return yds.first;
 
 free_list:
-	rsp = yds.first;
-	while (rsp) {
-		cur = rsp;
-		rsp = rsp->next;
-		fou_get_list_free(cur);
-	}
+	fou_get_list_free(yds.first);
 	return NULL;
 }

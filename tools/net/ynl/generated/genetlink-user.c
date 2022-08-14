@@ -428,13 +428,12 @@ void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *rsp)
 
 struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys)
 {
-	struct nlctrl_getfamily_list *rsp, *cur;
 	struct ynl_dump_state yds = {};
 	struct nlmsghdr *nlh;
 	int len, err;
 
 	yds.ys = ys;
-	yds.alloc_sz = sizeof(*rsp);
+	yds.alloc_sz = sizeof(struct nlctrl_getfamily_list);
 	yds.cb = nlctrl_getfamily_rsp_parse;
 	yds.rsp_policy = &nlctrl_main_nest;
 
@@ -459,12 +458,7 @@ struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys)
 	return yds.first;
 
 free_list:
-	rsp = yds.first;
-	while (rsp) {
-		cur = rsp;
-		rsp = rsp->next;
-		nlctrl_getfamily_list_free(cur);
-	}
+	nlctrl_getfamily_list_free(yds.first);
 	return NULL;
 }
 
@@ -546,13 +540,12 @@ struct nlctrl_getpolicy_rsp_list *
 nlctrl_getpolicy_dump(struct ynl_sock *ys,
 		      struct nlctrl_getpolicy_req_dump *req)
 {
-	struct nlctrl_getpolicy_rsp_list *rsp, *cur;
 	struct ynl_dump_state yds = {};
 	struct nlmsghdr *nlh;
 	int len, err;
 
 	yds.ys = ys;
-	yds.alloc_sz = sizeof(*rsp);
+	yds.alloc_sz = sizeof(struct nlctrl_getpolicy_rsp_list);
 	yds.cb = nlctrl_getpolicy_rsp_dump_parse;
 	yds.rsp_policy = &nlctrl_main_nest;
 
@@ -585,12 +578,7 @@ nlctrl_getpolicy_dump(struct ynl_sock *ys,
 	return yds.first;
 
 free_list:
-	rsp = yds.first;
-	while (rsp) {
-		cur = rsp;
-		rsp = rsp->next;
-		nlctrl_getpolicy_rsp_list_free(cur);
-	}
+	nlctrl_getpolicy_rsp_list_free(yds.first);
 	return NULL;
 }
 
