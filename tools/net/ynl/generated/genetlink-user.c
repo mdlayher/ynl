@@ -374,6 +374,7 @@ nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req)
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, CTRL_CMD_GETFAMILY, 1);
 	ys->req_policy = &nlctrl_main_nest;
+	yarg.rsp_policy = &nlctrl_main_nest;
 
 	if (req->family_id_present)
 		mnl_attr_put_u16(nlh, CTRL_ATTR_FAMILY_ID, req->family_id);

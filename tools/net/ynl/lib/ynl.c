@@ -230,7 +230,7 @@ int ynl_attr_validate(struct ynl_parse_arg *yarg, const struct nlattr *attr)
 	unsigned int type, len;
 	unsigned char *data;
 
-	data =mnl_attr_get_payload(attr);
+	data = mnl_attr_get_payload(attr);
 	len = mnl_attr_get_payload_len(attr);
 	type = mnl_attr_get_type(attr);
 	if (type > yarg->rsp_policy->max_attr) {
@@ -241,7 +241,7 @@ int ynl_attr_validate(struct ynl_parse_arg *yarg, const struct nlattr *attr)
 
 	policy = &yarg->rsp_policy->table[type];
 
-	switch (type) {
+	switch (policy->type) {
 	case YNL_PT_REJECT:
 		yerr(yarg->ys, YNL_ERROR_ATTR_INVALID,
 		     "Rejected attribute (%s)", policy->name);

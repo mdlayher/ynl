@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 	return 0;
 
 out:
-	perror("can't get the channels");
+	fprintf(stderr, "Getting channels failed: %s\n", ys->err.msg);
 	ynl_sock_destroy(ys);
 	return 2;
 }

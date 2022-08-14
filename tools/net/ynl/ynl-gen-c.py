@@ -1055,6 +1055,8 @@ def print_req(ri):
     ri.cw.p(f"nlh = ynl_gemsg_start_req(ys, {ri.nl.get_family_id()}, {ri.op.enum_name}, 1);")
 
     ri.cw.p(f"ys->req_policy = &{ri.struct['request'].render_name}_nest;")
+    if 'reply' in ri.op[ri.op_mode]:
+        ri.cw.p(f"yarg.rsp_policy = &{ri.struct['reply'].render_name}_nest;")
     ri.cw.nl()
     for _, attr in ri.struct["request"].member_list():
         attr.attr_put(ri, "req")

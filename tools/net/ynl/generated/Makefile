@@ -50,7 +50,7 @@ hardclean: clean
 	rm -f *.c *.h *.a
 
 regen:
-	@../ynl-regen.sh -f
+	@../ynl-regen.sh
 
 .PHONY: all clean hardclean regen
 .DEFAULT_GOAL: all
