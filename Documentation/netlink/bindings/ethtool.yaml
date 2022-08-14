@@ -106,8 +106,8 @@ operations:
             - combined-count
 
 mcast-groups:
-  name-prefix: ETHTOOL_MCGRP_
-  name-suffix: _NAME
+  name-prefix: ethtool-mcgrp-
+  name-suffix: -name
   list:
     -
       name: monitor

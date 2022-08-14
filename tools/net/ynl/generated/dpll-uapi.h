@@ -77,4 +77,9 @@ enum dpll_genl_event {
 	DPLL_EVENT_OUTPUT_CHANGE,
 };
 
+#define DPLL_CONFIG_DEVICE_GROUP_NAME	"config"
+#define DPLL_CONFIG_SOURCE_GROUP_NAME	"source"
+#define DPLL_CONFIG_OUTPUT_GROUP_NAME	"output"
+#define DPLL_MONITOR_GROUP_NAME	"monitor"
+
 #endif /* _UAPI_LINUX_DPLL_H */

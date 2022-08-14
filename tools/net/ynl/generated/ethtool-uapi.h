@@ -42,4 +42,6 @@ enum {
 	ETHTOOL_MSG_CHANNELS_NTF,
 };
 
+#define ETHTOOL_MCGRP_MONITOR_NAME	"monitor"
+
 #endif /* _UAPI_LINUX_ETHTOOL_H */

@@ -1446,6 +1446,21 @@ def render_uapi(family, cw):
         cw.block_end(line=';')
         cw.nl()
 
+    grps = family.get('mcast-groups', {'list': []})
+    for grp in grps['list']:
+        name = grp['name']
+        value = name
+        if 'value' in grp:
+            value = grp['value']
+        if 'name-prefix' in grps:
+            name = grps['name-prefix'].upper() + name
+        if 'name-suffix' in grps:
+            name = name + grps['name-suffix'].upper()
+        name = name.upper().replace('-', '_')
+
+        cw.p(f"#define {name}\t\"{value}\"")
+    cw.nl()
+
     cw.p(f'#endif /* {hdr_prot} */')
 
 
