@@ -832,17 +832,6 @@ def type_name(ri, direction, deref=False):
     return f"struct {op_prefix(ri, direction, deref=deref)}"
 
 
-def attribute_parse_kernel(ri, attr):
-    t = attr['type']
-    ri.cw.block_start(line=f"if (tb[{attr.enum_name}])")
-    ri.cw.p(f"req->{attr.name}_present = 1;")
-    if t in scalars:
-        ri.cw.p(f"req->{attr.name} = nla_get_{t}(tb[{attr.enum_name}]);")
-    elif t == 'nul-string':
-        ri.cw.p(f"strcpy(req->{attr.name}, nla_data(tb[{attr.enum_name}]));")
-    ri.cw.block_end()
-
-
 def print_prototype(ri, direction, terminate=True, doc=None):
     suffix = ';' if terminate else ''
 
@@ -1217,14 +1206,6 @@ def print_parse_prototype(ri, direction, terminate=True):
                           ['const struct nlattr **tb',
                            f"struct {ri.op.render_name}{suffix} *req"],
                           suffix=term)
-
-
-def print_parse_kernel(ri, direction):
-    print_parse_prototype(ri, direction, terminate=False)
-    ri.cw.block_start()
-    for _, arg in ri.struct['request'].member_list():
-        attribute_parse_kernel(ri, arg)
-    ri.cw.block_end()
 
 
 def print_req_type(ri):
@@ -1606,8 +1587,6 @@ def main():
                     parse_rsp_msg(ri)
                     print_req(ri)
                 elif args.mode == "kernel":
-                    print_parse_kernel(ri, "request")
-                    cw.nl()
                     print_req_policy(ri)
                 cw.nl()
 
