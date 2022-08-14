@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
-//	Documentation/netlink/bindings/genetlink.yaml/
-// /home/kicinski/devel/linux/gen.py --mode kernel --header --spec ../../../../Documentation/netlink/bindings/genetlink.yaml
+//	Documentation/netlink/bindings/genetlink.yaml
+// YNL-GEN kernel header
 
 #ifndef _LINUX_NLCTRL_GEN_H
 #define _LINUX_NLCTRL_GEN_H

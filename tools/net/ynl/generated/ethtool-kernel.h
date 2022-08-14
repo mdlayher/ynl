@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
-//	Documentation/netlink/bindings/ethtool.yaml/
-// /home/kicinski/devel/linux/gen.py --mode kernel --header --spec ../../../../Documentation/netlink/bindings/ethtool.yaml
+//	Documentation/netlink/bindings/ethtool.yaml
+// YNL-GEN kernel header
 
 #ifndef _LINUX_ETHTOOL_GEN_H
 #define _LINUX_ETHTOOL_GEN_H

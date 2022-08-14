@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
-//	Documentation/netlink/bindings/genetlink.yaml/
-// /home/kicinski/devel/linux/gen.py --mode uapi --header --spec ../../../../Documentation/netlink/bindings/genetlink.yaml
+//	Documentation/netlink/bindings/genetlink.yaml
+// YNL-GEN uapi header
 
 #ifndef _UAPI_LINUX_NLCTRL_H
 #define _UAPI_LINUX_NLCTRL_H

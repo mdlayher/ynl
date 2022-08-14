@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
-//	Documentation/netlink/bindings/fou.yaml/
-// /home/kicinski/devel/linux/gen.py --mode uapi --header --spec ../../../../Documentation/netlink/bindings/fou.yaml
+//	Documentation/netlink/bindings/fou.yaml
+// YNL-GEN uapi header
 
 #ifndef _UAPI_LINUX_FOU_H
 #define _UAPI_LINUX_FOU_H

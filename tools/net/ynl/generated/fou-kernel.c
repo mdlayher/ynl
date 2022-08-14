@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
-//	Documentation/netlink/bindings/fou.yaml/
-// /home/kicinski/devel/linux/gen.py --mode kernel --source --spec ../../../../Documentation/netlink/bindings/fou.yaml
+//	Documentation/netlink/bindings/fou.yaml
+// YNL-GEN kernel source
 
 #include <net/netlink.h>
 

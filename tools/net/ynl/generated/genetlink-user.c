@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Do not edit directly, auto-generated from:
-//	Documentation/netlink/bindings/genetlink.yaml/
-// /home/kicinski/devel/linux/gen.py --mode user --user-header genetlink-user.h ynl.h --source --spec ../../../../Documentation/netlink/bindings/genetlink.yaml
+//	Documentation/netlink/bindings/genetlink.yaml
+// YNL-GEN user source
 
 #include <linux/genetlink.h>
 

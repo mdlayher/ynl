@@ -1453,7 +1453,7 @@ def find_kernel_root(full_path):
         full_path = os.path.dirname(full_path)
         maintainers = os.path.join(full_path, "MAINTAINERS")
         if os.path.exists(maintainers):
-            return full_path, sub_path
+            return full_path, sub_path[:-1]
 
 
 def main():
@@ -1481,7 +1481,7 @@ def main():
     cw.p(f"// SPDX-License-Identifier: MIT")
     cw.p("// Do not edit directly, auto-generated from:")
     cw.p(f"//\t{spec_kernel}")
-    cw.p(f"// {' '.join(os.sys.argv)}")
+    cw.p(f"// YNL-GEN {args.mode} {'header' if args.header else 'source'}")
     cw.nl()
 
     if args.mode == 'uapi':
