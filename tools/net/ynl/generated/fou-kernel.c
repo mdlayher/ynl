@@ -7,7 +7,6 @@
 
 #include <linux/fou.h>
 
-/* ============== FOU_CMD_ADD ============== */
 // FOU_CMD_ADD - do
 const struct nla_policy fou_add_policy[] = {
 	[FOU_ATTR_PORT] = { .type = NLA_U16 },
@@ -22,7 +21,6 @@ const struct nla_policy fou_add_policy[] = {
 	[FOU_ATTR_IFINDEX] = { .type = NLA_S32 },
 };
 
-/* ============== FOU_CMD_DEL ============== */
 // FOU_CMD_DEL - do
 const struct nla_policy fou_del_policy[] = {
 	[FOU_ATTR_AF] = { .type = NLA_U8 },
@@ -35,7 +33,6 @@ const struct nla_policy fou_del_policy[] = {
 	[FOU_ATTR_PEER_V6] = { .type = NLA_BINARY, .len = 16 },
 };
 
-/* ============== FOU_CMD_GET ============== */
 // FOU_CMD_GET - do
 const struct nla_policy fou_get_policy[] = {
 	[FOU_ATTR_AF] = { .type = NLA_U8 },

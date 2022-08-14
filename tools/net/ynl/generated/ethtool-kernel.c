@@ -7,7 +7,6 @@
 
 #include <linux/ethtool_netlink.h>
 
-/* ============== ETHTOOL_MSG_CHANNELS_GET ============== */
 // ETHTOOL_MSG_CHANNELS_GET - do
 const struct nla_policy ethtool_channels_get_policy[] = {
 	[ETHTOOL_A_CHANNELS_HEADER] = { .type = NLA_NEST },
@@ -15,7 +14,6 @@ const struct nla_policy ethtool_channels_get_policy[] = {
 
 // ETHTOOL_MSG_CHANNELS_GET - dump
 // ETHTOOL_MSG_CHANNELS_GET - notify
-/* ============== ETHTOOL_MSG_CHANNELS_SET ============== */
 // ETHTOOL_MSG_CHANNELS_SET - do
 const struct nla_policy ethtool_channels_set_policy[] = {
 	[ETHTOOL_A_CHANNELS_HEADER] = { .type = NLA_NEST },

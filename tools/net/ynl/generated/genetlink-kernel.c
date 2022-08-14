@@ -7,7 +7,6 @@
 
 #include <linux/genetlink.h>
 
-/* ============== CTRL_CMD_GETFAMILY ============== */
 // CTRL_CMD_GETFAMILY - do
 const struct nla_policy nlctrl_getfamily_policy[] = {
 	[CTRL_ATTR_FAMILY_ID] = { .type = NLA_U16 },
@@ -16,5 +15,4 @@ const struct nla_policy nlctrl_getfamily_policy[] = {
 
 // CTRL_CMD_GETFAMILY - dump
 // CTRL_CMD_GETFAMILY - notify
-/* ============== CTRL_CMD_GETPOLICY ============== */
 // CTRL_CMD_GETPOLICY - dump

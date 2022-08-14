@@ -174,7 +174,6 @@ class TypeScalar(Type):
         return t
 
     def _attr_policy(self, policy):
-        spec = policy
         if 'flags-mask' in self.attr:
             flags = self.family.consts[self.attr['flags-mask']]
             flag_cnt = len(flags['values'])
@@ -1506,23 +1505,22 @@ def main():
                 print_type_full(ri, struct)
 
         for op_name, op in parsed.ops.items():
-            cw.p(f"/* ============== {op.enum_name} ============== */")
+            if args.mode == "user":
+                cw.p(f"/* ============== {op.enum_name} ============== */")
 
             if 'do' in op:
                 cw.p(f"// {op.enum_name} - do")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
 
-                print_req_type(ri)
-                print_req_type_helpers(ri)
-                cw.nl()
-                print_rsp_type(ri)
-                print_rsp_type_helpers(ri)
-                cw.nl()
-
                 if args.mode == "user":
+                    print_req_type(ri)
+                    print_req_type_helpers(ri)
+                    cw.nl()
+                    print_rsp_type(ri)
+                    print_rsp_type_helpers(ri)
+                    cw.nl()
                     print_req_prototype(ri)
                 elif args.mode == "kernel":
-                    print_parse_prototype(ri, "request")
                     print_req_policy_fwd(ri)
                 cw.nl()
 
@@ -1577,7 +1575,8 @@ def main():
                     parse_rsp_nested(ri, struct)
 
         for op_name, op in parsed.ops.items():
-            cw.p(f"/* ============== {op.enum_name} ============== */")
+            if args.mode == "user":
+                cw.p(f"/* ============== {op.enum_name} ============== */")
 
             if 'do' in op:
                 cw.p(f"// {op.enum_name} - do")
