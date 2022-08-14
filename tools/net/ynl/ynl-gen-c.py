@@ -964,7 +964,8 @@ def _multi_parse(ri, struct, init_lines, local_vars):
         ri.cw.p(f"parg.rsp_policy = &{aspec.nested_render_name}_nest;")
         ri.cw.block_start(line=f"mnl_attr_for_each_nested(attr, attr_{anest})")
         ri.cw.p(f"parg.data = &dst->{anest}[i];")
-        ri.cw.p(f"{aspec.nested_render_name}_parse(&parg, attr, mnl_attr_get_type(attr));")
+        ri.cw.p(f"if ({aspec.nested_render_name}_parse(&parg, attr, mnl_attr_get_type(attr)))")
+        ri.cw.p('return MNL_CB_ERROR;')
         ri.cw.p('i++;')
         ri.cw.block_end()
         ri.cw.block_end()
@@ -981,7 +982,8 @@ def _multi_parse(ri, struct, init_lines, local_vars):
         ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {aspec.enum_name})")
         if 'nested-attributes' in aspec:
             ri.cw.p(f"parg.data = &dst->{anest}[i];")
-            ri.cw.p(f"{aspec.nested_render_name}_parse(&parg, attr);")
+            ri.cw.p(f"if ({aspec.nested_render_name}_parse(&parg, attr))")
+            ri.cw.p('return MNL_CB_ERROR;')
         elif aspec['sub-type'] in scalars:
             t = aspec['sub-type']
             if t[0] == 's':

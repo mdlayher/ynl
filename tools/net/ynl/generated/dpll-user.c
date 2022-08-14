@@ -220,7 +220,8 @@ int dpll_device_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 		mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 			if (mnl_attr_get_type(attr) == DPLLA_OUTPUT) {
 				parg.data = &dst->output[i];
-				dpll_output_parse(&parg, attr);
+				if (dpll_output_parse(&parg, attr))
+					return MNL_CB_ERROR;
 				i++;
 			}
 		}
@@ -232,7 +233,8 @@ int dpll_device_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 		mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
 			if (mnl_attr_get_type(attr) == DPLLA_SOURCE) {
 				parg.data = &dst->source[i];
-				dpll_source_parse(&parg, attr);
+				if (dpll_source_parse(&parg, attr))
+					return MNL_CB_ERROR;
 				i++;
 			}
 		}

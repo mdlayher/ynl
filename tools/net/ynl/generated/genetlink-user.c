@@ -346,7 +346,8 @@ int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 		parg.rsp_policy = &nlctrl_mcast_group_nest;
 		mnl_attr_for_each_nested(attr, attr_mcast_groups) {
 			parg.data = &dst->mcast_groups[i];
-			nlctrl_mcast_group_parse(&parg, attr, mnl_attr_get_type(attr));
+			if (nlctrl_mcast_group_parse(&parg, attr, mnl_attr_get_type(attr)))
+				return MNL_CB_ERROR;
 			i++;
 		}
 	}
@@ -356,7 +357,8 @@ int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 		parg.rsp_policy = &nlctrl_operation_nest;
 		mnl_attr_for_each_nested(attr, attr_ops) {
 			parg.data = &dst->ops[i];
-			nlctrl_operation_parse(&parg, attr, mnl_attr_get_type(attr));
+			if (nlctrl_operation_parse(&parg, attr, mnl_attr_get_type(attr)))
+				return MNL_CB_ERROR;
 			i++;
 		}
 	}
