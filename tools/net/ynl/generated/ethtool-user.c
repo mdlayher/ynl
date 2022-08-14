@@ -343,7 +343,7 @@ struct ynl_ntf_base_type *ethtool_ntf_parse(struct ynl_sock *ys)
 		rsp = calloc(1, sizeof(struct ethtool_channels_get_ntf));
 		parse = ethtool_channels_get_rsp_parse;
 		rsp_policy = &ethtool_channels_nest;
-		free_handler = (void *)ethtool_channels_get_rsp_free;
+		free_handler = (void *)ethtool_channels_get_ntf_free;
 		break;
 	default:
 		return NULL;

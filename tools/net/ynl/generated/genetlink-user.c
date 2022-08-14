@@ -608,7 +608,7 @@ struct ynl_ntf_base_type *nlctrl_ntf_parse(struct ynl_sock *ys)
 		rsp = calloc(1, sizeof(struct nlctrl_getfamily_ntf));
 		parse = nlctrl_getfamily_rsp_parse;
 		rsp_policy = &nlctrl_main_nest;
-		free_handler = (void *)nlctrl_getfamily_rsp_free;
+		free_handler = (void *)nlctrl_getfamily_ntf_free;
 		break;
 	default:
 		return NULL;

@@ -1329,7 +1329,7 @@ def print_ntf_type_parse(family, cw, ku_mode):
         cw.p(f"rsp = calloc(1, sizeof({type_name(ri, 'notify')}));")
         cw.p(f"parse = {op_prefix(ri, 'reply', deref=True)}_parse;")
         cw.p(f"rsp_policy = &{ri.struct['reply'].render_name}_nest;")
-        cw.p(f"free_handler = (void *){op_prefix(ri, 'reply', deref=True)}_free;")
+        cw.p(f"free_handler = (void *){op_prefix(ri, 'notify')}_free;")
         cw.p('break;')
     cw.p('default:')
     cw.p('return NULL;')
