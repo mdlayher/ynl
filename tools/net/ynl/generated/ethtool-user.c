@@ -345,6 +345,7 @@ struct ynl_ntf_base_type *ethtool_ntf_parse(struct ynl_sock *ys)
 		rsp->free = (void *)ethtool_channels_get_ntf_free;
 		break;
 	default:
+		ynl_error_unknown_notification(ys, genlh->cmd);
 		return NULL;
 	}
 
@@ -352,7 +353,7 @@ struct ynl_ntf_base_type *ethtool_ntf_parse(struct ynl_sock *ys)
 
 	err = mnl_cb_run2(ys->rx_buf, len, 0, 0, parse, &yarg,
 			 ynl_cb_array, NLMSG_MIN_TYPE);
-	if (err)
+	if (err < 0)
 		goto err_free;
 
 	rsp->family = nlh->nlmsg_type;

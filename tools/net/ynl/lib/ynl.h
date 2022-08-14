@@ -13,12 +13,13 @@ struct nlmsghdr;
 enum ynl_error_code {
 	YNL_ERROR_NONE = 0,
 	__YNL_ERRNO_END = 4096,
+	YNL_ERROR_INTERNAL,
 	YNL_ERROR_EXPECT_ACK,
 	YNL_ERROR_EXPECT_MSG,
 	YNL_ERROR_UNEXPECT_MSG,
 	YNL_ERROR_ATTR_MISSING,
 	YNL_ERROR_ATTR_INVALID,
-	YNL_ERROR_INTERNAL,
+	YNL_ERROR_UNKNOWN_NTF,
 };
 
 struct ynl_error {
@@ -122,5 +123,7 @@ struct ynl_dump_state {
 };
 
 int ynl_dump_trampoline(const struct nlmsghdr *nlh, void *data);
+
+void ynl_error_unknown_notification(struct ynl_sock *ys, __u8 cmd);
 
 #endif

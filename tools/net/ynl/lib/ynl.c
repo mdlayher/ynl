@@ -606,3 +606,9 @@ int ynl_dump_trampoline(const struct nlmsghdr *nlh, void *data)
 
 	return ds->cb(nlh, &yarg);
 }
+
+void ynl_error_unknown_notification(struct ynl_sock *ys, __u8 cmd)
+{
+	yerr(ys, YNL_ERROR_UNKNOWN_NTF,
+	     "Unknown notification message type '%d'", cmd);
+}

@@ -5,6 +5,19 @@
 
 #include "ethtool-user.h"
 
+static void print_device_config(struct ethtool_channels_get_rsp *rsp)
+{
+	if (rsp->header_present && rsp->header.dev_name_present)
+		printf("%16s:", rsp->header.dev_name);
+	if (rsp->rx_count_present && rsp->tx_count_present)
+		printf("\trx: %u\ttx:%u", rsp->rx_count, rsp->tx_count);
+	if (rsp->combined_count)
+		printf("\tcombined: %u", rsp->combined_count);
+	if (rsp->other_count)
+		printf("\tother: %u", rsp->other_count);
+	printf("\n");
+}
+
 int main(int argc, char **argv)
 {
 	struct ethtool_channels_get_rsp *rsp;
@@ -37,15 +50,7 @@ int main(int argc, char **argv)
 	if (!rsp)
 		goto out;
 
-	printf("%s:", argv[1]);
-	if (rsp->rx_count_present && rsp->tx_count_present)
-		printf("\trx: %u\ttx:%u", rsp->rx_count, rsp->tx_count);
-	if (rsp->combined_count)
-		printf("\tcombined: %u", rsp->combined_count);
-	if (rsp->other_count)
-		printf("\tother: %u", rsp->other_count);
-	printf("\n");
-
+	print_device_config(rsp);
 	ethtool_channels_get_rsp_free(rsp);
 
 	if (argc == 2)
@@ -60,15 +65,7 @@ int main(int argc, char **argv)
 
 	if (ntf->cmd == ETHTOOL_MSG_CHANNELS_NTF) {
 		rsp = (struct ethtool_channels_get_rsp *)&ntf->data;
-
-		printf("%s:", rsp->header.dev_name);
-		if (rsp->rx_count_present && rsp->tx_count_present)
-			printf("\trx: %u\ttx:%u", rsp->rx_count, rsp->tx_count);
-		if (rsp->combined_count)
-			printf("\tcombined: %u", rsp->combined_count);
-		if (rsp->other_count)
-			printf("\tother: %u", rsp->other_count);
-		printf("\n");
+		print_device_config(rsp);
 	} else {
 		fprintf(stderr, "Unknown msg type: %d\n", ntf->cmd);
 	}
