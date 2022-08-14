@@ -1112,6 +1112,7 @@ def print_dump(ri):
     ri.cw.p('yds.ys = ys;')
     ri.cw.p('yds.alloc_sz = sizeof(*rsp);')
     ri.cw.p(f"yds.cb = {op_prefix(ri, 'reply', deref=True)}_parse;")
+    ri.cw.p(f"yds.rsp_policy = &{ri.struct['reply'].render_name}_nest;")
     ri.cw.nl()
     ri.cw.p(f"nlh = ynl_gemsg_start_dump(ys, {ri.nl.get_family_id()}, {ri.op.enum_name}, 1);")
 

@@ -522,6 +522,7 @@ int ynl_dump_trampoline(const struct nlmsghdr *nlh, void *data)
 	ds->last = obj;
 
 	yarg.ys = ds->ys;
+	yarg.rsp_policy = ds->rsp_policy;
 	yarg.data = &obj->data;
 
 	return ds->cb(nlh, &yarg);

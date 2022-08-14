@@ -291,6 +291,7 @@ struct fou_get_list *fou_get_dump(struct ynl_sock *ys)
 	yds.ys = ys;
 	yds.alloc_sz = sizeof(*rsp);
 	yds.cb = fou_get_rsp_parse;
+	yds.rsp_policy = &fou_main_nest;
 
 	nlh = ynl_gemsg_start_dump(ys, ys->family_id, FOU_CMD_GET, 1);
 

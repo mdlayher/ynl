@@ -436,6 +436,7 @@ struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys)
 	yds.ys = ys;
 	yds.alloc_sz = sizeof(*rsp);
 	yds.cb = nlctrl_getfamily_rsp_parse;
+	yds.rsp_policy = &nlctrl_main_nest;
 
 	nlh = ynl_gemsg_start_dump(ys, ys->family_id, CTRL_CMD_GETFAMILY, 1);
 
@@ -553,6 +554,7 @@ nlctrl_getpolicy_dump(struct ynl_sock *ys,
 	yds.ys = ys;
 	yds.alloc_sz = sizeof(*rsp);
 	yds.cb = nlctrl_getpolicy_rsp_dump_parse;
+	yds.rsp_policy = &nlctrl_main_nest;
 
 	nlh = ynl_gemsg_start_dump(ys, ys->family_id, CTRL_CMD_GETPOLICY, 1);
 	ys->req_policy = &nlctrl_main_nest;

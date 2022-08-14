@@ -101,6 +101,7 @@ struct ynl_dump_list_type {
 
 struct ynl_dump_state {
 	struct ynl_sock *ys;
+	struct ynl_policy_nest *rsp_policy;
 	void *first;
 	struct ynl_dump_list_type *last;
 	size_t alloc_sz;

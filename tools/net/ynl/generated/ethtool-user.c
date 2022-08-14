@@ -248,6 +248,7 @@ ethtool_channels_get_dump(struct ynl_sock *ys)
 	yds.ys = ys;
 	yds.alloc_sz = sizeof(*rsp);
 	yds.cb = ethtool_channels_get_rsp_parse;
+	yds.rsp_policy = &ethtool_channels_nest;
 
 	nlh = ynl_gemsg_start_dump(ys, ys->family_id, ETHTOOL_MSG_CHANNELS_GET, 1);
 
