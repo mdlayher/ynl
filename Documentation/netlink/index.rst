@@ -9,5 +9,6 @@ Netlink documentation.
 .. toctree::
    :maxdepth: 2
 
+   existing
    netlink-bindings
 
