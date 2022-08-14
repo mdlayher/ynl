@@ -89,7 +89,7 @@ class Type:
 
     def _attr_put_line(self, ri, var, line):
         ri.cw.p(f"if ({var}->{self.name}_present)")
-        ri.cw.p(f"{line};", add_ind=1)
+        ri.cw.p(f"{line};")
 
     def _attr_put_simple(self, ri, var, put_type):
         line = f"mnl_attr_put_{put_type}(nlh, {self.enum_name}, {var}->{self.name})"
@@ -112,7 +112,7 @@ class Type:
 
         if not self.is_multi_val():
             ri.cw.p(f"if (ynl_attr_validate(yarg, attr))")
-            ri.cw.p(f"\treturn MNL_CB_ERROR;")
+            ri.cw.p(f"return MNL_CB_ERROR;")
             ri.cw.p(f"{var}->{self.name}_present = 1;")
 
         if init_lines:
@@ -639,7 +639,12 @@ class CodeWriter:
         self.nlib = nlib
 
         self._nl = False
+        self._silent_block = False
         self._ind = 0
+
+    @classmethod
+    def _is_cond(cls, line):
+        return line.startswith('if') or line.startswith('while') or line.startswith('for')
 
     def p(self, line, add_ind=0):
         if self._nl:
@@ -648,6 +653,9 @@ class CodeWriter:
         ind = self._ind
         if line[-1] == ':':
             ind -= 1
+        if self._silent_block:
+            ind += 1
+        self._silent_block = line.endswith(')') and CodeWriter._is_cond(line)
         if add_ind:
             ind += add_ind
         print('\t' * ind + line)
@@ -662,6 +670,8 @@ class CodeWriter:
         self._ind += 1
 
     def block_end(self, line=''):
+        if line and line != ';':
+            line = ' ' + line
         self._ind -= 1
         self.p('}' + line)
 
@@ -1043,31 +1053,32 @@ def print_req(ri):
         attr.attr_put(ri, "req")
     ri.cw.nl()
 
-    ri.cw.p(f"""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
-	if (err < 0)
-		return {ret_err};
-
-	len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
-	if (len < 0)
-		return {ret_err};""")
+    ri.cw.p('err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);')
+    ri.cw.p('if (err < 0)')
+    ri.cw.p(f"return {ret_err};")
+    ri.cw.nl()
+    ri.cw.p('len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);')
+    ri.cw.p('if (len < 0)')
+    ri.cw.p(f"return {ret_err};")
     ri.cw.nl()
 
     if 'reply' in ri.op[ri.op_mode]:
-        ri.cw.p(f"""rsp = calloc(1, sizeof(*rsp));
-	yarg.data = rsp;
+        ri.cw.p('rsp = calloc(1, sizeof(*rsp));')
+        ri.cw.p('yarg.data = rsp;')
+        ri.cw.nl()
+        ri.cw.p(f"err = {ri.nl.parse_cb_run(op_prefix(ri, 'reply') + '_parse', '&yarg', False)};")
+        ri.cw.p('if (err < 0)')
+        ri.cw.p('goto err_free;')
+        ri.cw.nl()
 
-	err = {ri.nl.parse_cb_run(op_prefix(ri, "reply") + "_parse", '&yarg', False)};
-	if (err < 0)
-		goto err_free;""")
+    ri.cw.p('err = ynl_recv_ack(ys, err);')
+    ri.cw.p('if (err)')
+    ri.cw.p('goto err_free;')
     ri.cw.nl()
+    ri.cw.p(f"return {ret_ok};")
+    ri.cw.nl()
+    ri.cw.p('err_free:')
 
-    ri.cw.p(f"""\terr = ynl_recv_ack(ys, err);
-	if (err)
-		goto err_free;
-
-	return {ret_ok};
-
-err_free:""")
     if 'reply' in ri.op[ri.op_mode]:
         ri.cw.p(f"{call_free(ri, rdir(direction), 'rsp')}")
     ri.cw.p(f"return {ret_err};")
@@ -1100,30 +1111,32 @@ def print_dump(ri):
             attr.attr_put(ri, "req")
     ri.cw.nl()
 
-    ri.cw.p(f"""err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);
-	if (err < 0)
-		return NULL;
+    ri.cw.p('err = mnl_socket_sendto(ys->sock, nlh, nlh->nlmsg_len);')
+    ri.cw.p('if (err < 0)')
+    ri.cw.p('return NULL;')
+    ri.cw.nl()
 
-	do {'{'}
-		len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
-		if (len < 0)
-			goto free_list;
+    ri.cw.block_start(line='do')
+    ri.cw.p('len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);')
+    ri.cw.p('if (len < 0)')
+    ri.cw.p('goto free_list;')
+    ri.cw.nl()
+    ri.cw.p(f"err = {ri.nl.parse_cb_run('ynl_dump_trampoline', '&yds', False, indent=2)};")
+    ri.cw.p('if (err < 0)')
+    ri.cw.p('goto free_list;')
+    ri.cw.block_end(line='while (err > 0);')
+    ri.cw.nl()
 
-		err = {ri.nl.parse_cb_run('ynl_dump_trampoline', '&yds', False, indent=2)};
-		if (err < 0)
-			goto free_list;
-	{'}'} while (err > 0);
-
-	return yds.first;
-
-free_list:
-	rsp = yds.first;
-	while (rsp) {'{'}
-		cur = rsp;
-		rsp = rsp->next;
-		{call_free(ri, rdir(direction), 'cur')}
-	{'}'}
-	return NULL;""")
+    ri.cw.p('return yds.first;')
+    ri.cw.nl()
+    ri.cw.p('free_list:')
+    ri.cw.p('rsp = yds.first;')
+    ri.cw.block_start(line='while (rsp)')
+    ri.cw.p('cur = rsp;')
+    ri.cw.p('rsp = rsp->next;')
+    ri.cw.p(call_free(ri, rdir(direction), 'cur'))
+    ri.cw.block_end()
+    ri.cw.p('return NULL;')
     ri.cw.block_end()
 
 
@@ -1302,7 +1315,7 @@ def print_ntf_type_parse(family, cw, ku_mode):
                         'mnl_cb_t parse;'])
     cw.p('len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);')
     cw.p('if (len < (ssize_t)(sizeof(*nlh) + sizeof(*genlh)))')
-    cw.p('\treturn NULL;')
+    cw.p('return NULL;')
     cw.nl()
     cw.p('nlh = (void *)ys->rx_buf;')
     cw.p('genlh = mnl_nlmsg_get_payload(nlh);')
@@ -1324,7 +1337,7 @@ def print_ntf_type_parse(family, cw, ku_mode):
     cw.nl()
     cw.p(f"err = {cw.nlib.parse_cb_run('parse', '&yarg', True)};")
     cw.p('if (err)')
-    cw.p('\tgoto err_free;')
+    cw.p('goto err_free;')
     cw.nl()
     cw.p('rsp->family = nlh->nlmsg_type;')
     cw.p('rsp->cmd = genlh->cmd;')
@@ -1463,8 +1476,8 @@ def main():
         render_uapi(parsed, cw)
         return
 
+    hdr_prot = f"_LINUX_{parsed.name.upper()}_GEN_H"
     if args.header:
-        hdr_prot = f"_LINUX_{parsed.name.upper()}_GEN_H"
         cw.p('#ifndef ' + hdr_prot)
         cw.p('#define ' + hdr_prot)
         cw.nl()
