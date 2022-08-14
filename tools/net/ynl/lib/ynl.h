@@ -80,7 +80,7 @@ struct ynl_parse_arg {
 
 struct ynl_dump_list_type {
 	struct ynl_dump_list_type *next;
-	unsigned char data[];
+	unsigned char data[] __attribute__ ((aligned (8)));
 };
 
 extern mnl_cb_t ynl_cb_array[NLMSG_MIN_TYPE];
@@ -102,7 +102,7 @@ struct ynl_ntf_base_type {
 	__u16 family;
 	__u8 cmd;
 	void (*free)(struct ynl_ntf_base_type *ntf);
-	unsigned char data[];
+	unsigned char data[] __attribute__ ((aligned (8)));
 };
 
 void ynl_ntf_free(struct ynl_ntf_base_type *ntf);

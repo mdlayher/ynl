@@ -90,7 +90,7 @@ ethtool_channels_get(struct ynl_sock *ys, struct ethtool_channels_get_req *req);
 // ETHTOOL_MSG_CHANNELS_GET - dump
 struct ethtool_channels_get_list {
 	struct ethtool_channels_get_list *next;
-	struct ethtool_channels_get_rsp obj;
+	struct ethtool_channels_get_rsp obj __attribute__ ((aligned (8)));
 };
 
 void ethtool_channels_get_list_free(struct ethtool_channels_get_list *rsp);
@@ -102,7 +102,8 @@ ethtool_channels_get_dump(struct ynl_sock *ys);
 struct ethtool_channels_get_ntf {
 	__u16 family;
 	__u8 cmd;
-	struct ethtool_channels_get_rsp obj;
+	void (*free)(struct ethtool_channels_get_ntf *ntf);
+	struct ethtool_channels_get_rsp obj __attribute__ ((aligned (8)));
 };
 
 void ethtool_channels_get_ntf_free(struct ethtool_channels_get_ntf *rsp);

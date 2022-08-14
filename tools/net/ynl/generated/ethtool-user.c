@@ -323,34 +323,32 @@ err_free:
 // --------------- Common notification parsing --------------- //
 struct ynl_ntf_base_type *ethtool_ntf_parse(struct ynl_sock *ys)
 {
-	struct ynl_policy_nest *rsp_policy;mnl_cb_t parse;
-	void (*free_handler)(struct ynl_ntf_base_type *);
 	struct ynl_parse_arg yarg = { .ys = ys, };
 	struct ynl_ntf_base_type *rsp;
 	struct genlmsghdr *genlh;
 	struct nlmsghdr *nlh;
+	mnl_cb_t parse;
 	int len, err;
 
 	len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
 	if (len < (ssize_t)(sizeof(*nlh) + sizeof(*genlh)))
 		return NULL;
 
-	nlh = (void *)ys->rx_buf;
+	nlh = (struct nlmsghdr *)ys->rx_buf;
 	genlh = mnl_nlmsg_get_payload(nlh);
 
 	switch (genlh->cmd) {
 	case ETHTOOL_MSG_CHANNELS_NTF:
 		rsp = calloc(1, sizeof(struct ethtool_channels_get_ntf));
 		parse = ethtool_channels_get_rsp_parse;
-		rsp_policy = &ethtool_channels_nest;
-		free_handler = (void *)ethtool_channels_get_ntf_free;
+		yarg.rsp_policy = &ethtool_channels_nest;
+		rsp->free = (void *)ethtool_channels_get_ntf_free;
 		break;
 	default:
 		return NULL;
 	}
 
 	yarg.data = rsp->data;
-	yarg.rsp_policy = rsp_policy;
 
 	err = mnl_cb_run2(ys->rx_buf, len, 0, 0, parse, &yarg,
 			 ynl_cb_array, NLMSG_MIN_TYPE);
@@ -359,7 +357,6 @@ struct ynl_ntf_base_type *ethtool_ntf_parse(struct ynl_sock *ys)
 
 	rsp->family = nlh->nlmsg_type;
 	rsp->cmd = genlh->cmd;
-	rsp->free = free_handler;
 	return rsp;
 
 err_free:

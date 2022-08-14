@@ -122,7 +122,7 @@ nlctrl_getfamily(struct ynl_sock *ys, struct nlctrl_getfamily_req *req);
 // CTRL_CMD_GETFAMILY - dump
 struct nlctrl_getfamily_list {
 	struct nlctrl_getfamily_list *next;
-	struct nlctrl_getfamily_rsp obj;
+	struct nlctrl_getfamily_rsp obj __attribute__ ((aligned (8)));
 };
 
 void nlctrl_getfamily_list_free(struct nlctrl_getfamily_list *rsp);
@@ -133,7 +133,8 @@ struct nlctrl_getfamily_list *nlctrl_getfamily_dump(struct ynl_sock *ys);
 struct nlctrl_getfamily_ntf {
 	__u16 family;
 	__u8 cmd;
-	struct nlctrl_getfamily_rsp obj;
+	void (*free)(struct nlctrl_getfamily_ntf *ntf);
+	struct nlctrl_getfamily_rsp obj __attribute__ ((aligned (8)));
 };
 
 void nlctrl_getfamily_ntf_free(struct nlctrl_getfamily_ntf *rsp);
@@ -186,7 +187,7 @@ struct nlctrl_getpolicy_rsp_dump {
 
 struct nlctrl_getpolicy_rsp_list {
 	struct nlctrl_getpolicy_rsp_list *next;
-	struct nlctrl_getpolicy_rsp_dump obj;
+	struct nlctrl_getpolicy_rsp_dump obj __attribute__ ((aligned (8)));
 };
 
 void nlctrl_getpolicy_rsp_list_free(struct nlctrl_getpolicy_rsp_list *rsp);

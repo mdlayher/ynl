@@ -1237,7 +1237,8 @@ def print_wrapped_type(ri):
     elif ri.op_mode == 'notify':
         ri.cw.p('__u16 family;')
         ri.cw.p('__u8 cmd;')
-    ri.cw.p(f"{type_name(ri, 'reply', deref=True)} obj;")
+        ri.cw.p(f"void (*free)({type_name(ri, 'reply')} *ntf);")
+    ri.cw.p(f"{type_name(ri, 'reply', deref=True)} obj __attribute__ ((aligned (8)));")
     ri.cw.block_end(line=';')
     ri.cw.nl()
     print_free_prototype(ri, 'reply')
@@ -1309,15 +1310,13 @@ def print_ntf_type_parse(family, cw, ku_mode):
                         'struct nlmsghdr *nlh;',
                         'struct ynl_parse_arg yarg = { .ys = ys, };',
                         'struct ynl_ntf_base_type *rsp;',
-                        'void (*free_handler)(struct ynl_ntf_base_type *);',
                         'int len, err;',
-                        'struct ynl_policy_nest *rsp_policy;'
                         'mnl_cb_t parse;'])
     cw.p('len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);')
     cw.p('if (len < (ssize_t)(sizeof(*nlh) + sizeof(*genlh)))')
     cw.p('return NULL;')
     cw.nl()
-    cw.p('nlh = (void *)ys->rx_buf;')
+    cw.p('nlh = (struct nlmsghdr *)ys->rx_buf;')
     cw.p('genlh = mnl_nlmsg_get_payload(nlh);')
     cw.nl()
     cw.block_start(line='switch (genlh->cmd)')
@@ -1328,15 +1327,14 @@ def print_ntf_type_parse(family, cw, ku_mode):
             cw.p(f"case {ntf.enum_name}:")
         cw.p(f"rsp = calloc(1, sizeof({type_name(ri, 'notify')}));")
         cw.p(f"parse = {op_prefix(ri, 'reply', deref=True)}_parse;")
-        cw.p(f"rsp_policy = &{ri.struct['reply'].render_name}_nest;")
-        cw.p(f"free_handler = (void *){op_prefix(ri, 'notify')}_free;")
+        cw.p(f"yarg.rsp_policy = &{ri.struct['reply'].render_name}_nest;")
+        cw.p(f"rsp->free = (void *){op_prefix(ri, 'notify')}_free;")
         cw.p('break;')
     cw.p('default:')
     cw.p('return NULL;')
     cw.block_end()
     cw.nl()
     cw.p('yarg.data = rsp->data;')
-    cw.p('yarg.rsp_policy = rsp_policy;')
     cw.nl()
     cw.p(f"err = {cw.nlib.parse_cb_run('parse', '&yarg', True)};")
     cw.p('if (err)')
@@ -1344,7 +1342,6 @@ def print_ntf_type_parse(family, cw, ku_mode):
     cw.nl()
     cw.p('rsp->family = nlh->nlmsg_type;')
     cw.p('rsp->cmd = genlh->cmd;')
-    cw.p('rsp->free = free_handler;')
     cw.p('return rsp;')
     cw.nl()
     cw.p('err_free:')
