@@ -11,13 +11,13 @@
 #include <linux/fou.h>
 
 // FOU_CMD_ADD - do
-const struct nla_policy fou_add_policy[];
+extern const struct nla_policy fou_add_policy[FOU_ATTR_IFINDEX + 1];
 
 // FOU_CMD_DEL - do
-const struct nla_policy fou_del_policy[];
+extern const struct nla_policy fou_del_policy[FOU_ATTR_IFINDEX + 1];
 
 // FOU_CMD_GET - do
-const struct nla_policy fou_get_policy[];
+extern const struct nla_policy fou_get_policy[FOU_ATTR_IFINDEX + 1];
 
 // FOU_CMD_GET - dump
 

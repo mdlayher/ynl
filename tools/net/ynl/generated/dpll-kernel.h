@@ -11,12 +11,12 @@
 #include <linux/dpll.h>
 
 // DPLL_CMD_DEVICE_GET - do
-const struct nla_policy dpll_device_get_policy[];
+extern const struct nla_policy dpll_device_get_policy[DPLLA_FLAGS + 1];
 
 // DPLL_CMD_SET_SOURCE_TYPE - do
-const struct nla_policy dpll_set_source_type_policy[];
+extern const struct nla_policy dpll_set_source_type_policy[DPLLA_SOURCE_TYPE + 1];
 
 // DPLL_CMD_SET_OUTPUT_TYPE - do
-const struct nla_policy dpll_set_output_type_policy[];
+extern const struct nla_policy dpll_set_output_type_policy[DPLLA_OUTPUT_TYPE + 1];
 
 #endif /* _LINUX_DPLL_GEN_H */

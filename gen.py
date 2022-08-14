@@ -26,6 +26,7 @@ class Type:
     def __init__(self, family, attr_set, attr):
         self.family = family
         self.attr = attr
+        self.value = attr['value']
         self.name = attr['name'].replace('-', '_')
         self.type = attr['type']
 
@@ -403,7 +404,13 @@ class Struct:
         else:
             for t in self.attr_set:
                 self.attr_list.append((t, self.attr_set[t]),)
+
+        max_val = 0
+        self.attr_max_val = None
         for name, attr in self.attr_list:
+            if attr.value > max_val:
+                max_val = attr.value
+                self.attr_max_val = attr
             self.attrs[name] = attr
 
     def __iter__(self):
@@ -441,7 +448,14 @@ class AttrSet:
         if self.c_name in c_kw:
             self.c_name += '_'
 
+        val = 0
         for elem in self.yaml['attributes']:
+            if 'value' in elem:
+                val = elem['value']
+            else:
+                elem['value'] = val
+            val += 1
+
             if elem['type'] in scalars:
                 attr = TypeScalar(family, self, elem)
             elif elem['type'] == 'unused':
@@ -1336,8 +1350,10 @@ def print_ntf_type_parse(family, cw, ku_mode):
 
 
 def print_req_policy_fwd(ri, terminate=True):
+    prefix = 'extern ' if terminate else ''
     suffix = ';' if terminate else ' = {'
-    ri.cw.p(f"const struct nla_policy {ri.op.render_name}_policy[]{suffix}")
+    max_attr = ri.struct['request'].attr_max_val
+    ri.cw.p(f"{prefix}const struct nla_policy {ri.op.render_name}_policy[{max_attr.enum_name} + 1]{suffix}")
 
 
 def print_req_policy(ri):

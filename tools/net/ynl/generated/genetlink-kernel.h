@@ -11,7 +11,7 @@
 #include <linux/genetlink.h>
 
 // CTRL_CMD_GETFAMILY - do
-const struct nla_policy nlctrl_getfamily_policy[];
+extern const struct nla_policy nlctrl_getfamily_policy[CTRL_ATTR_FAMILY_NAME + 1];
 
 // CTRL_CMD_GETFAMILY - dump
 // CTRL_CMD_GETFAMILY - notify
