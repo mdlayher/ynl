@@ -141,6 +141,9 @@ properties:
     required: [ list ]
     additionalProperties: False
     properties:
+      enum-model:
+        description: |
+        enum
       name-prefix:
         description: |
           Prefix for the C enum name of the command. The name is formed by concatenating

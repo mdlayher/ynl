@@ -121,6 +121,7 @@ attribute-sets:
         sub-type: u32
 
 operations:
+  enum-model: split
   name-enum: genl_cmd
   async-prefix: DPLL_EVENT_
   async-enum: genl_event

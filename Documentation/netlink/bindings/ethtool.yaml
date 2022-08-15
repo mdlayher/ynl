@@ -60,6 +60,7 @@ headers:
   uapi: linux/ethtool_netlink.h
 
 operations:
+  enum-model: directional
   name-prefix: ethtool-msg-
   async-prefix: ethtool-msg-
   list:
