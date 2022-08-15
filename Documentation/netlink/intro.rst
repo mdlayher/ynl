@@ -12,4 +12,12 @@ extended the attributes/members.
 To achieve this Netlink uses a minimal fixed-format metadata header
 which followed by TLV (type, length, value) structures.
 
-Unfortunatelly the protocol has evolved over the 
+Unfortunately the protocol has evolved over the years, in an organic
+and undocumented fashion making it hard to coherently explain.
+To make the most practical sense this document starts by describing
+netlink as it is used today and dives into more "historical" uses
+in later sections.
+
+Generic Netlink
+===============
+
