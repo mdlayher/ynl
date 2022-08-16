@@ -208,7 +208,6 @@ class YnlAttrSpace:
 
         self.attrs = dict()
         self.name = self.yaml['name']
-        self.name_prefix = self.yaml['name-prefix']
         self.subspace_of = self.yaml['subset-of'] if 'subspace-of' in self.yaml else None
 
         val = 0
@@ -273,8 +272,10 @@ class YnlFamily:
 
             self._ops[elem['name']] = elem
 
+            op_name = elem['name'].replace('-', '_')
+
             bound_f = functools.partial(self._op, elem['name'])
-            setattr(self, elem['name'], bound_f)
+            setattr(self, op_name, bound_f)
 
         self.family = GenlFamily(self.yaml['name'])
 

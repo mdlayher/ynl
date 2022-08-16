@@ -17,9 +17,9 @@ def main():
     ynl = YnlFamily(args.spec, args.schema)
 
     if args.dev_name:
-        channels = ynl.channels_get({'header': {'dev_name': args.dev_name}})
+        channels = ynl.channels_get({'header': {'dev-name': args.dev_name}})
     elif args.ifindex:
-        channels = ynl.channels_get({'header': {'dev_index': args.ifindex}})
+        channels = ynl.channels_get({'header': {'dev-index': args.ifindex}})
     else:
         return
     print('Netlink responded with:')
