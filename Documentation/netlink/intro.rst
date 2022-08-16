@@ -22,7 +22,9 @@ Opening a socket
 ================
 
 Netlink communication happens over sockets, a socket needs to be
-opened first::
+opened first:
+
+.. code-block:: c
 
   fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_GENERIC);
 
@@ -51,7 +53,9 @@ message always starts with struct nlmsghdr, which is followed by
 a protocol-specific header. In case of Generic Netlink that header
 is struct genlmsghdr.
 
-The practical meaning of the fields is as follows::
+The practical meaning of the fields is as follows:
+
+.. code-block:: c
 
   struct nlmsghdr {
 	__u32	nlmsg_len;	/* Length of message including header */
@@ -72,11 +76,11 @@ which operation within the sybsystem the message was referring to
 (e.g. get information about a netdev). Generic Netlink needs to mux
 multiple subsystems in a single protocol so it uses this field to
 identify the subsystem, and :c:member:`genlmsghdr.cmd` identifies
-the operation instead. (See `ref:Resolving the Family ID` for
+the operation instead. (See :ref:`res_fam` for
 information on how to find the Family ID of the subsystem of interest.)
 Note that the first 16 values (0-15) of this field are reserved for
 general protocol messaging both in Classic Netlink and Generic Netlink.
-See `ref:Netlink message types` for more details.
+See :ref:`nl_msg_type` for more details.
 
 There are 3 usual types of message exchanges on a Netlink socket:
  - performing a single action (``do`` in Generic Netlink);
@@ -91,6 +95,7 @@ Asynchronous notifications are sent by the kernel and received by
 the user sockets which subscribed to them. ``do`` and ``dump`` requests
 are initiated by the user. :c:member:`nlmsghdr.nlmsg_flags` should
 be set as follows:
+
  - ``do`` - ``NLM_F_REQUEST | NLM_F_ACK``
  - ``dump`` - ``NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP``
 
@@ -101,12 +106,14 @@ message sent is considered good hygiene.
 
 :c:member:`nlmsghdr.nlmsg_pid` is the Netlink equivalent of an address.
 Kernel has the address of ``0`` hence this field should be set to ``0``.
-See `ref:nlmsg_pid` for a historical sidebar.
+See :ref:`nlmsg_pid` for a historical sidebar.
 
 The expected use for :c:member:`genlmsghdr.version` was to allow
 versioning of the APIs provided by the subsystems. No subsystem to
 date made significant use of this field, so setting it to ``1`` seems
 like a safe bet.
+
+.. _nl_msg_type:
 
 Netlink message types
 ---------------------
@@ -153,7 +160,7 @@ is indicated by ``NLM_F_CAPPED`` being set in
 :c:member:`nlmsghdr.nlmsg_flags`.
 
 The second optional element of ``NLMSG_ERROR`` are the extended ACK
-attributes. See `ref:Extended ACK` for more details. The presence
+attributes. See :ref:`ext_ack` for more details. The presence
 of extended ACK is indicated by ``NLM_F_ACK_TLVS`` being set in
 :c:member:`nlmsghdr.nlmsg_flags`.
 
@@ -166,6 +173,8 @@ of extended ACK is indicated by ``NLM_F_ACK_TLVS`` being set in
   ----------------------------------------------
   | ** optionally extended ACK                 |
   ----------------------------------------------
+
+.. _res_fam:
 
 Resolving the Family ID
 -----------------------
@@ -264,6 +273,8 @@ If the family is found kernel will reply with two messages::
 
 The order of attributes (struct nlattr) is not guaranteed.
 
+.. _ext_ack:
+
 Extended ACK
 ------------
 
@@ -288,6 +299,8 @@ The latter should be treated as a warning.
 Extended ACKs greatly improve the usability of Netlink and should
 always be enabled, appropriately parsed and reported to the user.
 
+.. _nlmsg_pid:
+
 nlmsg_pid
 ---------
 
@@ -303,6 +316,9 @@ The kernel can now reach the user space process.
 This sort of communication is utilized in UMH (user mode helper)-like
 scenarios when kernel needs to consult user space logic or ask user
 space for a policy decision.
+
+Kernel will use the process ID for the field when responding to a request
+sent from an unbound socket.
 
 Classic Netlink
 ===============
