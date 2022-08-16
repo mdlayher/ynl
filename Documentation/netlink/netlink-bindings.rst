@@ -47,9 +47,11 @@ property. The properties of an attribute should look fairly familiar to anyone w
 wrote netlink code (``name``, ``type``, optional validation constraints like ``len`` and
 reference to the internal space for nests).
 
-Note that attribute spaces do not themselves nest, nested attributes refer to their internal
-space via a ``nested-attributes`` property, so the YAML spec does not resemble the format
-of the netlink messages directly.
+Note that the YAML spec is "flattened" and is not meant to visually resemble
+the format of the netlink messages (unlike certain ad-hoc documentation
+formats seen in kernel comments). In the YAML spec subordinate attribute sets
+are not defined inline as a nest, but defined in a separate attribute set
+referred to with a ``nested-attributes`` property of the container.
 
 YAML spec may also contain fractional spaces - spaces which contain a ``subset-of``
 property. Such spaces describe a section of a full space, allowing narrowing down which

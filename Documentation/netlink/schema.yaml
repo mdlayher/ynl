@@ -97,7 +97,7 @@ properties:
         subset-of:
           description: |
             Name of another space which this is a logical part of. Sub-spaces can be used to define
-            a limitted group of attributes which are used in a nest.
+            a limited group of attributes which are used in a nest.
           type: string
         attributes:
           description: List of attributes in the space.
@@ -130,7 +130,7 @@ properties:
                 description: Name of the space (sub-space) used inside the attribute.
                 type: string
               enum:
-                description: Name of the enum used for the atttribute.
+                description: Name of the enum type used for the atttribute.
                 type: string
               flags-mask:
                 description: Name of the flags constant on which to base mask (unsigned scalar types only).
