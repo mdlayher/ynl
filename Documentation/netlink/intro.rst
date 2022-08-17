@@ -154,7 +154,7 @@ message sent is considered good hygiene. The purpose of the field is
 matching responses to requests.
 
 :c:member:`nlmsghdr.nlmsg_pid` is the Netlink equivalent of an address.
-Kernel has the address of ``0`` hence this field should be set to ``0``.
+This field can be set to ``0`` when talking to the kernel.
 See :ref:`nlmsg_pid` for the (uncommon) uses of the field.
 
 The expected use for :c:member:`genlmsghdr.version` was to allow
@@ -360,6 +360,28 @@ The latter should be treated as a warning.
 Extended ACKs greatly improve the usability of Netlink and should
 always be enabled, appropriately parsed and reported to the user.
 
+Dump consistency
+----------------
+
+Some of the data structures kernel uses for storing objects make it
+hard to provide an atomic snapshot of all the objects (without
+impacting the fast-paths updating them).
+
+The ``NLM_F_DUMP_INTR`` flag may be set on any message in the dump
+or the ``NLMSG_DONE`` message if the dump was interrupted and may
+be inconsistent (e.g. missing objects). User space should retry
+the dump if it sees that flag.
+
+Introspection
+-------------
+
+The basic instrospection can be seen in :ref:`_res_fam` already.
+User space can query information about the Generic Netlink family,
+including which operations are supported and what attributes
+the kernel understands. This is useful in rare cases when user
+space needs to make sure that the kernel has support for a feature
+before issuing a request.
+
 .. _nlmsg_pid:
 
 nlmsg_pid
@@ -368,23 +390,127 @@ nlmsg_pid
 :c:member:`nlmsghdr.nlmsg_pid` is called PID because the protocol predates
 wide spread use of multi-threading and the initial recommendation was
 to use process IDs in this field. Process IDs start from 1 hence the use
-of ``0`` to mean kernel. The field is still used today in rare cases
-when kernel needs to send a unicast notification. User space application
-can use bind() to associate its socket with a specific PID (similarly
-to binding to a UDP port), it then communicates its PID to the kernel.
+of ``0`` to mean "allocate automatically".
+
+The field is still used today in rare cases when kernel needs to send
+a unicast notification. User space application can use bind() to associate
+its socket with a specific PID (similarly to binding to a UDP port),
+it then communicates its PID to the kernel.
 The kernel can now reach the user space process.
 
 This sort of communication is utilized in UMH (user mode helper)-like
 scenarios when kernel needs to consult user space logic or ask user
 space for a policy decision.
 
-Kernel will use the process ID for the field when responding to a request
-sent from an unbound socket.
+Kernel will automatically fill the field with process ID when responding
+to a request sent from an unbound socket.
 
 Classic Netlink
 ===============
 
-TODO
+The main differences between Classic and Generic Netlink are the dynamic
+allocation of subsystem identifiers and availability of introspection.
+In theory the protocol does not differ significantly, however, in practice
+Classic Netlink experimented with concepts which were abandoned in Generic
+Netlink (really, they usually only found use in a single subsystem or
+a subsection of a subsystem). This section is meant as an explainer of
+a few of such concepts, with the explicit goal of giving the Generic Netlink
+users the confidence to ignore them when they inevitably run into such
+concepts reading the uAPI headers.
+
+Most of the concepts and examples here refer to the ``NETLINK_ROUTE`` family,
+which covers much of the configuration of the Linux networking stack.
+Real documentation of that family, however, deserves a chapter (or a book)
+of its own.
+
+Families
+--------
+
+Netlink refers to subsystems as families. This is a remnant of its networking
+roots and the concept of protocol families, which are part of message
+demultiplexing in ``NETLINK_ROUTE``.
+
+Sadly every layer of encapsulation likes to refer to whatever it's carrying
+as a "family":
+
+ 1. AF_NETLINK is a bona fide protocol family
+ 2. AF_NETLINK's documentation refers to what comes after its own
+    struct nlmsghdr as a "Family Header"
+ 3. Generic Netlink with its struct genlmsghdr is a Family for AF_NETLINK,
+    but it also calls it's distinct sub-protocols "Families".
+
+Note that the Generic Netlink Family IDs are in a different "ID space" and
+overlap with Classic Netlink protocol numbers (e.g. ``NETLINK_ROUTE``,
+``NETLINK_GENERIC``).
+
+Strict checking
+---------------
+
+The ``NETLINK_GET_STRICT_CHK`` socket option enables strict input checking
+in ``NETLINK_ROUTE``. It was needed because historically kernel did not
+validate the fields of structures it didn't process. This made it impossible
+to start using them later without causing regressions for applications which
+initialized them incorrectly or not at all.
+
+``NETLINK_GET_STRICT_CHK`` declares that the application is initializing
+all fields correctly. It also opts in validating that message does not
+contain trailing data and requests that kernel rejects attributes with
+type higher than largest attribute type known to the kernel.
+
+Unknown attributes
+------------------
+
+Historically Netlink ignored all unknown attributes. The thinking was that
+it would free the application from having to check what kernel supports.
+The application could make a request to change kernel state and check which
+parts of the request "stuck".
+
+This is no longer the case for new Generic Netlink families and those opting
+in to strict checking. See enum netlink_validation for validation types
+performed.
+
+Fixed metadata and fixed structure
+----------------------------------
+
+Classic Netlink made liberal use of fixed-format structures within
+the messages. Messages would commonly have a structure with
+a considerable number of fields after struct nlmsghdr. It was also
+common to put structures with multiple members inside attributes,
+without breaking each member into an attribute of its own.
+
+Request types
+-------------
+
+``NETLINK_ROUTE`` categorized requests into 4 types ``NEW``, ``DEL``, ``GET``,
+and ``SET``. Each object can handle all or some of those requests
+(objects being netdevs, routes, addresses, qdiscs etc.) Request type
+is defined by the 2 lowest bits of the message type, so commands for
+new objects would always be allocated in with a stride of 4.
+
+Each object would also have it's own fixed metadata shared by all request
+types (e.g. struct ifinfomsg for netdev requests, struct ifaddrmsg for address
+requests, struct tcmsg for qdisc requests).
+
+Even though other protocols and Generic Netlink commands often use
+the same verbs in their names (``GET``, ``SET``) the concept of request
+types did not find much wider adoption.
+
+Message flags
+-------------
+
+The earlier section has already covered the basic request flags
+(``NLM_F_REQUEST``, ``NLM_F_ACK``, ``NLM_F_DUMP``) and the Ack flags
+(``NLM_F_CAPPED``, ``NLM_F_ACK_TLVS``). Dump flags was also mentioned
+(``NLM_F_MULTI``, ``NLM_F_DUMP_INTR``).
+
+Those are the main flags of note, with a small exception (of ``ieee802154``)
+Generic Netlink does not make use of other flags. If the protocol needs
+to communicate special requirements for a request it should use
+an attribute, not try to define flags in struct nlmsghdr.
+
+Classic Netlink defined various flags for its ``GET``, ``NEW`` and ``DEL``
+requests, but since request types have not been generalized neither should
+the flags be.
 
 uAPI reference
 ==============
