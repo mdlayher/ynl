@@ -130,9 +130,10 @@ general protocol messaging both in Classic Netlink and Generic Netlink.
 See :ref:`nl_msg_type` for more details.
 
 There are 3 usual types of message exchanges on a Netlink socket:
- - performing a single action (``do`` in Generic Netlink);
- - dumping information (``dump`` in Generic Netlink);
- - getting asynchronous notifications (``multicast`` in Generic Netlink).
+
+ - performing a single action (``do``);
+ - dumping information (``dump``);
+ - getting asynchronous notifications (``multicast``).
 
 Classic Netlink is very flexible and presumably allows other types
 of exchanges to happen, but in practice those are the three that get
@@ -172,6 +173,7 @@ protocol specific values but the first 16 identifiers are reserved
 ``NLMSG_MIN_TYPE`` which is ``0x10``).
 
 The low-level Netlink protocol messages are:
+
  - ``NLMSG_NOOP`` - ignore the message, not used in practice;
  - ``NLMSG_ERROR`` - carries the return code of an operation;
  - ``NLMSG_DONE`` - marks the end of a dump;
