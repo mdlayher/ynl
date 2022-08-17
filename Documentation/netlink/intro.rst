@@ -5,15 +5,15 @@ Introduction to Netlink
 =======================
 
 Netlink is often described as a ioctl() replacement mechanism.
-The basic idea is to replace fixed-format C structures as supplied
-to ioctl() with a format which allows an easy way to added or
+It aims to replace fixed-format C structures as supplied
+to ioctl() with a format which allows an easy way to add or
 extended the attributes/members.
 
 To achieve this Netlink uses a minimal fixed-format metadata header
 which followed by TLV (type, length, value) structures.
 
 Unfortunately the protocol has evolved over the years, in an organic
-and undocumented fashion making it hard to coherently explain.
+and undocumented fashion, making it hard to coherently explain.
 To make the most practical sense this document starts by describing
 netlink as it is used today and dives into more "historical" uses
 in later sections.
@@ -28,44 +28,91 @@ opened first:
 
   fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_GENERIC);
 
-Not much to be said about the first two arguments, the last argument
-is the Netlink protocol, which used to identify the subsystem with
-which the socket will communicate.
+The use of sockets allows for a natural way to communicate information
+in both directions (to and from the kernel). The operations are still
+performed synchronously when applications send() the request but
+a separate recv() system call is needed to read the reply.
+
+A very simplified flow of a Netlink "call" will therefore look
+something like:
+
+.. code-block:: c
+
+  fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_GENERIC);
+
+  /* format the request */
+  send(fd, &request, sizeof(request));
+  n = recv(fd, &response, RSP_BUFFER_SIZE);
+  /* interpret the response */
+
+Netlink also provides natural support for "dumping", i.e. communicating
+to user space all objects of a certain type (e.g. all network interfaces).
+
+.. code-block:: c
+
+  fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_GENERIC);
+
+  /* format the dump request */
+  send(fd, &request, sizeof(request));
+  while (1) {
+    n = recv(fd, &buffer, RSP_BUFFER_SIZE);
+    /* one recv() call can read multiple messages, hence the loop below */
+    for (nl_msg in buffer) {
+      if (response.nlmsg_type == NLMSG_DONE)
+        goto dump_finished;
+      /* process the object */
+    }
+  }
+  dump_finished:
+
+The first two arguments of the socket() call require little explanation -
+it is allocating a Netlink socket, with no headers inserting by the kernel
+(hence RAW). The last argument is the protocol within Netlink. This field
+used to identify the subsystem with which the socket will communicate.
+
+Classic vs Generic Netlink
+==========================
 
 Initial implementation of Netlink depended on a static allocation
 of IDs to subsystems and provided little supporting infrastructure.
-Let us refer to those protocols collectively as Classic Netlink.
-Generic Netlink (introduced in 2005) allows dynamic ID allocation,
+Let us refer to those protocols collectively as **Classic Netlink**.
+The list of them is defined on top of the ``include/uapi/linux/netlink.h``
+file, they include - general networking (NETLINK_ROUTE), iSCSI
+(NETLINK_ISCSI), audit (NETLINK_AUDIT) etc.
+
+**Generic Netlink** (introduced in 2005) allows dynamic ID allocation,
 introspection and simplifies dealing with Netlink on the kernel side.
 
 The following section describes how to use Generic Netlink, as the
 number of subsystems using Generic Netlink outnumbers the older
 protocols by an order of magnitude. Information on how to communicate
 with core networking parts of the Linux kernel (or one of the other
-20-something subsystems using Classic Netlink listed at the top of
-``include/uapi/linux/netlink.h``) is provided later in this document.
+20-ish subsystems using Classic Netlink) is provided later in this document.
 
 Generic Netlink
 ===============
 
-Netlink protocols define their own fixed metadata headers. A Netlink
-message always starts with struct nlmsghdr, which is followed by
-a protocol-specific header. In case of Generic Netlink that header
+In addition to the general Netlink fixed metadata header each Netlink
+protocol defines its own fixed metadata header. (Similarly to how network
+headers stack - Ethernet/IP/TCP etc.)
+
+A Netlink message always starts with struct nlmsghdr, which is followed
+by a protocol-specific header. In case of Generic Netlink that header
 is struct genlmsghdr.
 
-The practical meaning of the fields is as follows:
+The practical meaning of the fields in case of Generic Netlink is as follows:
 
 .. code-block:: c
 
   struct nlmsghdr {
-	__u32	nlmsg_len;	/* Length of message including header */
-	__u16	nlmsg_type;	/* Family ID */
-	__u16	nlmsg_flags;	/* Request or dump */
+	__u32	nlmsg_len;	/* Length of message including headers */
+	__u16	nlmsg_type;	/* Generic Netlink Family (subsystem) ID */
+	__u16	nlmsg_flags;	/* Flags - request or dump */
 	__u32	nlmsg_seq;	/* Sequence number */
 	__u32	nlmsg_pid;	/* Endpoint ID, set to 0 */
   };
   struct genlmsghdr {
-	__u8	cmd;		/* Command, as defined by family */
+	__u8	cmd;		/* Command, as defined by the Family */
 	__u8	version;	/* Irrelevant, set to 1 */
 	__u16	reserved;	/* Reserved, set to 0 */
   };
@@ -102,11 +149,12 @@ be set as follows:
 :c:member:`nlmsghdr.nlmsg_seq` should be a set to a monotonically
 increasing value. The value gets echoed back in responses and doesn't
 matter in practice, but setting it to an increasing value for each
-message sent is considered good hygiene.
+message sent is considered good hygiene. The purpose of the field is
+matching responses to requests.
 
 :c:member:`nlmsghdr.nlmsg_pid` is the Netlink equivalent of an address.
 Kernel has the address of ``0`` hence this field should be set to ``0``.
-See :ref:`nlmsg_pid` for a historical sidebar.
+See :ref:`nlmsg_pid` for the (uncommon) uses of the field.
 
 The expected use for :c:member:`genlmsghdr.version` was to allow
 versioning of the APIs provided by the subsystems. No subsystem to
@@ -132,7 +180,7 @@ The low-level Netlink protocol messages are:
 ``NLMSG_ERROR`` and ``NLMSG_DONE`` are of practical importance.
 They carry return codes for an operations. Note that unless
 the ``NLM_F_ACK`` flag is set Netlink will not report success,
-only errors (read: you should always set ``NLM_F_ACK``).
+only errors (for simplicity you should always set ``NLM_F_ACK``).
 
 The format of ``NLMSG_ERROR`` is described by struct nlmsgerr::
 
@@ -143,14 +191,16 @@ The format of ``NLMSG_ERROR`` is described by struct nlmsgerr::
   ----------------------------------------------
   | struct nlmsghdr - originial request header |
   ----------------------------------------------
-  | ** optionally payload of the request       |
+  | ** optionally (1) payload of the request   |
   ----------------------------------------------
-  | ** optionally extended ACK                 |
+  | ** optionally (2) extended ACK             |
   ----------------------------------------------
 
-``NLMSG_ERROR`` carries the information about the request which led
-to the error. This should be useful when trying to match requests
-to responses or re-parse the request to dump in an error logs.
+There are two instances of struct nlmsghdr here, first of the response
+and second of teh request. ``NLMSG_ERROR`` carries the information about
+the request which led to the error. This could be useful when trying
+to match requests to responses or re-parse the request to dump in an
+error logs.
 
 The request is not echoed in messages reporting success (``error == 0``)
 or if ``NETLINK_CAP_ACK`` setsockopt() was set. The latter is common
@@ -164,7 +214,8 @@ attributes. See :ref:`ext_ack` for more details. The presence
 of extended ACK is indicated by ``NLM_F_ACK_TLVS`` being set in
 :c:member:`nlmsghdr.nlmsg_flags`.
 
-``NLMSG_DONE`` is simpler, the request is not echoed::
+``NLMSG_DONE`` is simpler, the request is never echoed but the extended
+ACK attributes may be present::
 
   ----------------------------------------------
   | struct nlmsghdr - response header          |
@@ -180,31 +231,35 @@ Resolving the Family ID
 -----------------------
 
 This sections explains how to find the Family ID of a subsystem.
-It also serves as a general example of Netlink communication.
+It also serves as an example of Generic Netlink communication.
 
-Generic Netlink is itself a subsystem available the Generic Netlink API.
+Generic Netlink is itself a subsystem exposed via the Generic Netlink API.
 To avoid a circular dependency Generic Netlink has a statically allocated
 Family ID (``GENL_ID_CTRL``). The Generic Netlink family implements
 a command used to find out information about other families
 (``CTRL_CMD_GETFAMILY``).
 
-To get information about the Generic Netlink family called "test1"
-we need to send the following message on the previously opened Generic
-Netlink socket::
+To get information about the Generic Netlink family called for example
+"test1" we need to send a message on the previously opened Generic Netlink
+socket. The message should target the Generic Netlink Family (1), be a
+``do`` (2) call to ``CTRL_CMD_GETFAMILY`` (3). A ``dump`` version of this
+call will make the kernel respond with information about all the families
+it knows about. Last but not least the name of the family in question has
+to be specified (4)::
 
   struct nlmsghdr:
     __u32 nlmsg_len:	32
-    __u16 nlmsg_type:	GENL_ID_CTRL
-    __u16 nlmsg_flags:	NLM_F_REQUEST | NLM_F_ACK
+    __u16 nlmsg_type:	GENL_ID_CTRL               // (1)
+    __u16 nlmsg_flags:	NLM_F_REQUEST | NLM_F_ACK  // (2)
     __u32 nlmsg_seq:	1
     __u32 nlmsg_pid:	0
 
   struct genlmsghdr:
-    __u8 cmd:		CTRL_CMD_GETFAMILY
+    __u8 cmd:		CTRL_CMD_GETFAMILY         // (3)
     __u8 version:	2 /* or 1, doesn't matter */
     __u16 reserved:	0
 
-  struct nlattr:
+  struct nlattr:                                   // (4)
     __u16 nla_len:	10
     __u16 nla_type:	CTRL_ATTR_FAMILY_NAME
     char data: 		test1\0
@@ -215,9 +270,10 @@ Netlink socket::
 Note that length fields in Netlink (:c:member:`nlmsghdr.nlmsg_len`
 and :c:member:`nlattr.nla_len`) always include the header.
 Headers in netlink must be aligned to 4 bytes, hence the extra ``\0\0``
-at the end of the message. The attribute lengths exclude padding.
+at the end of the message. The attribute lengths exclude the padding.
 
-If the family is found kernel will reply with two messages::
+If the family is found kernel will reply with two messages, the response
+with all the information about the family::
 
   /* Message #1 - reply */
   struct nlmsghdr:
@@ -252,7 +308,10 @@ If the family is found kernel will reply with two messages::
     __u16 nla_len:	9
     __u16 nla_type:	CTRL_ATTR_FAMILY_VERSION
     __u16: 		1
+
   /* ... etc, more attributes will follow. */
+
+And the error code (success)::
 
   /* Message #2 - the ACK */
   struct nlmsghdr:
@@ -271,7 +330,7 @@ If the family is found kernel will reply with two messages::
     __u32 nlmsg_seq:	1
     __u32 nlmsg_pid:	0
 
-The order of attributes (struct nlattr) is not guaranteed.
+Note that the order of attributes (struct nlattr) is not guaranteed.
 
 .. _ext_ack:
 
@@ -324,3 +383,8 @@ Classic Netlink
 ===============
 
 TODO
+
+uAPI reference
+==============
+
+.. kernel-doc:: include/uapi/linux/netlink.h
