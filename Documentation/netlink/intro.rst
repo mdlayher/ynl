@@ -4,13 +4,13 @@
 Introduction to Netlink
 =======================
 
-Netlink is often described as a ioctl() replacement mechanism.
+Netlink is often described as an ioctl() replacement.
 It aims to replace fixed-format C structures as supplied
-to ioctl() with a format which allows an easy way to add or
-extended the attributes/members.
+to ioctl() with a format which allows an easy way to add
+or extended the arguments.
 
 To achieve this Netlink uses a minimal fixed-format metadata header
-which followed by TLV (type, length, value) structures.
+followed by multiple attributes in the TLV (type, length, value) format.
 
 Unfortunately the protocol has evolved over the years, in an organic
 and undocumented fashion, making it hard to coherently explain.
@@ -28,7 +28,7 @@ opened first:
 
   fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_GENERIC);
 
-The use of sockets allows for a natural way to communicate information
+The use of sockets allows for a natural way of exchanging information
 in both directions (to and from the kernel). The operations are still
 performed synchronously when applications send() the request but
 a separate recv() system call is needed to read the reply.
@@ -46,7 +46,8 @@ something like:
   /* interpret the response */
 
 Netlink also provides natural support for "dumping", i.e. communicating
-to user space all objects of a certain type (e.g. all network interfaces).
+to user space all objects of a certain type (e.g. dumping all network
+interfaces).
 
 .. code-block:: c
 
@@ -58,7 +59,7 @@ to user space all objects of a certain type (e.g. all network interfaces).
     n = recv(fd, &buffer, RSP_BUFFER_SIZE);
     /* one recv() call can read multiple messages, hence the loop below */
     for (nl_msg in buffer) {
-      if (response.nlmsg_type == NLMSG_DONE)
+      if (nl_msg.nlmsg_type == NLMSG_DONE)
         goto dump_finished;
       /* process the object */
     }
@@ -66,39 +67,43 @@ to user space all objects of a certain type (e.g. all network interfaces).
   dump_finished:
 
 The first two arguments of the socket() call require little explanation -
-it is allocating a Netlink socket, with no headers inserting by the kernel
-(hence RAW). The last argument is the protocol within Netlink. This field
-used to identify the subsystem with which the socket will communicate.
+it is opening a Netlink socket, with all headers provided by the user
+(hence NETLINK, RAW). The last argument is the protocol within Netlink.
+This field used to identify the subsystem with which the socket will
+communicate.
 
 Classic vs Generic Netlink
-==========================
+--------------------------
 
 Initial implementation of Netlink depended on a static allocation
 of IDs to subsystems and provided little supporting infrastructure.
 Let us refer to those protocols collectively as **Classic Netlink**.
 The list of them is defined on top of the ``include/uapi/linux/netlink.h``
-file, they include - general networking (NETLINK_ROUTE), iSCSI
-(NETLINK_ISCSI), audit (NETLINK_AUDIT) etc.
+file, they include among others - general networking (NETLINK_ROUTE),
+iSCSI (NETLINK_ISCSI), and audit (NETLINK_AUDIT).
 
-**Generic Netlink** (introduced in 2005) allows dynamic ID allocation,
-introspection and simplifies dealing with Netlink on the kernel side.
+**Generic Netlink** (introduced in 2005) allows for dynamic registration of
+subsystems (and subsystem ID allocation), introspection and simplifies
+implementing the kernel side of the interface.
 
 The following section describes how to use Generic Netlink, as the
 number of subsystems using Generic Netlink outnumbers the older
-protocols by an order of magnitude. Information on how to communicate
-with core networking parts of the Linux kernel (or one of the other
-20-ish subsystems using Classic Netlink) is provided later in this document.
+protocols by an order of magnitude. There are also no plans for adding
+more Classic Netlink protocols to the kernel.
+Basic information on how communicating with core networking parts of
+the Linux kernel (or another of the 20 subsystems using Classic
+Netlink) differs from Generic Netlink is provided later in this document.
 
 Generic Netlink
 ===============
 
-In addition to the general Netlink fixed metadata header each Netlink
-protocol defines its own fixed metadata header. (Similarly to how network
-headers stack - Ethernet/IP/TCP etc.)
+In addition to the Netlink fixed metadata header each Netlink protocol
+defines its own fixed metadata header. (Similarly to how network
+headers stack - Ethernet > IP > TCP we have Netlink > Generic N. > Family.)
 
 A Netlink message always starts with struct nlmsghdr, which is followed
-by a protocol-specific header. In case of Generic Netlink that header
-is struct genlmsghdr.
+by a protocol-specific header. In case of Generic Netlink the protocol
+header is struct genlmsghdr.
 
 The practical meaning of the fields in case of Generic Netlink is as follows:
 
@@ -119,14 +124,14 @@ The practical meaning of the fields in case of Generic Netlink is as follows:
   /* TLV attributes follow... */
 
 In Classic Netlink :c:member:`nlmsghdr.nlmsg_type` used to identify
-which operation within the sybsystem the message was referring to
+which operation within the subsystem the message was referring to
 (e.g. get information about a netdev). Generic Netlink needs to mux
 multiple subsystems in a single protocol so it uses this field to
 identify the subsystem, and :c:member:`genlmsghdr.cmd` identifies
 the operation instead. (See :ref:`res_fam` for
 information on how to find the Family ID of the subsystem of interest.)
-Note that the first 16 values (0-15) of this field are reserved for
-general protocol messaging both in Classic Netlink and Generic Netlink.
+Note that the first 16 values (0 - 15) of this field are reserved for
+control messages both in Classic Netlink and Generic Netlink.
 See :ref:`nl_msg_type` for more details.
 
 There are 3 usual types of message exchanges on a Netlink socket:
@@ -144,14 +149,15 @@ the user sockets which subscribed to them. ``do`` and ``dump`` requests
 are initiated by the user. :c:member:`nlmsghdr.nlmsg_flags` should
 be set as follows:
 
- - ``do`` - ``NLM_F_REQUEST | NLM_F_ACK``
- - ``dump`` - ``NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP``
+ - for ``do``: ``NLM_F_REQUEST | NLM_F_ACK``
+ - for ``dump``: ``NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP``
 
 :c:member:`nlmsghdr.nlmsg_seq` should be a set to a monotonically
 increasing value. The value gets echoed back in responses and doesn't
 matter in practice, but setting it to an increasing value for each
 message sent is considered good hygiene. The purpose of the field is
-matching responses to requests.
+matching responses to requests. Asynchronous notifications will have
+:c:member:`nlmsghdr.nlmsg_seq` of ``0``.
 
 :c:member:`nlmsghdr.nlmsg_pid` is the Netlink equivalent of an address.
 This field can be set to ``0`` when talking to the kernel.
@@ -172,7 +178,7 @@ protocol specific values but the first 16 identifiers are reserved
 (first subsystem specific message type should be equal to
 ``NLMSG_MIN_TYPE`` which is ``0x10``).
 
-The low-level Netlink protocol messages are:
+There are only 4 Netlink control messages defined:
 
  - ``NLMSG_NOOP`` - ignore the message, not used in practice;
  - ``NLMSG_ERROR`` - carries the return code of an operation;
@@ -180,9 +186,10 @@ The low-level Netlink protocol messages are:
  - ``NLMSG_OVERRUN`` - socket buffer has overflown.
 
 ``NLMSG_ERROR`` and ``NLMSG_DONE`` are of practical importance.
-They carry return codes for an operations. Note that unless
-the ``NLM_F_ACK`` flag is set Netlink will not report success,
-only errors (for simplicity you should always set ``NLM_F_ACK``).
+They carry return codes for operations. Note that unless
+the ``NLM_F_ACK`` flag is set on the request Netlink will not respond
+with ``NLMSG_ERROR`` if there is no error. To avoid having to special-case
+this quirk it is recommended to always set ``NLM_F_ACK``.
 
 The format of ``NLMSG_ERROR`` is described by struct nlmsgerr::
 
@@ -191,7 +198,7 @@ The format of ``NLMSG_ERROR`` is described by struct nlmsgerr::
   ----------------------------------------------
   |    int error                               |
   ----------------------------------------------
-  | struct nlmsghdr - originial request header |
+  | struct nlmsghdr - original request header |
   ----------------------------------------------
   | ** optionally (1) payload of the request   |
   ----------------------------------------------
@@ -199,21 +206,21 @@ The format of ``NLMSG_ERROR`` is described by struct nlmsgerr::
   ----------------------------------------------
 
 There are two instances of struct nlmsghdr here, first of the response
-and second of teh request. ``NLMSG_ERROR`` carries the information about
+and second of the request. ``NLMSG_ERROR`` carries the information about
 the request which led to the error. This could be useful when trying
-to match requests to responses or re-parse the request to dump in an
-error logs.
+to match requests to responses or re-parse the request to dump it into
+logs.
 
-The request is not echoed in messages reporting success (``error == 0``)
-or if ``NETLINK_CAP_ACK`` setsockopt() was set. The latter is common
+The payload of the request is not echoed in messages reporting success
+(``error == 0``) or if ``NETLINK_CAP_ACK`` setsockopt() was set.
+The latter is common
 and perhaps recommended as having to read a copy of every request back
 from the kernel is rather wasteful. The absence of request payload
-is indicated by ``NLM_F_CAPPED`` being set in
-:c:member:`nlmsghdr.nlmsg_flags`.
+is indicated by ``NLM_F_CAPPED`` in :c:member:`nlmsghdr.nlmsg_flags`.
 
 The second optional element of ``NLMSG_ERROR`` are the extended ACK
 attributes. See :ref:`ext_ack` for more details. The presence
-of extended ACK is indicated by ``NLM_F_ACK_TLVS`` being set in
+of extended ACK is indicated by ``NLM_F_ACK_TLVS`` in
 :c:member:`nlmsghdr.nlmsg_flags`.
 
 ``NLMSG_DONE`` is simpler, the request is never echoed but the extended
@@ -237,17 +244,17 @@ It also serves as an example of Generic Netlink communication.
 
 Generic Netlink is itself a subsystem exposed via the Generic Netlink API.
 To avoid a circular dependency Generic Netlink has a statically allocated
-Family ID (``GENL_ID_CTRL``). The Generic Netlink family implements
-a command used to find out information about other families
-(``CTRL_CMD_GETFAMILY``).
+Family ID (``GENL_ID_CTRL`` which is equal to ``NLMSG_MIN_TYPE``).
+The Generic Netlink family implements a command used to find out information
+about other families (``CTRL_CMD_GETFAMILY``).
 
-To get information about the Generic Netlink family called for example
-"test1" we need to send a message on the previously opened Generic Netlink
+To get information about the Generic Netlink family named for example
+``"test1"`` we need to send a message on the previously opened Generic Netlink
 socket. The message should target the Generic Netlink Family (1), be a
 ``do`` (2) call to ``CTRL_CMD_GETFAMILY`` (3). A ``dump`` version of this
-call will make the kernel respond with information about all the families
+call would make the kernel respond with information about *all* the families
 it knows about. Last but not least the name of the family in question has
-to be specified (4)::
+to be specified (4) as an attribute with the appropriate type::
 
   struct nlmsghdr:
     __u32 nlmsg_len:	32
@@ -269,10 +276,11 @@ to be specified (4)::
   (padding:)
     char data:		\0\0
 
-Note that length fields in Netlink (:c:member:`nlmsghdr.nlmsg_len`
-and :c:member:`nlattr.nla_len`) always include the header.
-Headers in netlink must be aligned to 4 bytes, hence the extra ``\0\0``
-at the end of the message. The attribute lengths exclude the padding.
+The length fields in Netlink (:c:member:`nlmsghdr.nlmsg_len`
+and :c:member:`nlattr.nla_len`) always *include* the header.
+Headers in netlink must be aligned to 4 bytes from the start of the message,
+hence the extra ``\0\0`` at the end of the message. The attribute lengths
+*exclude* the padding.
 
 If the family is found kernel will reply with two messages, the response
 with all the information about the family::
@@ -282,7 +290,7 @@ with all the information about the family::
     __u32 nlmsg_len:	136
     __u16 nlmsg_type:	GENL_ID_CTRL
     __u16 nlmsg_flags:	0
-    __u32 nlmsg_seq:	1 /* echoed from our request */
+    __u32 nlmsg_seq:	1    /* echoed from our request */
     __u32 nlmsg_pid:	5831 /* The PID of our user space process */
 
   struct genlmsghdr:
@@ -301,7 +309,7 @@ with all the information about the family::
   struct nlattr:
     __u16 nla_len:	6
     __u16 nla_type:	CTRL_ATTR_FAMILY_ID
-    __u16: 		123 /* The Family ID we are after */
+    __u16: 		123  /* The Family ID we are after */
 
   (padding:)
     char data:		\0\0
@@ -313,14 +321,14 @@ with all the information about the family::
 
   /* ... etc, more attributes will follow. */
 
-And the error code (success)::
+And the error code (success) since ``NLM_F_ACK`` had been set on the request::
 
   /* Message #2 - the ACK */
   struct nlmsghdr:
     __u32 nlmsg_len:	36
     __u16 nlmsg_type:	NLMSG_ERROR
     __u16 nlmsg_flags:	NLM_F_CAPPED /* There won't be a payload */
-    __u32 nlmsg_seq:	1 /* echoed from our request */
+    __u32 nlmsg_seq:	1    /* echoed from our request */
     __u32 nlmsg_pid:	5831 /* The PID of our user space process */
 
   int error:		0
@@ -332,25 +340,31 @@ And the error code (success)::
     __u32 nlmsg_seq:	1
     __u32 nlmsg_pid:	0
 
-Note that the order of attributes (struct nlattr) is not guaranteed.
+The order of attributes (struct nlattr) is not guaranteed so the user
+has to walk the attributes and parse them.
+
+Note that Generic Netlink sockets are not associated or bound to a single
+family. A socket can be used to exchange messages with many different
+families, selecting the recipient family on message-by-message basis using
+the :c:member:`nlmsghdr.nlmsg_type` field. 
 
 .. _ext_ack:
 
 Extended ACK
 ------------
 
-Extended ACK controls reporting of additional error/warning TLVs in
-``NLMSG_ERROR`` and ``NLMSG_DONE`` messages. To maintain backward
+Extended ACK controls reporting of additional error/warning TLVs
+in ``NLMSG_ERROR`` and ``NLMSG_DONE`` messages. To maintain backward
 compatibility this feature has to be explicitly enabled by setting
 the ``NETLINK_EXT_ACK`` setsockopt() to ``1``.
 
 Types of extended ack attributes are defined in enum nlmsgerr_attrs.
-The two most commonly used attributes are ``NLMSGERR_ATTR_MSG`` and
-``NLMSGERR_ATTR_OFFS``.
+The two most commonly used attributes are ``NLMSGERR_ATTR_MSG``
+and ``NLMSGERR_ATTR_OFFS``.
 
-``NLMSGERR_ATTR_MSG`` carries a message in English describing the
-encountered problem. These messages are far more detailed than
-what can be expressed thru standard UNIX error codes.
+``NLMSGERR_ATTR_MSG`` carries a message in English describing
+the encountered problem. These messages are far more detailed
+than what can be expressed thru standard UNIX error codes.
 
 ``NLMSGERR_ATTR_OFFS`` points to the attribute which caused the problem.
 
@@ -363,24 +377,29 @@ always be enabled, appropriately parsed and reported to the user.
 Dump consistency
 ----------------
 
-Some of the data structures kernel uses for storing objects make it
-hard to provide an atomic snapshot of all the objects (without
-impacting the fast-paths updating them).
+Some of the data structures kernel uses for storing objects make
+it hard to provide an atomic snapshot of all the objects in a dump
+(without impacting the fast-paths updating them).
 
-The ``NLM_F_DUMP_INTR`` flag may be set on any message in the dump
-or the ``NLMSG_DONE`` message if the dump was interrupted and may
-be inconsistent (e.g. missing objects). User space should retry
-the dump if it sees that flag.
+Kernel may set the ``NLM_F_DUMP_INTR`` flag on any message in a dump
+(including the ``NLMSG_DONE`` message) if the dump was interrupted and
+may be inconsistent (e.g. missing objects). User space should retry
+the dump if it sees the flag set.
 
 Introspection
 -------------
 
-The basic instrospection can be seen in :ref:`_res_fam` already.
-User space can query information about the Generic Netlink family,
-including which operations are supported and what attributes
-the kernel understands. This is useful in rare cases when user
-space needs to make sure that the kernel has support for a feature
-before issuing a request.
+The basic introspection abilities are enabled by access to the Family 
+object as reported in :ref:`res_fam`. User can query information about
+the Generic Netlink family, including which operations are supported
+by the kernel and what attributes the kernel understands.
+Family information includes the highest ID of an attribute kernel can parse,
+a separate command (``CTRL_CMD_GETPOLICY``) provides detailed information
+about supported attributes, including ranges of values the kernel accepts.
+
+Querying family information is useful in rare cases when user space needs
+to make sure that the kernel has support for a feature before issuing
+a request.
 
 .. _nlmsg_pid:
 
@@ -389,7 +408,7 @@ nlmsg_pid
 
 :c:member:`nlmsghdr.nlmsg_pid` is called PID because the protocol predates
 wide spread use of multi-threading and the initial recommendation was
-to use process IDs in this field. Process IDs start from 1 hence the use
+to use process ID in this field. Process IDs start from 1 hence the use
 of ``0`` to mean "allocate automatically".
 
 The field is still used today in rare cases when kernel needs to send
@@ -399,11 +418,11 @@ it then communicates its PID to the kernel.
 The kernel can now reach the user space process.
 
 This sort of communication is utilized in UMH (user mode helper)-like
-scenarios when kernel needs to consult user space logic or ask user
+scenarios when kernel needs to trigger user space logic or ask user
 space for a policy decision.
 
 Kernel will automatically fill the field with process ID when responding
-to a request sent from an unbound socket.
+to a request sent with the :c:member:`nlmsghdr.nlmsg_pid` value of ``0``.
 
 Classic Netlink
 ===============
@@ -412,36 +431,35 @@ The main differences between Classic and Generic Netlink are the dynamic
 allocation of subsystem identifiers and availability of introspection.
 In theory the protocol does not differ significantly, however, in practice
 Classic Netlink experimented with concepts which were abandoned in Generic
-Netlink (really, they usually only found use in a single subsystem or
-a subsection of a subsystem). This section is meant as an explainer of
-a few of such concepts, with the explicit goal of giving the Generic Netlink
-users the confidence to ignore them when they inevitably run into such
-concepts reading the uAPI headers.
+Netlink (really, they usually only found use in a small corner of a single
+subsystem). This section is meant as an explainer of a few of such concepts,
+with the explicit goal of giving the Generic Netlink
+users the confidence to ignore them when reading the uAPI headers.
 
 Most of the concepts and examples here refer to the ``NETLINK_ROUTE`` family,
 which covers much of the configuration of the Linux networking stack.
-Real documentation of that family, however, deserves a chapter (or a book)
-of its own.
+Real documentation of that family, deserves a chapter (or a book) of its own.
 
 Families
 --------
 
-Netlink refers to subsystems as families. This is a remnant of its networking
-roots and the concept of protocol families, which are part of message
+Netlink refers to subsystems as families. This is a remnant of using
+sockets and the concept of protocol families, which are part of message
 demultiplexing in ``NETLINK_ROUTE``.
 
 Sadly every layer of encapsulation likes to refer to whatever it's carrying
-as a "family":
+as "families" making the term very confusing:
 
- 1. AF_NETLINK is a bona fide protocol family
+ 1. AF_NETLINK is a bona fide socket protocol family
  2. AF_NETLINK's documentation refers to what comes after its own
-    struct nlmsghdr as a "Family Header"
- 3. Generic Netlink with its struct genlmsghdr is a Family for AF_NETLINK,
-    but it also calls it's distinct sub-protocols "Families".
+    header (struct nlmsghdr) in a message as a "Family Header"
+ 3. Generic Netlink is a family for AF_NETLINK (struct genlmsghdr follows
+    struct nlmsghdr), yet it also calls its users "Families".
 
-Note that the Generic Netlink Family IDs are in a different "ID space" and
-overlap with Classic Netlink protocol numbers (e.g. ``NETLINK_ROUTE``,
-``NETLINK_GENERIC``).
+Note that the Generic Netlink Family IDs are in a different "ID space"
+and overlap with Classic Netlink protocol numbers (e.g. ``NETLINK_CRYPTO``
+has the Classic Netlink protocol ID of 21 which Generic Netlink will
+happily allocate to one of its families as well).
 
 Strict checking
 ---------------
@@ -449,28 +467,30 @@ Strict checking
 The ``NETLINK_GET_STRICT_CHK`` socket option enables strict input checking
 in ``NETLINK_ROUTE``. It was needed because historically kernel did not
 validate the fields of structures it didn't process. This made it impossible
-to start using them later without causing regressions for applications which
-initialized them incorrectly or not at all.
+to start using those fields later without risking regressions in applications
+which initialized them incorrectly or not at all.
 
 ``NETLINK_GET_STRICT_CHK`` declares that the application is initializing
-all fields correctly. It also opts in validating that message does not
+all fields correctly. It also opts into validating that message does not
 contain trailing data and requests that kernel rejects attributes with
 type higher than largest attribute type known to the kernel.
+
+``NETLINK_GET_STRICT_CHK`` is not used outside of ``NETLINK_ROUTE``.
 
 Unknown attributes
 ------------------
 
 Historically Netlink ignored all unknown attributes. The thinking was that
-it would free the application from having to check what kernel supports.
-The application could make a request to change kernel state and check which
+it would free the application from having to probe what kernel supports.
+The application could make a request to change the state and check which
 parts of the request "stuck".
 
 This is no longer the case for new Generic Netlink families and those opting
 in to strict checking. See enum netlink_validation for validation types
 performed.
 
-Fixed metadata and fixed structure
-----------------------------------
+Fixed metadata and structures
+-----------------------------
 
 Classic Netlink made liberal use of fixed-format structures within
 the messages. Messages would commonly have a structure with
@@ -485,32 +505,32 @@ Request types
 and ``SET``. Each object can handle all or some of those requests
 (objects being netdevs, routes, addresses, qdiscs etc.) Request type
 is defined by the 2 lowest bits of the message type, so commands for
-new objects would always be allocated in with a stride of 4.
+new objects would always be allocated with a stride of 4.
 
 Each object would also have it's own fixed metadata shared by all request
 types (e.g. struct ifinfomsg for netdev requests, struct ifaddrmsg for address
 requests, struct tcmsg for qdisc requests).
 
 Even though other protocols and Generic Netlink commands often use
-the same verbs in their names (``GET``, ``SET``) the concept of request
-types did not find much wider adoption.
+the same verbs in their message names (``GET``, ``SET``) the concept
+of request types did not find wider adoption.
 
 Message flags
 -------------
 
 The earlier section has already covered the basic request flags
-(``NLM_F_REQUEST``, ``NLM_F_ACK``, ``NLM_F_DUMP``) and the Ack flags
-(``NLM_F_CAPPED``, ``NLM_F_ACK_TLVS``). Dump flags was also mentioned
-(``NLM_F_MULTI``, ``NLM_F_DUMP_INTR``).
+(``NLM_F_REQUEST``, ``NLM_F_ACK``, ``NLM_F_DUMP``) and the ``NLMSG_ERROR`` /
+``NLMSG_DONE`` flags (``NLM_F_CAPPED``, ``NLM_F_ACK_TLVS``).
+Dump flags were also mentioned (``NLM_F_MULTI``, ``NLM_F_DUMP_INTR``).
 
 Those are the main flags of note, with a small exception (of ``ieee802154``)
 Generic Netlink does not make use of other flags. If the protocol needs
-to communicate special requirements for a request it should use
-an attribute, not try to define flags in struct nlmsghdr.
+to communicate special constraints for a request it should use
+an attribute, not the flags in struct nlmsghdr.
 
-Classic Netlink defined various flags for its ``GET``, ``NEW`` and ``DEL``
-requests, but since request types have not been generalized neither should
-the flags be.
+Classic Netlink, however, defined various flags for its ``GET``, ``NEW``
+and ``DEL`` requests. Since request types have not been generalized
+the request type specific flags should not be used either.
 
 uAPI reference
 ==============
