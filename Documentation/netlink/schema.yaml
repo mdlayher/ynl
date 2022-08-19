@@ -143,13 +143,13 @@ properties:
     properties:
       enum-model:
         description: |
-	  The model of assigning values to the operations.
-	  "unified" is the recommended model where all message types belong
-	  to a single enum.
-	  "directional" has the messages sent to the kernel and from the kernel
-	  enumerated separately.
-	  "notify-split" has the notifications and request-response types in
-	  different enums.
+          The model of assigning values to the operations.
+          "unified" is the recommended model where all message types belong
+          to a single enum.
+          "directional" has the messages sent to the kernel and from the kernel
+          enumerated separately.
+          "notify-split" has the notifications and request-response types in
+          different enums.
         enum: [ unified, directional, notify-split ]
       name-prefix:
         description: |
