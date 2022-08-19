@@ -23,6 +23,7 @@ int main(int argc, char **argv)
 	struct ethtool_channels_get_rsp *rsp;
 	struct ethtool_channels_get_req req;
 	struct ynl_ntf_base_type *ntf;
+	struct ynl_error yse;
 	struct ynl_sock *ys;
 
 	if (argc < 2) {
@@ -30,9 +31,11 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	ys = ynl_sock_create("ethtool", NULL);
-	if (!ys)
+	ys = ynl_sock_create("ethtool", &yse);
+	if (!ys) {
+		fprintf(stderr, "YNL init: %s\n", yse.msg);
 		return 1;
+	}
 
 	memset(&req, 0, sizeof(req));
 	ethtool_channels_get_req_set_header_dev_index(&req, 21312);
