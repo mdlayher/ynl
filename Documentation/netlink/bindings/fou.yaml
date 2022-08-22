@@ -10,8 +10,8 @@ constants:
   -
     type: enum
     name: encap_type
-    value-prefix: FOU_ENCAP_
-    values: [ UNSPEC, DIRECT, GUE ]
+    value-prefix: fou-encap-
+    values: [ unspec, direct, gue ]
 
 attribute-sets:
   -

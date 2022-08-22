@@ -57,8 +57,8 @@ upper / c-ify
 -------------
 
 In C code we need to transform the names, e.g. from do-something into
-DO_SOMETHING. Some of the schemas are still using literal DO_SOMETHING
-plus I think constants -> enums do not handle the transformations yet.
+DO_SOMETHING. Some of the schemas are still using literal DO_SOMETHING,
+especially silent constants.
 
 silent constants
 ----------------

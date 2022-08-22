@@ -170,6 +170,14 @@ class TypeUnused(Type):
 
 
 class TypeScalar(Type):
+    def __init__(self, family, attr_set, attr):
+        super().__init__(family, attr_set, attr)
+
+        if 'enum' in self.attr:
+            self.type_name = f"enum {family.name}_{self.attr['enum'].replace('-', '_')}"
+        else:
+            self.type_name = '__' + self.type
+
     def _mnl_type(self):
         t = self.type
         # mnl does not have a helper for signed types
@@ -192,12 +200,7 @@ class TypeScalar(Type):
         return f'.type = YNL_PT_U{self.type[1:]}, '
 
     def arg_member(self, ri):
-        if 'enum' in self.attr:
-            t = f"enum {ri.family.name}_{self.attr['enum']} "
-        else:
-            scalar_pfx = '__' if ri.ku_space == 'user' else ''
-            t = scalar_pfx + self.type + ' '
-        return [f'{t}{self.c_name}']
+        return [f'{self.type_name} {self.c_name}']
 
     def attr_put(self, ri, var):
         self._attr_put_simple(ri, var, self._mnl_type())
@@ -1382,7 +1385,7 @@ def print_req_policy(ri):
 def uapi_enum_start(family, cw, obj, key):
     start_line = 'enum'
     if key in obj:
-        start_line = 'enum ' + family.name + '_' + obj[key]
+        start_line = 'enum ' + family.name + '_' + obj[key].replace('-', '_')
     cw.block_start(line=start_line)
 
 

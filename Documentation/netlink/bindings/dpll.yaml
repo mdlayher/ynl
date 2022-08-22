@@ -9,39 +9,39 @@ headers:
 constants:
   -
     type: flags
-    name: genl_get_flags
-    value-prefix: DPLL_FLAG_
+    name: genl-get-flags
+    value-prefix: dpll-flag-
     values: [ sources, outputs, status ]
   -
     type: enum
-    name: genl_status
-    value-prefix: DPLL_STATUS_
+    name: genl-status
+    value-prefix: dpll-status-
     values: [ none, calibrating, locked ]
   -
     type: enum
-    name: genl_signal_type
-    value-prefix: DPLL_TYPE_
-    values: [ none, ext_1pps, ext_10mhz, synce_eth_port, int_oscillator, gnss, custom ]
+    name: genl-signal-type
+    value-prefix: dpll-type-
+    values: [ none, ext-1pps, ext-10mhz, synce-eth-port, int-oscillator, gnss, custom ]
   -
     type: enum
-    name: genl_lock_status
-    value-prefix: DPLL_LOCK_STATUS_
-    values: [ unlocked, ext_1pps, ext_10mhz, synce, int_oscillator, gnss ]
+    name: genl-lock-status
+    value-prefix: dpll-lock-status-
+    values: [ unlocked, ext-1pps, ext-10mhz, synce, int-oscillator, gnss ]
 
 attribute-sets:
   -
     name: main
     name-prefix: dplla-
-    name-enum: genl_attr
+    name-enum: genl-attr
     attributes:
       -
         name: unspec
         type: unused
       -
-        name: device_id
+        name: device-id
         type: u32
       -
-        name: device_name
+        name: device-name
         type: nul-string
         len: DPLL_NAME_LENGTH - 1
       -
@@ -50,14 +50,14 @@ attribute-sets:
         sub-type: nest
         nested-attributes: source
       -
-        name: source_id
+        name: source-id
         type: u32
       -
-        name: source_type
+        name: source-type
         type: u32
-        enum: genl_signal_type
+        enum: genl-signal-type
       -
-        name: source_supported
+        name: source-supported
         type: u32
       -
         name: output
@@ -65,43 +65,43 @@ attribute-sets:
         sub-type: nest
         nested-attributes: output
       -
-        name: output_id
+        name: output-id
         type: u32
       -
-        name: output_type
+        name: output-type
         type: u32
-        enum: genl_signal_type
+        enum: genl-signal-type
       -
-        name: output_supported
+        name: output-supported
         type: u32
       -
         name: status
         type: u32
-        enum: genl_status
+        enum: genl-status
       -
         name: temp
         type: u32
       -
-        name: lock_status
+        name: lock-status
         type: u32
-        enum: genl_lock_status
+        enum: genl-lock-status
       -
         name: flags
         type: u32
-        flags-mask: genl_get_flags
+        flags-mask: genl-get-flags
   -
     name: source
     subset-of: main
     attributes:
       -
-        name: output_id
+        name: output-id
         type: u32
       -
-        name: output_type
+        name: output-type
         type: u32
-        enum: genl_signal_type
+        enum: genl-signal-type
       -
-        name: output_supported
+        name: output-supported
         type: multi-attr
         sub-type: u32
   -
@@ -109,51 +109,51 @@ attribute-sets:
     subset-of: main
     attributes:
       -
-        name: source_id
+        name: source-id
         type: u32
       -
-        name: source_type
+        name: source-type
         type: u32
-        enum: genl_signal_type
+        enum: genl-signal-type
       -
-        name: source_supported
+        name: source-supported
         type: multi-attr
         sub-type: u32
 
 operations:
   enum-model: notify-split
-  name-enum: genl_cmd
-  async-prefix: DPLL_EVENT_
-  async-enum: genl_event
+  name-enum: genl-cmd
+  async-prefix: dpll-event-
+  async-enum: genl-event
   list:
     -
       name: unspec
       description: unused
 
     -
-      name: device_get
+      name: device-get
       description: Get the device info. TODO..
       attribute-set: main
 
       do:
         request:
           attributes:
-            - device_id
-            - device_name
+            - device-id
+            - device-name
             - flags
 
         reply:
           attributes:
-            - device_id
-            - device_name
+            - device-id
+            - device-name
             - source
             - output
             - status
             - temp
-            - lock_status
+            - lock-status
 
     -
-      name: set_source_type
+      name: set-source-type
       description: Set the source type. TODO..
       attribute-set: main
       flags: [ admin-perm ]
@@ -161,13 +161,13 @@ operations:
       do:
         request:
           attributes:
-            - device_id
-            - device_name
-            - source_id
-            - source_type
+            - device-id
+            - device-name
+            - source-id
+            - source-type
 
     -
-      name: set_output_type
+      name: set-output-type
       description: Set the output type. TODO..
       attribute-set: main
       flags: [ admin-perm ]
@@ -175,10 +175,10 @@ operations:
       do:
         request:
           attributes:
-            - device_id
-            - device_name
-            - output_id
-            - output_type
+            - device-id
+            - device-name
+            - output-id
+            - output-type
 
     -
       name: device-create
@@ -187,8 +187,8 @@ operations:
       attribute-set: main
       mcgrp: config
       event:
-        - device_id
-        - device_name
+        - device-id
+        - device-name
 
     -
       name: device-delete
@@ -196,8 +196,8 @@ operations:
       attribute-set: main
       mcgrp: config
       event:
-        - device_id
-        - device_name
+        - device-id
+        - device-name
 
     -
       name: status-locked
@@ -205,8 +205,8 @@ operations:
       attribute-set: main
       mcgrp: monitor
       event:
-        - device_id
-        - lock_status
+        - device-id
+        - lock-status
 
     -
       name: status-unlocked
@@ -214,8 +214,8 @@ operations:
       attribute-set: main
       mcgrp: monitor
       event:
-        - device_id
-        - lock_status
+        - device-id
+        - lock-status
 
     -
       name: source-change
@@ -223,9 +223,9 @@ operations:
       attribute-set: main
       mcgrp: config-source
       event:
-        - device_id
-        - source_id
-        - source_type
+        - device-id
+        - source-id
+        - source-type
 
     -
       name: output-change
@@ -233,13 +233,13 @@ operations:
       attribute-set: main
       mcgrp: config-output
       event:
-        - device_id
-        - output_id
-        - output_type
+        - device-id
+        - output-id
+        - output-type
 
 mcast-groups:
-  name-prefix: DPLL_
-  name-suffix: _GROUP_NAME
+  name-prefix: dpll-
+  name-suffix: -group-name
   list:
     -
       name: config-device
