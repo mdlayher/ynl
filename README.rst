@@ -109,11 +109,19 @@ We should define an ext ack type in the kernel which points out a missing
 attr. The offset should point to the payload of the containing nest
 (right after the fixed header if it's the main nest).
 
+This is mostly done, ynl parsing and testing needed.
+
 struct support
 --------------
 
 structs are defined in the schema but not supported in attrs,
 ops or any of the codegen.
+
+ynl if else in parsing
+----------------------
+
+YNL currently does if (type == attr), when it should
+do else if for every subsequent attribute.
 
 Notes on existing families
 ==========================
