@@ -1,12 +1,13 @@
 name: nlctrl
 
+protocol: genetlink-legacy
+
 description: |
   Generic netlink control protocol. Interface to query information about
   generic netlink families registered in the kernel - their names, ids,
   accepted messages and attributes.
 
-headers:
-  uapi: linux/genetlink.h
+uapi-header: linux/genetlink.h
 
 attribute-sets:
   -

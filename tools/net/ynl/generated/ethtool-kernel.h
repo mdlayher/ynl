@@ -9,6 +9,7 @@
 #include <net/netlink.h>
 
 #include <linux/ethtool_netlink.h>
+#include <linux/if.h>
 
 // ETHTOOL_MSG_CHANNELS_GET - do
 extern const struct nla_policy ethtool_channels_get_policy[ETHTOOL_A_CHANNELS_HEADER + 1];

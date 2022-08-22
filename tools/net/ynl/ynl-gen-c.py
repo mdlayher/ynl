@@ -188,11 +188,11 @@ class TypeScalar(Type):
     def _attr_policy(self, policy):
         if 'flags-mask' in self.attr:
             flags = self.family.consts[self.attr['flags-mask']]
-            flag_cnt = len(flags['values'])
+            flag_cnt = len(flags['entries'])
             return f"NLA_POLICY_MASK({policy}, 0x{(1 << flag_cnt) - 1:x})"
         elif 'enum' in self.attr:
             enum = self.family.consts[self.attr['enum']]
-            cnt = len(enum['values'])
+            cnt = len(enum['entries'])
             return f"NLA_POLICY_MAX({policy}, {cnt})"
         return super()._attr_policy(policy)
 
@@ -546,11 +546,15 @@ class Family:
         if 'proto' in self.yaml and self.yaml['proto'] != 'genetlink':
             raise Exception("Codegen only supported for genetlink")
 
-        if 'constants' not in self.yaml:
-            self.yaml['constants'] = []
+        if 'definitions' not in self.yaml:
+            self.yaml['definitions'] = []
 
         self.name = self.yaml['name']
         self.c_name = self.name.replace('-', '_')
+        if 'uapi-header' in self.yaml:
+            self.uapi_header = self.yaml['uapi-header']
+        else:
+            self.uapi_header = f"linux/{self.name}.h"
         if 'name-prefix' in self.yaml['operations']:
             self.op_prefix = self.yaml['operations']['name-prefix'].upper().replace('-', '_')
         else:
@@ -585,7 +589,7 @@ class Family:
         return self.yaml.get(key, default)
 
     def _dictify(self):
-        for elem in self.yaml['constants']:
+        for elem in self.yaml['definitions']:
             self.consts[elem['name']] = elem
 
         for elem in self.yaml['attribute-sets']:
@@ -1400,10 +1404,10 @@ def render_uapi(family, cw):
     cw.writes_defines(defines)
     cw.nl()
 
-    for const in family['constants']:
+    for const in family['definitions']:
         if const['type'] == 'enum':
             uapi_enum_start(family, cw, const, 'name')
-            for item in const['values']:
+            for item in const['entries']:
                 item_name = item
                 if 'value-prefix' in const:
                     item_name = (const['value-prefix'] + item).upper().replace('-', '_')
@@ -1413,7 +1417,7 @@ def render_uapi(family, cw):
         elif const['type'] == 'flags':
             uapi_enum_start(family, cw, const, 'name')
             i = 0
-            for item in const['values']:
+            for item in const['entries']:
                 item_name = item
                 if 'value-prefix' in const:
                     item_name = (const['value-prefix'] + item).upper().replace('-', '_')
@@ -1531,14 +1535,10 @@ def main():
     if args.mode == 'kernel':
         cw.p(f'#include <net/netlink.h>')
         cw.nl()
-    headers = []
-    for header_type in ['uapi', args.mode]:
-        if header_type not in parsed['headers']:
-            continue
-        one = parsed['headers'][header_type]
-        if type(one) is str:
-            one = [one]
-        headers += one
+    headers = [parsed.uapi_header]
+    for definition in parsed['definitions']:
+        if 'header' in definition:
+            headers.append(definition['header'])
     for one in headers:
         cw.p(f"#include <{one}>")
     cw.nl()

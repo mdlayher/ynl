@@ -1,17 +1,16 @@
 name: fou
 
+protocol: genetlink-c
+
 description: |
   Foo-over-UDP.
 
-headers:
-  uapi: linux/fou.h
-
-constants:
+definitions:
   -
     type: enum
     name: encap_type
     value-prefix: fou-encap-
-    values: [ unspec, direct, gue ]
+    entries: [ unspec, direct, gue ]
 
 attribute-sets:
   -

@@ -10,3 +10,4 @@ Netlink documentation for users.
    :maxdepth: 2
 
    intro
+   yaml

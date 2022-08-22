@@ -3,30 +3,27 @@ name: dpll
 description: |
   DPLL subsystem.
 
-headers:
-  uapi: linux/dpll.h
-
-constants:
+definitions:
   -
     type: flags
     name: genl-get-flags
     value-prefix: dpll-flag-
-    values: [ sources, outputs, status ]
+    entries: [ sources, outputs, status ]
   -
     type: enum
     name: genl-status
     value-prefix: dpll-status-
-    values: [ none, calibrating, locked ]
+    entries: [ none, calibrating, locked ]
   -
     type: enum
     name: genl-signal-type
     value-prefix: dpll-type-
-    values: [ none, ext-1pps, ext-10mhz, synce-eth-port, int-oscillator, gnss, custom ]
+    entries: [ none, ext-1pps, ext-10mhz, synce-eth-port, int-oscillator, gnss, custom ]
   -
     type: enum
     name: genl-lock-status
     value-prefix: dpll-lock-status-
-    values: [ unlocked, ext-1pps, ext-10mhz, synce, int-oscillator, gnss ]
+    entries: [ unlocked, ext-1pps, ext-10mhz, synce, int-oscillator, gnss ]
 
 attribute-sets:
   -

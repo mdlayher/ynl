@@ -2,10 +2,21 @@
 
 name: ethtool
 
+protocol: genetlink-legacy
+
 description: |
   Ethernet device configuration interface.
 
+uapi-header: linux/ethtool_netlink.h
+
 attr-cnt-suffix: cnt
+
+definitions:
+  -
+    type: const
+    name: ALTIFNAMSIZ
+    value: 128
+    header: linux/if.h
 
 attribute-sets:
   -
@@ -54,10 +65,6 @@ attribute-sets:
       -
         name: combined-count
         type: u32
-
-headers:
-  user: linux/if.h
-  uapi: linux/ethtool_netlink.h
 
 operations:
   enum-model: directional

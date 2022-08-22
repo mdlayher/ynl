@@ -67,6 +67,9 @@ We need a version of constants which are known but don't get rendered
 to the C uAPI header. These are things like IFNAMSIZ which C headers
 pull in thru an include but non-C won't have any knowledge of.
 
+These constants have the 'headers' attribute in their definitions,
+but are currently not skipped during rendering.
+
 document the attributes
 -----------------------
 

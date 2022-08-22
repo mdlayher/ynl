@@ -11,43 +11,27 @@ required: [ name, description, attribute-sets, operations ]
 additionalProperties: False
 properties:
   name:
-    description: Name of the genetlink family
+    description: Name of the genetlink family.
     type: string
   description:
-    description: Description of the family
     type: string
   version:
-    description: Version of the family as defined by genetlink.
+    description: Generic Netlink family version. Default is 1.
     type: integer
+  protocol:
+    description: Schema compatibility level. Default is "genetlink".
+    enum: [ genetlink, genetlink-c, genetlink-legacy ] # Trim
+  # Start genetlink-c
+  uapi-header:
+    description: Path to the uAPI header, default is linux/${family-name}.h
+    type: string
   attr-cnt-suffix:
     description: Suffix for last member of attribute enum, default is "MAX".
     type: string
-  proto:
-    description: |
-      Name of the netlink protocol (default: genetlink).
-    enum: [ genetlink ]
-  headers:
-    description: C headers defining the protocol
-    type: object
-    additionalProperties: False
-    properties:
-      uapi:
-        description: Path under include/uapi where protocol definition is placed
-        type: string
-      kernel:
-        description: Additional headers on which the protocol definition depends (kernel side)
-        anyOf: &str-or-arrstr
-          -
-            type: array
-            items:
-              type: string
-          -
-            type: string
-      user:
-        description: Additional headers on which the protocol definition depends (user side)
-        anyOf: *str-or-arrstr
-  constants:
-    description: Enums and defines of the protocol
+  # End genetlink-c
+
+  definitions:
+    description: Array of type and constant definitions.
     type: array
     items:
       type: object
@@ -57,18 +41,26 @@ properties:
         name:
           type: string
         type:
-          enum: [ enum, flags ]
-        value-prefix:
-          description: For enum the prefix of the values, optional.
-          type: string
-        value-start:
-          description: For enum the literal initializer for the first value.
+          enum: [ const, enum, flags ]
+        value:
+          description: For const - the value.
           oneOf: [ { type: string }, { type: integer }]
-        values:
-          description: For enum array of values
+        value-start:
+          description: For enum or flags the literal initializer for the first value.
+          oneOf: [ { type: string }, { type: integer }]
+        entries:
+          description: For enum or flags array of values
           type: array
           items:
             type: string
+        header:
+          description: For C-compatible languages, header which already defines this value.
+          type: string
+        # Start genetlink-c
+        value-prefix:
+          description: For enum the prefix of the values, optional.
+          type: string
+        # End genetlink-c
 
   attribute-sets:
     description: Definition of attribute spaces for this family.
