@@ -34,7 +34,10 @@ class Type:
             self.len = attr['len']
         if 'nested-attributes' in attr:
             self.nested_attrs = attr['nested-attributes']
-            self.nested_render_name = f"{family.name}_{self.nested_attrs.replace('-', '_')}"
+            if self.nested_attrs == family.name:
+                self.nested_render_name = f"{family.name}"
+            else:
+                self.nested_render_name = f"{family.name}_{self.nested_attrs.replace('-', '_')}"
 
         self.enum_name = f"{attr_set.name_prefix}{self.name}"
         self.enum_name = self.enum_name.upper().replace('-', '_')
@@ -392,7 +395,10 @@ class Struct:
         self.inherited = []
 
         self.nested = type_list is None
-        self.render_name = f"{family.name}_{space_name.replace('-', '_')}"
+        if family.name == space_name.replace('-', '_'):
+            self.render_name = f"{family.name}"
+        else:
+            self.render_name = f"{family.name}_{space_name.replace('-', '_')}"
         self.struct_name = 'struct ' + self.render_name
         self.ptr_name = self.struct_name + ' *'
 
@@ -451,6 +457,8 @@ class AttrSet:
         self.c_name = self.name.replace('-', '_')
         if self.c_name in c_kw:
             self.c_name += '_'
+        if self.c_name == family.c_name:
+            self.c_name = ''
 
         val = 0
         for elem in self.yaml['attributes']:
@@ -539,6 +547,7 @@ class Family:
             self.yaml['constants'] = []
 
         self.name = self.yaml['name']
+        self.c_name = self.name.replace('-', '_')
         if 'name-prefix' in self.yaml['operations']:
             self.op_prefix = self.yaml['operations']['name-prefix'].upper().replace('-', '_')
         else:

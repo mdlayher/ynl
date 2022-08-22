@@ -15,9 +15,9 @@
 #include "ynl.h"
 
 // Policies
-extern struct ynl_policy_nest fou_main_nest;
+extern struct ynl_policy_nest fou_nest;
 
-struct ynl_policy_attr fou_main_policy[FOU_ATTR_MAX + 1] = {
+struct ynl_policy_attr fou_policy[FOU_ATTR_MAX + 1] = {
 	[FOU_ATTR_UNSPEC] = { .name = "unspec", .type = YNL_PT_REJECT, },
 	[FOU_ATTR_PORT] = { .name = "port", .type = YNL_PT_U16, },
 	[FOU_ATTR_AF] = { .name = "af", .type = YNL_PT_U8, },
@@ -32,9 +32,9 @@ struct ynl_policy_attr fou_main_policy[FOU_ATTR_MAX + 1] = {
 	[FOU_ATTR_IFINDEX] = { .name = "ifindex", .type = YNL_PT_U32, },
 };
 
-struct ynl_policy_nest fou_main_nest = {
+struct ynl_policy_nest fou_nest = {
 	.max_attr = FOU_ATTR_MAX,
-	.table = fou_main_policy,
+	.table = fou_policy,
 };
 
 // Common nested types
@@ -46,7 +46,7 @@ int fou_add(struct ynl_sock *ys, struct fou_add_req *req)
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, FOU_CMD_ADD, 1);
-	ys->req_policy = &fou_main_nest;
+	ys->req_policy = &fou_nest;
 
 	if (req->port_present)
 		mnl_attr_put_u16(nlh, FOU_ATTR_PORT, req->port);
@@ -95,7 +95,7 @@ int fou_del(struct ynl_sock *ys, struct fou_del_req *req)
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, FOU_CMD_DEL, 1);
-	ys->req_policy = &fou_main_nest;
+	ys->req_policy = &fou_nest;
 
 	if (req->af_present)
 		mnl_attr_put_u8(nlh, FOU_ATTR_AF, req->af);
@@ -220,8 +220,8 @@ struct fou_get_rsp *fou_get(struct ynl_sock *ys, struct fou_get_req *req)
 	int len, err;
 
 	nlh = ynl_gemsg_start_req(ys, ys->family_id, FOU_CMD_GET, 1);
-	ys->req_policy = &fou_main_nest;
-	yarg.rsp_policy = &fou_main_nest;
+	ys->req_policy = &fou_nest;
+	yarg.rsp_policy = &fou_nest;
 
 	if (req->af_present)
 		mnl_attr_put_u8(nlh, FOU_ATTR_AF, req->af);
@@ -290,7 +290,7 @@ struct fou_get_list *fou_get_dump(struct ynl_sock *ys)
 	yds.ys = ys;
 	yds.alloc_sz = sizeof(struct fou_get_list);
 	yds.cb = fou_get_rsp_parse;
-	yds.rsp_policy = &fou_main_nest;
+	yds.rsp_policy = &fou_nest;
 
 	nlh = ynl_gemsg_start_dump(ys, ys->family_id, FOU_CMD_GET, 1);
 
