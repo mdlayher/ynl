@@ -58,7 +58,7 @@ struct nlctrl_operation {
 };
 
 struct nlctrl_policy {
-	__u32 do_present:1;
+	__u32 do__present:1;
 	__u32 dump_present:1;
 
 	__u32 cmd;

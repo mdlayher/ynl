@@ -256,7 +256,7 @@ int nlctrl_policy_parse(struct ynl_parse_arg *yarg,
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_POLICY_DO) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
-			dst->do_present = 1;
+			dst->do__present = 1;
 			dst->do_ = mnl_attr_get_u32(attr);
 		}
 		if (mnl_attr_get_type(attr) == CTRL_ATTR_POLICY_DUMP) {

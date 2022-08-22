@@ -14,12 +14,12 @@ attribute-sets:
     name-prefix: ctrl-attr-
     attributes:
       -
-        name: family_id
+        name: family-id
         type: u16
         description: |
             Numerical identifier of the family.
       -
-        name: family_name
+        name: family-name
         type: nul-string
         len: GENL_NAMSIZ - 1
         description: |
@@ -38,21 +38,21 @@ attribute-sets:
         type: array-nest
         nested-attributes: operation
       -
-        name: mcast_groups
+        name: mcast-groups
         type: array-nest
         nested-attributes: mcast-group
       -
         name: op
         type: u32
       -
-        name: op_policy
+        name: op-policy
         type: nest-type-value
         type-value: [ cmd ]
         nested-attributes: policy
       -
         name: policy
         type: nest-type-value
-        type-value: [ current_policy_idx, attr_idx ]
+        type-value: [ current-policy-idx, attr-idx ]
         nested-attributes: nl-policy
   -
     name: operation
@@ -93,38 +93,38 @@ attribute-sets:
         name: type
         type: u32
       -
-        name: min_value_u
+        name: min-value-u
         type: u64
       -
-        name: max_value_u
+        name: max-value-u
         type: u64
       -
-        name: min_value_s
+        name: min-value-s
         type: s64
       -
-        name: max_value_s
+        name: max-value-s
         type: s64
       -
         name: mask
         type: u64
       -
-        name: min_length
+        name: min-length
         type: u32
       -
-        name: max_length
+        name: max-length
         type: u32
       -
-        name: policy_idx
+        name: policy-idx
         type: u32
       -
-        name: policy_maxtype
+        name: policy-maxtype
         type: u32
       -
-        name: bitfield32_mask
+        name: bitfield32-mask
         type: u32
 
 operations:
-  name-prefix: CTRL_CMD_
+  name-prefix: ctrl-cmd-
   list:
     -
       name: getfamily
@@ -135,17 +135,17 @@ operations:
       do:
         request:
           attributes:
-            - family_id
-            - family_name
+            - family-id
+            - family-name
         reply: &getfamily-do-reply
           attributes:
-            - family_id
-            - family_name
+            - family-id
+            - family-name
             - version
             - hdrsize
             - maxattr
             - ops
-            - mcast_groups
+            - mcast-groups
       dump:
         reply: *getfamily-do-reply
     -
@@ -157,11 +157,11 @@ operations:
       description: Notification for families being unregistered.
       notify: getfamily
     -
-      name: newmcast_grp
+      name: newmcast-grp
       description: Notification for new multicast groups.
       notify: getfamily
     -
-      name: delmcast_grp
+      name: delmcast-grp
       description: Notification for deleted multicast groups.
       notify: getfamily
     -
@@ -172,11 +172,11 @@ operations:
       dump:
         request:
           attributes:
-            - family_id
-            - family_name
+            - family-id
+            - family-name
             - op
         reply:
           attributes:
-            - family_id
-            - op_policy
+            - family-id
+            - op-policy
             - policy
