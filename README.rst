@@ -109,13 +109,11 @@ We should define an ext ack type in the kernel which points out a missing
 attr. The offset should point to the payload of the containing nest
 (right after the fixed header if it's the main nest).
 
-C codegen ignore main attr pfx
-------------------------------
+struct support
+--------------
 
-For C codegen we use the attr set name to prefix the enum name.
-The main attr space, however, is often prefix-less. So let's
-use assume that if the space name is $family then the name should
-be skipped when rendering uAPI.
+structs are defined in the schema but not supported in attrs,
+ops or any of the codegen.
 
 Notes on existing families
 ==========================

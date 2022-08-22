@@ -29,7 +29,7 @@ it to describe older Netlink families. The levels are:
    directly with kernel C uAPI headers
  - genetlink-legacy - Generic Netlink catch all schema supporting quirks of
    all old genetlink families
- - raw-netlink - catch all schema supporting pre-generic netlink protocols
+ - netlink-raw - catch all schema supporting pre-Generic Netlink protocols
    such as ``NETLINK_ROUTE``
 
 The definition of the schemas (in ``jsonschema``) which can be found

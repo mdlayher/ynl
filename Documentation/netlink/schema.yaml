@@ -20,7 +20,7 @@ properties:
     type: integer
   protocol:
     description: Schema compatibility level. Default is "genetlink".
-    enum: [ genetlink, genetlink-c, genetlink-legacy ] # Trim
+    enum: [ genetlink, genetlink-c, genetlink-legacy, netlink-raw ] # Trim
   # Start genetlink-c
   uapi-header:
     description: Path to the uAPI header, default is linux/${family-name}.h
@@ -40,11 +40,16 @@ properties:
       properties:
         name:
           type: string
+        header:
+          description: For C-compatible languages, header which already defines this value.
+          type: string
         type:
-          enum: [ const, enum, flags ]
+          enum: [ const, enum, flags, struct ] # Trim
+        # For const
         value:
           description: For const - the value.
           oneOf: [ { type: string }, { type: integer }]
+        # For enum and flags
         value-start:
           description: For enum or flags the literal initializer for the first value.
           oneOf: [ { type: string }, { type: integer }]
@@ -53,14 +58,27 @@ properties:
           type: array
           items:
             type: string
-        header:
-          description: For C-compatible languages, header which already defines this value.
-          type: string
         # Start genetlink-c
         value-prefix:
           description: For enum the prefix of the values, optional.
           type: string
         # End genetlink-c
+        # Start genetlink-legacy
+        members:
+          description: List of struct members. Only scalars and strings members allowed.
+          type: array
+          items:
+            type: object
+            required: [ name, type ]
+            additionalProperties: False
+            properties:
+              name:
+                type: string
+              type:
+                enum: [ u8, u16, u32, u64, s8, s16, s32, s64, nul-string ]
+              len:
+                oneOf: [ { type: string }, { type: integer }]
+        # End genetlink-legacy
 
   attribute-sets:
     description: Definition of attribute spaces for this family.
