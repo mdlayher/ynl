@@ -122,12 +122,6 @@ struct support
 structs are defined in the schema but not supported in attrs,
 ops or any of the codegen.
 
-ynl if else in parsing
-----------------------
-
-YNL currently does if (type == attr), when it should
-do else if for every subsequent attribute.
-
 zero-check the reserved space in genl header
 --------------------------------------------
 

@@ -109,7 +109,7 @@ int nlctrl_mcast_group_parse(struct ynl_parse_arg *yarg,
 			dst->id_present = 1;
 			dst->id = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_MCAST_GRP_NAME) {
+		else if (mnl_attr_get_type(attr) == CTRL_ATTR_MCAST_GRP_NAME) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->name_present = 1;
@@ -143,61 +143,61 @@ int nlctrl_nl_policy_parse(struct ynl_parse_arg *yarg,
 			dst->type_present = 1;
 			dst->type = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MIN_VALUE_U) {
+		else if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MIN_VALUE_U) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->min_value_u_present = 1;
 			dst->min_value_u = mnl_attr_get_u64(attr);
 		}
-		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MAX_VALUE_U) {
+		else if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MAX_VALUE_U) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->max_value_u_present = 1;
 			dst->max_value_u = mnl_attr_get_u64(attr);
 		}
-		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MIN_VALUE_S) {
+		else if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MIN_VALUE_S) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->min_value_s_present = 1;
 			dst->min_value_s = mnl_attr_get_u64(attr);
 		}
-		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MAX_VALUE_S) {
+		else if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MAX_VALUE_S) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->max_value_s_present = 1;
 			dst->max_value_s = mnl_attr_get_u64(attr);
 		}
-		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MASK) {
+		else if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MASK) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->mask_present = 1;
 			dst->mask = mnl_attr_get_u64(attr);
 		}
-		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MIN_LENGTH) {
+		else if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MIN_LENGTH) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->min_length_present = 1;
 			dst->min_length = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MAX_LENGTH) {
+		else if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_MAX_LENGTH) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->max_length_present = 1;
 			dst->max_length = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_POLICY_IDX) {
+		else if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_POLICY_IDX) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->policy_idx_present = 1;
 			dst->policy_idx = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_POLICY_MAXTYPE) {
+		else if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_POLICY_MAXTYPE) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->policy_maxtype_present = 1;
 			dst->policy_maxtype = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_BITFIELD32_MASK) {
+		else if (mnl_attr_get_type(attr) == NL_POLICY_TYPE_ATTR_BITFIELD32_MASK) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->bitfield32_mask_present = 1;
@@ -228,7 +228,7 @@ int nlctrl_operation_parse(struct ynl_parse_arg *yarg,
 			dst->id_present = 1;
 			dst->id = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_OP_FLAGS) {
+		else if (mnl_attr_get_type(attr) == CTRL_ATTR_OP_FLAGS) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->flags_present = 1;
@@ -259,7 +259,7 @@ int nlctrl_policy_parse(struct ynl_parse_arg *yarg,
 			dst->do__present = 1;
 			dst->do_ = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_POLICY_DUMP) {
+		else if (mnl_attr_get_type(attr) == CTRL_ATTR_POLICY_DUMP) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->dump_present = 1;
@@ -299,39 +299,39 @@ int nlctrl_getfamily_rsp_parse(const struct nlmsghdr *nlh, void *data)
 			dst->family_id_present = 1;
 			dst->family_id = mnl_attr_get_u16(attr);
 		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_FAMILY_NAME) {
+		else if (mnl_attr_get_type(attr) == CTRL_ATTR_FAMILY_NAME) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->family_name_present = 1;
 			strncpy(dst->family_name, mnl_attr_get_str(attr), GENL_NAMSIZ - 1);
 			dst->family_name[GENL_NAMSIZ - 1] = 0;
 		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_VERSION) {
+		else if (mnl_attr_get_type(attr) == CTRL_ATTR_VERSION) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->version_present = 1;
 			dst->version = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_HDRSIZE) {
+		else if (mnl_attr_get_type(attr) == CTRL_ATTR_HDRSIZE) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->hdrsize_present = 1;
 			dst->hdrsize = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_MAXATTR) {
+		else if (mnl_attr_get_type(attr) == CTRL_ATTR_MAXATTR) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->maxattr_present = 1;
 			dst->maxattr = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_OPS) {
+		else if (mnl_attr_get_type(attr) == CTRL_ATTR_OPS) {
 			const struct nlattr *attr2;
 
 			attr_ops = attr;
 			mnl_attr_for_each_nested(attr2, attr)
 				dst->n_ops++;
 		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_MCAST_GROUPS) {
+		else if (mnl_attr_get_type(attr) == CTRL_ATTR_MCAST_GROUPS) {
 			const struct nlattr *attr2;
 
 			attr_mcast_groups = attr;
@@ -489,7 +489,7 @@ int nlctrl_getpolicy_rsp_dump_parse(const struct nlmsghdr *nlh, void *data)
 			dst->family_id_present = 1;
 			dst->family_id = mnl_attr_get_u16(attr);
 		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_OP_POLICY) {
+		else if (mnl_attr_get_type(attr) == CTRL_ATTR_OP_POLICY) {
 			const struct nlattr *attr_cmd;
 			__u32 cmd;
 
@@ -503,7 +503,7 @@ int nlctrl_getpolicy_rsp_dump_parse(const struct nlmsghdr *nlh, void *data)
 			cmd = mnl_attr_get_type(attr_cmd);
 			nlctrl_policy_parse(&parg, attr_cmd, cmd);
 		}
-		if (mnl_attr_get_type(attr) == CTRL_ATTR_POLICY) {
+		else if (mnl_attr_get_type(attr) == CTRL_ATTR_POLICY) {
 			const struct nlattr *attr_current_policy_idx, *attr_attr_idx;
 			__u32 current_policy_idx, attr_idx;
 

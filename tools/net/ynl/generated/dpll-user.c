@@ -84,13 +84,13 @@ int dpll_output_parse(struct ynl_parse_arg *yarg, const struct nlattr *nested)
 			dst->source_id_present = 1;
 			dst->source_id = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == DPLLA_SOURCE_TYPE) {
+		else if (mnl_attr_get_type(attr) == DPLLA_SOURCE_TYPE) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->source_type_present = 1;
 			dst->source_type = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == DPLLA_SOURCE_SUPPORTED) {
+		else if (mnl_attr_get_type(attr) == DPLLA_SOURCE_SUPPORTED) {
 			dst->n_source_supported++;
 		}
 	}
@@ -128,13 +128,13 @@ int dpll_source_parse(struct ynl_parse_arg *yarg, const struct nlattr *nested)
 			dst->output_id_present = 1;
 			dst->output_id = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == DPLLA_OUTPUT_TYPE) {
+		else if (mnl_attr_get_type(attr) == DPLLA_OUTPUT_TYPE) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->output_type_present = 1;
 			dst->output_type = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == DPLLA_OUTPUT_SUPPORTED) {
+		else if (mnl_attr_get_type(attr) == DPLLA_OUTPUT_SUPPORTED) {
 			dst->n_output_supported++;
 		}
 	}
@@ -180,32 +180,32 @@ int dpll_device_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 			dst->device_id_present = 1;
 			dst->device_id = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == DPLLA_DEVICE_NAME) {
+		else if (mnl_attr_get_type(attr) == DPLLA_DEVICE_NAME) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->device_name_present = 1;
 			strncpy(dst->device_name, mnl_attr_get_str(attr), DPLL_NAME_LENGTH - 1);
 			dst->device_name[DPLL_NAME_LENGTH - 1] = 0;
 		}
-		if (mnl_attr_get_type(attr) == DPLLA_SOURCE) {
+		else if (mnl_attr_get_type(attr) == DPLLA_SOURCE) {
 			dst->n_source++;
 		}
-		if (mnl_attr_get_type(attr) == DPLLA_OUTPUT) {
+		else if (mnl_attr_get_type(attr) == DPLLA_OUTPUT) {
 			dst->n_output++;
 		}
-		if (mnl_attr_get_type(attr) == DPLLA_STATUS) {
+		else if (mnl_attr_get_type(attr) == DPLLA_STATUS) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->status_present = 1;
 			dst->status = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == DPLLA_TEMP) {
+		else if (mnl_attr_get_type(attr) == DPLLA_TEMP) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->temp_present = 1;
 			dst->temp = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == DPLLA_LOCK_STATUS) {
+		else if (mnl_attr_get_type(attr) == DPLLA_LOCK_STATUS) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->lock_status_present = 1;

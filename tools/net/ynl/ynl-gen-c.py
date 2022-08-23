@@ -119,14 +119,15 @@ class Type:
     def _attr_get(self, ri, var):
         raise Exception(f"Attr get not implemented for class type {self.type}")
 
-    def attr_get(self, ri, var):
+    def attr_get(self, ri, var, first):
         lines, init_lines, local_vars = self._attr_get(ri, var)
         if type(lines) is str:
             lines = [lines]
         if type(init_lines) is str:
             init_lines = [init_lines]
 
-        ri.cw.block_start(line=f"if (mnl_attr_get_type(attr) == {self.enum_name})")
+        kw = 'if' if first else 'else if'
+        ri.cw.block_start(line=f"{kw} (mnl_attr_get_type(attr) == {self.enum_name})")
         if local_vars:
             for local in local_vars:
                 ri.cw.p(local)
@@ -969,8 +970,10 @@ def _multi_parse(ri, struct, init_lines, local_vars):
     ri.cw.nl()
     ri.cw.block_start(line=iter_line)
 
+    first = True
     for _, arg in struct.member_list():
-        arg.attr_get(ri, 'dst')
+        arg.attr_get(ri, 'dst', first=first)
+        first = False
 
     ri.cw.block_end()
     ri.cw.nl()

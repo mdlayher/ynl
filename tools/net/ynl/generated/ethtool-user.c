@@ -83,14 +83,14 @@ int ethtool_header_parse(struct ynl_parse_arg *yarg,
 			dst->dev_index_present = 1;
 			dst->dev_index = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_HEADER_DEV_NAME) {
+		else if (mnl_attr_get_type(attr) == ETHTOOL_A_HEADER_DEV_NAME) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->dev_name_present = 1;
 			strncpy(dst->dev_name, mnl_attr_get_str(attr), ALTIFNAMSIZ - 1);
 			dst->dev_name[ALTIFNAMSIZ - 1] = 0;
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_HEADER_FLAGS) {
+		else if (mnl_attr_get_type(attr) == ETHTOOL_A_HEADER_FLAGS) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->flags_present = 1;
@@ -128,49 +128,49 @@ int ethtool_channels_get_rsp_parse(const struct nlmsghdr *nlh, void *data)
 			parg.data = &dst->header;
 			ethtool_header_parse(&parg, attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_RX_MAX) {
+		else if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_RX_MAX) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->rx_max_present = 1;
 			dst->rx_max = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_TX_MAX) {
+		else if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_TX_MAX) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->tx_max_present = 1;
 			dst->tx_max = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_OTHER_MAX) {
+		else if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_OTHER_MAX) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->other_max_present = 1;
 			dst->other_max = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_COMBINED_MAX) {
+		else if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_COMBINED_MAX) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->combined_max_present = 1;
 			dst->combined_max = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_RX_COUNT) {
+		else if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_RX_COUNT) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->rx_count_present = 1;
 			dst->rx_count = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_TX_COUNT) {
+		else if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_TX_COUNT) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->tx_count_present = 1;
 			dst->tx_count = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_OTHER_COUNT) {
+		else if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_OTHER_COUNT) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->other_count_present = 1;
 			dst->other_count = mnl_attr_get_u32(attr);
 		}
-		if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_COMBINED_COUNT) {
+		else if (mnl_attr_get_type(attr) == ETHTOOL_A_CHANNELS_COMBINED_COUNT) {
 			if (ynl_attr_validate(yarg, attr))
 				return MNL_CB_ERROR;
 			dst->combined_count_present = 1;
