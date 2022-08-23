@@ -596,6 +596,42 @@ struct ynl_ntf_base_type *dpll_ntf_parse(struct ynl_sock *ys)
 	genlh = mnl_nlmsg_get_payload(nlh);
 
 	switch (genlh->cmd) {
+	case DPLL_EVENT_DEVICE_CREATE:
+		rsp = calloc(1, sizeof(struct dpll_device_create));
+		parse = dpll_device_create_rsp_parse;
+		yarg.rsp_policy = &dpll_main_nest;
+		rsp->free = (void *)dpll_device_create_free;
+		break;
+	case DPLL_EVENT_DEVICE_DELETE:
+		rsp = calloc(1, sizeof(struct dpll_device_delete));
+		parse = dpll_device_delete_rsp_parse;
+		yarg.rsp_policy = &dpll_main_nest;
+		rsp->free = (void *)dpll_device_delete_free;
+		break;
+	case DPLL_EVENT_STATUS_LOCKED:
+		rsp = calloc(1, sizeof(struct dpll_status_locked));
+		parse = dpll_status_locked_rsp_parse;
+		yarg.rsp_policy = &dpll_main_nest;
+		rsp->free = (void *)dpll_status_locked_free;
+		break;
+	case DPLL_EVENT_STATUS_UNLOCKED:
+		rsp = calloc(1, sizeof(struct dpll_status_unlocked));
+		parse = dpll_status_unlocked_rsp_parse;
+		yarg.rsp_policy = &dpll_main_nest;
+		rsp->free = (void *)dpll_status_unlocked_free;
+		break;
+	case DPLL_EVENT_SOURCE_CHANGE:
+		rsp = calloc(1, sizeof(struct dpll_source_change));
+		parse = dpll_source_change_rsp_parse;
+		yarg.rsp_policy = &dpll_main_nest;
+		rsp->free = (void *)dpll_source_change_free;
+		break;
+	case DPLL_EVENT_OUTPUT_CHANGE:
+		rsp = calloc(1, sizeof(struct dpll_output_change));
+		parse = dpll_output_change_rsp_parse;
+		yarg.rsp_policy = &dpll_main_nest;
+		rsp->free = (void *)dpll_output_change_free;
+		break;
 	default:
 		ynl_error_unknown_notification(ys, genlh->cmd);
 		return NULL;

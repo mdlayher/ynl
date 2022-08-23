@@ -1372,6 +1372,16 @@ def print_ntf_type_parse(family, cw, ku_mode):
         cw.p(f"yarg.rsp_policy = &{ri.struct['reply'].render_name}_nest;")
         cw.p(f"rsp->free = (void *){op_prefix(ri, 'notify')}_free;")
         cw.p('break;')
+    for op_name, op in family.ops.items():
+        if 'event' not in op:
+            continue
+        ri = RenderInfo(cw, family, ku_mode, op, op_name, "event")
+        cw.p(f"case {op.enum_name}:")
+        cw.p(f"rsp = calloc(1, sizeof({type_name(ri, 'event')}));")
+        cw.p(f"parse = {op_prefix(ri, 'reply', deref=True)}_parse;")
+        cw.p(f"yarg.rsp_policy = &{ri.struct['reply'].render_name}_nest;")
+        cw.p(f"rsp->free = (void *){op_prefix(ri, 'notify')}_free;")
+        cw.p('break;')
     cw.p('default:')
     cw.p('ynl_error_unknown_notification(ys, genlh->cmd);')
     cw.p('return NULL;')

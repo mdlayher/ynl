@@ -52,6 +52,7 @@ notification models
 I'm thinking we need to notification types - notifications and events.
 The former are direct mapping of a GET, for brevity they don't have to
 repeat all the arguments. Events have their own list of arguments.
+This needs to be documented.
 
 upper / c-ify
 -------------
