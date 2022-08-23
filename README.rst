@@ -70,6 +70,11 @@ pull in thru an include but non-C won't have any knowledge of.
 These constants have the 'headers' attribute in their definitions,
 but are currently not skipped during rendering.
 
+check that the lenght is constant or constant - 1
+-------------------------------------------------
+
+Regex the fields which can take string constant names.
+
 document the attributes
 -----------------------
 
