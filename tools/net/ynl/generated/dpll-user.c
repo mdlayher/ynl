@@ -367,8 +367,252 @@ err_free:
 }
 
 /* ============== DPLL_EVENT_DEVICE_CREATE ============== */
+// DPLL_EVENT_DEVICE_CREATE - event
+int dpll_device_create_rsp_parse(const struct nlmsghdr *nlh, void *data)
+{
+	struct dpll_device_create_rsp *dst;
+	struct ynl_parse_arg *yarg = data;
+	const struct nlattr *attr;
+
+	dst = yarg->data;
+
+	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
+		if (mnl_attr_get_type(attr) == DPLLA_DEVICE_ID) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->device_id_present = 1;
+			dst->device_id = mnl_attr_get_u32(attr);
+		}
+		else if (mnl_attr_get_type(attr) == DPLLA_DEVICE_NAME) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->device_name_present = 1;
+			strncpy(dst->device_name, mnl_attr_get_str(attr), DPLL_NAME_LENGTH - 1);
+			dst->device_name[DPLL_NAME_LENGTH - 1] = 0;
+		}
+	}
+
+	return MNL_CB_OK;
+}
+
+void dpll_device_create_free(struct dpll_device_create *rsp)
+{
+	free(rsp);
+}
+
 /* ============== DPLL_EVENT_DEVICE_DELETE ============== */
+// DPLL_EVENT_DEVICE_DELETE - event
+int dpll_device_delete_rsp_parse(const struct nlmsghdr *nlh, void *data)
+{
+	struct dpll_device_delete_rsp *dst;
+	struct ynl_parse_arg *yarg = data;
+	const struct nlattr *attr;
+
+	dst = yarg->data;
+
+	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
+		if (mnl_attr_get_type(attr) == DPLLA_DEVICE_ID) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->device_id_present = 1;
+			dst->device_id = mnl_attr_get_u32(attr);
+		}
+		else if (mnl_attr_get_type(attr) == DPLLA_DEVICE_NAME) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->device_name_present = 1;
+			strncpy(dst->device_name, mnl_attr_get_str(attr), DPLL_NAME_LENGTH - 1);
+			dst->device_name[DPLL_NAME_LENGTH - 1] = 0;
+		}
+	}
+
+	return MNL_CB_OK;
+}
+
+void dpll_device_delete_free(struct dpll_device_delete *rsp)
+{
+	free(rsp);
+}
+
 /* ============== DPLL_EVENT_STATUS_LOCKED ============== */
+// DPLL_EVENT_STATUS_LOCKED - event
+int dpll_status_locked_rsp_parse(const struct nlmsghdr *nlh, void *data)
+{
+	struct dpll_status_locked_rsp *dst;
+	struct ynl_parse_arg *yarg = data;
+	const struct nlattr *attr;
+
+	dst = yarg->data;
+
+	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
+		if (mnl_attr_get_type(attr) == DPLLA_DEVICE_ID) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->device_id_present = 1;
+			dst->device_id = mnl_attr_get_u32(attr);
+		}
+		else if (mnl_attr_get_type(attr) == DPLLA_LOCK_STATUS) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->lock_status_present = 1;
+			dst->lock_status = mnl_attr_get_u32(attr);
+		}
+	}
+
+	return MNL_CB_OK;
+}
+
+void dpll_status_locked_free(struct dpll_status_locked *rsp)
+{
+	free(rsp);
+}
+
 /* ============== DPLL_EVENT_STATUS_UNLOCKED ============== */
+// DPLL_EVENT_STATUS_UNLOCKED - event
+int dpll_status_unlocked_rsp_parse(const struct nlmsghdr *nlh, void *data)
+{
+	struct dpll_status_unlocked_rsp *dst;
+	struct ynl_parse_arg *yarg = data;
+	const struct nlattr *attr;
+
+	dst = yarg->data;
+
+	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
+		if (mnl_attr_get_type(attr) == DPLLA_DEVICE_ID) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->device_id_present = 1;
+			dst->device_id = mnl_attr_get_u32(attr);
+		}
+		else if (mnl_attr_get_type(attr) == DPLLA_LOCK_STATUS) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->lock_status_present = 1;
+			dst->lock_status = mnl_attr_get_u32(attr);
+		}
+	}
+
+	return MNL_CB_OK;
+}
+
+void dpll_status_unlocked_free(struct dpll_status_unlocked *rsp)
+{
+	free(rsp);
+}
+
 /* ============== DPLL_EVENT_SOURCE_CHANGE ============== */
+// DPLL_EVENT_SOURCE_CHANGE - event
+int dpll_source_change_rsp_parse(const struct nlmsghdr *nlh, void *data)
+{
+	struct dpll_source_change_rsp *dst;
+	struct ynl_parse_arg *yarg = data;
+	const struct nlattr *attr;
+
+	dst = yarg->data;
+
+	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
+		if (mnl_attr_get_type(attr) == DPLLA_DEVICE_ID) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->device_id_present = 1;
+			dst->device_id = mnl_attr_get_u32(attr);
+		}
+		else if (mnl_attr_get_type(attr) == DPLLA_SOURCE_ID) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->source_id_present = 1;
+			dst->source_id = mnl_attr_get_u32(attr);
+		}
+		else if (mnl_attr_get_type(attr) == DPLLA_SOURCE_TYPE) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->source_type_present = 1;
+			dst->source_type = mnl_attr_get_u32(attr);
+		}
+	}
+
+	return MNL_CB_OK;
+}
+
+void dpll_source_change_free(struct dpll_source_change *rsp)
+{
+	free(rsp);
+}
+
 /* ============== DPLL_EVENT_OUTPUT_CHANGE ============== */
+// DPLL_EVENT_OUTPUT_CHANGE - event
+int dpll_output_change_rsp_parse(const struct nlmsghdr *nlh, void *data)
+{
+	struct dpll_output_change_rsp *dst;
+	struct ynl_parse_arg *yarg = data;
+	const struct nlattr *attr;
+
+	dst = yarg->data;
+
+	mnl_attr_for_each(attr, nlh, sizeof(struct genlmsghdr)) {
+		if (mnl_attr_get_type(attr) == DPLLA_DEVICE_ID) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->device_id_present = 1;
+			dst->device_id = mnl_attr_get_u32(attr);
+		}
+		else if (mnl_attr_get_type(attr) == DPLLA_OUTPUT_ID) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->output_id_present = 1;
+			dst->output_id = mnl_attr_get_u32(attr);
+		}
+		else if (mnl_attr_get_type(attr) == DPLLA_OUTPUT_TYPE) {
+			if (ynl_attr_validate(yarg, attr))
+				return MNL_CB_ERROR;
+			dst->output_type_present = 1;
+			dst->output_type = mnl_attr_get_u32(attr);
+		}
+	}
+
+	return MNL_CB_OK;
+}
+
+void dpll_output_change_free(struct dpll_output_change *rsp)
+{
+	free(rsp);
+}
+
+// --------------- Common notification parsing --------------- //
+struct ynl_ntf_base_type *dpll_ntf_parse(struct ynl_sock *ys)
+{
+	struct ynl_parse_arg yarg = { .ys = ys, };
+	struct ynl_ntf_base_type *rsp;
+	struct genlmsghdr *genlh;
+	struct nlmsghdr *nlh;
+	mnl_cb_t parse;
+	int len, err;
+
+	len = mnl_socket_recvfrom(ys->sock, ys->rx_buf, MNL_SOCKET_BUFFER_SIZE);
+	if (len < (ssize_t)(sizeof(*nlh) + sizeof(*genlh)))
+		return NULL;
+
+	nlh = (struct nlmsghdr *)ys->rx_buf;
+	genlh = mnl_nlmsg_get_payload(nlh);
+
+	switch (genlh->cmd) {
+	default:
+		ynl_error_unknown_notification(ys, genlh->cmd);
+		return NULL;
+	}
+
+	yarg.data = rsp->data;
+
+	err = mnl_cb_run2(ys->rx_buf, len, 0, 0, parse, &yarg,
+			 ynl_cb_array, NLMSG_MIN_TYPE);
+	if (err < 0)
+		goto err_free;
+
+	rsp->family = nlh->nlmsg_type;
+	rsp->cmd = genlh->cmd;
+	return rsp;
+
+err_free:
+	free(rsp);
+	return NULL;
+}

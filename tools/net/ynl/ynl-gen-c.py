@@ -578,6 +578,8 @@ class Family:
         self.pure_nested_structs = dict()
         self.all_notify = dict()
 
+        self._mock_up_events()
+
         self._dictify()
         self._load_root_sets()
         self._load_nested_sets()
@@ -588,6 +590,16 @@ class Family:
 
     def get(self, key, default=None):
         return self.yaml.get(key, default)
+
+    # Fake a 'do' equivalent of all events, so that we can render their response parsing
+    def _mock_up_events(self):
+        for op in self.yaml['operations']['list']:
+            if 'event' in op:
+                op['do'] = {
+                    'reply': {
+                        'attributes': op['event']['attributes']
+                    }
+                }
 
     def _dictify(self):
         for elem in self.yaml['definitions']:
@@ -670,7 +682,7 @@ class RenderInfo:
         self.op_mode = op_mode
 
         # 'do' and 'dump' response parsing is identical
-        if op_mode != 'do' and 'do' in op and 'reply' in op['do'] and \
+        if op_mode != 'do' and 'dump' in op and 'do' in op and 'reply' in op['do'] and \
            op["do"]["reply"] == op["dump"]["reply"]:
             self.type_consistent = True
         else:
@@ -694,6 +706,7 @@ class RenderInfo:
                                              type_list=op[op_mode][op_dir]['attributes'])
         if op_mode == 'event':
             self.struct['reply'] = Struct(family, self.attr_set, type_list=op['event']['attributes'])
+
 
 class CodeWriter:
     def __init__(self, nlib):
@@ -1046,7 +1059,7 @@ def parse_rsp_nested(ri, struct):
 
 
 def parse_rsp_msg(ri, deref=False):
-    if 'reply' not in ri.op[ri.op_mode]:
+    if 'reply' not in ri.op[ri.op_mode] and ri.op_mode != 'event':
         return
 
     func_args = ['const struct nlmsghdr *nlh',
@@ -1578,7 +1591,7 @@ def main():
             if args.mode == "user":
                 cw.p(f"/* ============== {op.enum_name} ============== */")
 
-            if 'do' in op:
+            if 'do' in op and 'event' not in op:
                 cw.p(f"// {op.enum_name} - do")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
 
@@ -1621,7 +1634,6 @@ def main():
                 if args.mode == "user":
                     cw.p(f"// {op.enum_name} - event")
                     print_rsp_type(ri)
-                    print_rsp_type_helpers(ri)
                     cw.nl()
                     print_wrapped_type(ri)
 
@@ -1657,7 +1669,7 @@ def main():
             if args.mode == "user":
                 cw.p(f"/* ============== {op.enum_name} ============== */")
 
-            if 'do' in op:
+            if 'do' in op and 'event' not in op:
                 cw.p(f"// {op.enum_name} - do")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
                 if args.mode == "user":
@@ -1685,6 +1697,17 @@ def main():
                     has_ntf = True
                     if not ri.type_consistent:
                         raise Exception('Only notifications with consistent types supported')
+                    print_ntf_type_free(ri)
+
+            if 'event' in op:
+                if args.mode == "user":
+                    cw.p(f"// {op.enum_name} - event")
+                    has_ntf = True
+
+                    ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
+                    parse_rsp_msg(ri)
+
+                    ri = RenderInfo(cw, parsed, args.mode, op, op_name, "event")
                     print_ntf_type_free(ri)
 
         if has_ntf:
