@@ -674,7 +674,7 @@ class RenderInfo:
            op["do"]["reply"] == op["dump"]["reply"]:
             self.type_consistent = True
         else:
-            self.type_consistent = False
+            self.type_consistent = op_mode == 'event'
 
         self.attr_set = attr_set
         if not self.attr_set:
@@ -692,7 +692,8 @@ class RenderInfo:
             if op and op_dir in op[op_mode]:
                 self.struct[op_dir] = Struct(family, self.attr_set,
                                              type_list=op[op_mode][op_dir]['attributes'])
-
+        if op_mode == 'event':
+            self.struct['reply'] = Struct(family, self.attr_set, type_list=op['event']['attributes'])
 
 class CodeWriter:
     def __init__(self, nlib):
@@ -826,6 +827,7 @@ op_mode_to_wrapper = {
     'do': '',
     'dump': '_list',
     'notify': '_ntf',
+    'event': '',
 }
 
 c_kw = {
@@ -1248,16 +1250,20 @@ def print_req_type(ri):
 
 
 def print_rsp_type(ri):
-    if 'reply' not in ri.op[ri.op_mode]:
+    if (ri.op_mode == 'do' or ri.op_mode == 'dump') and 'reply' in ri.op[ri.op_mode]:
+        direction = 'reply'
+    elif ri.op_mode == 'event':
+        direction = 'reply'
+    else:
         return
-    print_type(ri, "reply")
+    print_type(ri, direction)
 
 
 def print_wrapped_type(ri):
     ri.cw.block_start(line=f"{type_name(ri, 'reply')}")
     if ri.op_mode == 'dump':
         ri.cw.p(f"{type_name(ri, 'reply')} *next;")
-    elif ri.op_mode == 'notify':
+    elif ri.op_mode == 'notify' or ri.op_mode == 'event':
         ri.cw.p('__u16 family;')
         ri.cw.p('__u8 cmd;')
         ri.cw.p(f"void (*free)({type_name(ri, 'reply')} *ntf);")
@@ -1608,6 +1614,15 @@ def main():
                     has_ntf = True
                     if not ri.type_consistent:
                         raise Exception('Only notifications with consistent types supported')
+                    print_wrapped_type(ri)
+
+            if 'event' in op:
+                ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'event')
+                if args.mode == "user":
+                    cw.p(f"// {op.enum_name} - event")
+                    print_rsp_type(ri)
+                    print_rsp_type_helpers(ri)
+                    cw.nl()
                     print_wrapped_type(ri)
 
         if has_ntf:

@@ -184,8 +184,9 @@ operations:
       attribute-set: main
       mcgrp: config
       event:
-        - device-id
-        - device-name
+        attributes:
+          - device-id
+          - device-name
 
     -
       name: device-delete
@@ -193,8 +194,9 @@ operations:
       attribute-set: main
       mcgrp: config
       event:
-        - device-id
-        - device-name
+        attributes:
+          - device-id
+          - device-name
 
     -
       name: status-locked
@@ -202,8 +204,9 @@ operations:
       attribute-set: main
       mcgrp: monitor
       event:
-        - device-id
-        - lock-status
+        attributes:
+          - device-id
+          - lock-status
 
     -
       name: status-unlocked
@@ -211,8 +214,9 @@ operations:
       attribute-set: main
       mcgrp: monitor
       event:
-        - device-id
-        - lock-status
+        attributes:
+          - device-id
+          - lock-status
 
     -
       name: source-change
@@ -220,9 +224,10 @@ operations:
       attribute-set: main
       mcgrp: config-source
       event:
-        - device-id
-        - source-id
-        - source-type
+        attributes:
+          - device-id
+          - source-id
+          - source-type
 
     -
       name: output-change
@@ -230,9 +235,10 @@ operations:
       attribute-set: main
       mcgrp: config-output
       event:
-        - device-id
-        - output-id
-        - output-type
+        attributes:
+          - device-id
+          - output-id
+          - output-type
 
 mcast-groups:
   name-prefix: dpll-

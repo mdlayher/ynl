@@ -195,10 +195,121 @@ int dpll_set_output_type(struct ynl_sock *ys,
 			 struct dpll_set_output_type_req *req);
 
 /* ============== DPLL_EVENT_DEVICE_CREATE ============== */
+// DPLL_EVENT_DEVICE_CREATE - event
+struct dpll_device_create_rsp {
+	__u32 device_id_present:1;
+	__u32 device_name_present:1;
+
+	__u32 device_id;
+	char device_name[DPLL_NAME_LENGTH];
+};
+
+struct dpll_device_create {
+	__u16 family;
+	__u8 cmd;
+	void (*free)(struct dpll_device_create *ntf);
+	struct dpll_device_create_rsp obj __attribute__ ((aligned (8)));
+};
+
+void dpll_device_create_free(struct dpll_device_create *rsp);
+
 /* ============== DPLL_EVENT_DEVICE_DELETE ============== */
+// DPLL_EVENT_DEVICE_DELETE - event
+struct dpll_device_delete_rsp {
+	__u32 device_id_present:1;
+	__u32 device_name_present:1;
+
+	__u32 device_id;
+	char device_name[DPLL_NAME_LENGTH];
+};
+
+struct dpll_device_delete {
+	__u16 family;
+	__u8 cmd;
+	void (*free)(struct dpll_device_delete *ntf);
+	struct dpll_device_delete_rsp obj __attribute__ ((aligned (8)));
+};
+
+void dpll_device_delete_free(struct dpll_device_delete *rsp);
+
 /* ============== DPLL_EVENT_STATUS_LOCKED ============== */
+// DPLL_EVENT_STATUS_LOCKED - event
+struct dpll_status_locked_rsp {
+	__u32 device_id_present:1;
+	__u32 lock_status_present:1;
+
+	__u32 device_id;
+	enum dpll_genl_lock_status lock_status;
+};
+
+struct dpll_status_locked {
+	__u16 family;
+	__u8 cmd;
+	void (*free)(struct dpll_status_locked *ntf);
+	struct dpll_status_locked_rsp obj __attribute__ ((aligned (8)));
+};
+
+void dpll_status_locked_free(struct dpll_status_locked *rsp);
+
 /* ============== DPLL_EVENT_STATUS_UNLOCKED ============== */
+// DPLL_EVENT_STATUS_UNLOCKED - event
+struct dpll_status_unlocked_rsp {
+	__u32 device_id_present:1;
+	__u32 lock_status_present:1;
+
+	__u32 device_id;
+	enum dpll_genl_lock_status lock_status;
+};
+
+struct dpll_status_unlocked {
+	__u16 family;
+	__u8 cmd;
+	void (*free)(struct dpll_status_unlocked *ntf);
+	struct dpll_status_unlocked_rsp obj __attribute__ ((aligned (8)));
+};
+
+void dpll_status_unlocked_free(struct dpll_status_unlocked *rsp);
+
 /* ============== DPLL_EVENT_SOURCE_CHANGE ============== */
+// DPLL_EVENT_SOURCE_CHANGE - event
+struct dpll_source_change_rsp {
+	__u32 device_id_present:1;
+	__u32 source_id_present:1;
+	__u32 source_type_present:1;
+
+	__u32 device_id;
+	__u32 source_id;
+	enum dpll_genl_signal_type source_type;
+};
+
+struct dpll_source_change {
+	__u16 family;
+	__u8 cmd;
+	void (*free)(struct dpll_source_change *ntf);
+	struct dpll_source_change_rsp obj __attribute__ ((aligned (8)));
+};
+
+void dpll_source_change_free(struct dpll_source_change *rsp);
+
 /* ============== DPLL_EVENT_OUTPUT_CHANGE ============== */
+// DPLL_EVENT_OUTPUT_CHANGE - event
+struct dpll_output_change_rsp {
+	__u32 device_id_present:1;
+	__u32 output_id_present:1;
+	__u32 output_type_present:1;
+
+	__u32 device_id;
+	__u32 output_id;
+	enum dpll_genl_signal_type output_type;
+};
+
+struct dpll_output_change {
+	__u16 family;
+	__u8 cmd;
+	void (*free)(struct dpll_output_change *ntf);
+	struct dpll_output_change_rsp obj __attribute__ ((aligned (8)));
+};
+
+void dpll_output_change_free(struct dpll_output_change *rsp);
 
 #endif /* _LINUX_DPLL_GEN_H */

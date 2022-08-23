@@ -230,10 +230,14 @@ properties:
               description: Name of the command sharing the reply type with this notification.
               type: string
             event:
-              description: Explicit list of the attributes for the notification.
-              type: array
-              items:
-                type: string
+              type: object
+              additionalProperties: False
+              properties:
+                attributes:
+                  description: Explicit list of the attributes for the notification.
+                  type: array
+                  items:
+                    type: string
             mcgrp:
               description: Name of the multicast group generating given notification.
               type: string
