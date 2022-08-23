@@ -116,7 +116,11 @@ class Type:
     def attr_put(self, ri, var):
         raise Exception(f"Put not implemented for class type {self.type}")
 
-    def _attr_get(self, ri, var, lines, init_lines=None, local_vars=None):
+    def _attr_get(self, ri, var):
+        raise Exception(f"Attr get not implemented for class type {self.type}")
+
+    def attr_get(self, ri, var):
+        lines, init_lines, local_vars = self._attr_get(ri, var)
         if type(lines) is str:
             lines = [lines]
         if type(init_lines) is str:
@@ -141,9 +145,6 @@ class Type:
         for line in lines:
             ri.cw.p(line)
         ri.cw.block_end()
-
-    def attr_get(self, ri, var):
-        raise Exception(f"Put not implemented for class type {self.type}")
 
     def _setter_lines(self, ri, member):
         raise Exception(f"Setter not implemented for class type {self.type}")
@@ -205,8 +206,8 @@ class TypeScalar(Type):
     def attr_put(self, ri, var):
         self._attr_put_simple(ri, var, self._mnl_type())
 
-    def attr_get(self, ri, var):
-        self._attr_get(ri, var, f"{var}->{self.c_name} = mnl_attr_get_{self._mnl_type()}(attr);")
+    def _attr_get(self, ri, var):
+        return f"{var}->{self.c_name} = mnl_attr_get_{self._mnl_type()}(attr);", None, None
 
     def _setter_lines(self, ri, member):
         return [f"{member} = {self.c_name};"]
@@ -222,8 +223,8 @@ class TypeFlag(Type):
     def attr_put(self, ri, var):
         self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {self.enum_name}, 0, NULL)")
 
-    def attr_get(self, ri, var):
-        self._attr_get(ri, var, [])
+    def _attr_get(self, ri, var):
+        return [], None, None
 
     def _setter_lines(self, ri, member):
         return []
@@ -248,10 +249,9 @@ class TypeNulString(Type):
     def attr_put(self, ri, var):
         self._attr_put_simple(ri, var, 'strz')
 
-    def attr_get(self, ri, var):
-        self._attr_get(ri, var,
-                       [f"strncpy({var}->{self.c_name}, mnl_attr_get_str(attr), {self.len});",
-                        f"{var}->{self.c_name}[{self.len}] = 0;"])
+    def _attr_get(self, ri, var):
+        return [f"strncpy({var}->{self.c_name}, mnl_attr_get_str(attr), {self.len});",
+                f"{var}->{self.c_name}[{self.len}] = 0;"], None, None
 
     def _setter_lines(self, ri, member):
         return [f'strncpy({member}, {self.c_name}, sizeof({member}));',
@@ -272,8 +272,8 @@ class TypeBinary(Type):
         self._attr_put_line(ri, var, f"mnl_attr_put(nlh, {self.enum_name}, " +
                             f"{self.len}, {var}->{self.c_name})")
 
-    def attr_get(self, ri, var):
-        self._attr_get(ri, var, f"memcpy({var}->{self.c_name}, mnl_attr_get_payload(attr), {self.len});")
+    def _attr_get(self, ri, var):
+        return f"memcpy({var}->{self.c_name}, mnl_attr_get_payload(attr), {self.len});", None, None
 
     def _setter_lines(self, ri, member):
         return [f"memcpy({member}, {self.c_name}, {self.len});"]
@@ -290,11 +290,11 @@ class TypeNest(Type):
         self._attr_put_line(ri, var, f"{self.nested_render_name}_put(nlh, " +
                             f"{self.enum_name}, &{var}->{self.c_name})")
 
-    def attr_get(self, ri, var):
+    def _attr_get(self, ri, var):
         get_lines = [f"{self.nested_render_name}_parse(&parg, attr);"]
         init_lines = [f"parg.rsp_policy = &{self.nested_render_name}_nest;",
                       f"parg.data = &{var}->{self.c_name};"]
-        self._attr_get(ri, var, get_lines, init_lines=init_lines)
+        return get_lines, init_lines, None
 
     def setter(self, ri, space, direction, deref=False, ref=None):
         ref = (ref if ref else []) + [self.c_name]
@@ -327,8 +327,8 @@ class TypeMultiAttr(Type):
         else:
             raise Exception(f"Sub-type {self.attr['sub-type']} not supported yet")
 
-    def attr_get(self, ri, var):
-        self._attr_get(ri, var, f'{var}->n_{self.c_name}++;')
+    def _attr_get(self, ri, var):
+        return f'{var}->n_{self.c_name}++;', None, None
 
 
 class TypeArrayNest(Type):
@@ -350,12 +350,12 @@ class TypeArrayNest(Type):
     def _attr_typol(self):
         return f'.type = YNL_PT_NEST, .nest = &{self.nested_render_name}_nest, '
 
-    def attr_get(self, ri, var):
+    def _attr_get(self, ri, var):
         local_vars = ['const struct nlattr *attr2;']
         get_lines = [f'attr_{self.c_name} = attr;',
                      'mnl_attr_for_each_nested(attr2, attr)',
                      f'\t{var}->n_{self.c_name}++;']
-        self._attr_get(ri, var, get_lines, local_vars=local_vars)
+        return get_lines, None, local_vars
 
 
 class TypeNestTypeValue(Type):
@@ -365,7 +365,7 @@ class TypeNestTypeValue(Type):
     def _attr_typol(self):
         return f'.type = YNL_PT_NEST, .nest = &{self.nested_render_name}_nest, '
 
-    def attr_get(self, ri, var):
+    def _attr_get(self, ri, var):
         prev = 'attr'
         tv_args = ''
         get_lines = []
@@ -385,7 +385,7 @@ class TypeNestTypeValue(Type):
             tv_args = f", {', '.join(tv_names)}"
 
         get_lines += [f"{self.nested_render_name}_parse(&parg, {prev}{tv_args});"]
-        self._attr_get(ri, var, get_lines, init_lines=init_lines, local_vars=local_vars)
+        return get_lines, init_lines, local_vars
 
 
 class Struct:
