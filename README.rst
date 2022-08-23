@@ -15,7 +15,7 @@ The interesting bits are in the following locations:
  - actual YAML bindings - Documentation/netlink/
  - tools/net/ - code generators, samples, C library etc.
 
-... and this document itself :)
+and this document itself :)
 
 Goals
 =====
