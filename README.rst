@@ -123,6 +123,13 @@ ynl if else in parsing
 YNL currently does if (type == attr), when it should
 do else if for every subsequent attribute.
 
+zero-check the reserved space in genl header
+--------------------------------------------
+
+We don't currently check that struct genlmsghdr.reserved is zero on input.
+We should start doing that to allow reuse of some of those bits for new
+fields.
+
 Notes on existing families
 ==========================
 
