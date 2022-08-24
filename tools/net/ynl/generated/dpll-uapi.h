@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Do not edit directly, auto-generated from:
-//	Documentation/netlink/bindings/dpll.yaml
+//	Documentation/netlink/specs/dpll.yaml
 // YNL-GEN uapi header
 
 #ifndef _UAPI_LINUX_DPLL_H

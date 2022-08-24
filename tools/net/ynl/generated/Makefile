@@ -3,8 +3,8 @@ CFLAGS=-std=gnu99 -O2 -W -Wall -Wextra -Wno-unused-parameter -Wshadow -g -I../li
 
 TOOL:=../ynl-gen-c.py
 
-YAML:=$(wildcard ../../../../Documentation/netlink/bindings/*.yaml)
-GENS:=$(patsubst ../../../../Documentation/netlink/bindings/%.yaml,%,${YAML})
+YAML:=$(wildcard ../../../../Documentation/netlink/specs/*.yaml)
+GENS:=$(patsubst ../../../../Documentation/netlink/specs/%.yaml,%,${YAML})
 SRCS=$(patsubst %,%-user.c,${GENS})
 HDRS=$(patsubst %,%-user.h,${GENS})
 KSRCS=$(patsubst %,%-kernel.c,${GENS})
@@ -18,24 +18,24 @@ protos.a: $(OBJS)
 	@echo -e "\tAR $@"
 	@ar rcs $@ $(OBJS)
 
-%-user.h: ../../../../Documentation/netlink/bindings/%.yaml $(TOOL)
+%-user.h: ../../../../Documentation/netlink/specs/%.yaml $(TOOL)
 	@echo -e "\tGEN $@"
 	@$(TOOL) --mode user --user-header ynl.h --header --spec $< > $@
 
-%-user.c: ../../../../Documentation/netlink/bindings/%.yaml $(TOOL)
+%-user.c: ../../../../Documentation/netlink/specs/%.yaml $(TOOL)
 	@echo -e "\tGEN $@"
 	@$(TOOL) --mode user --user-header $(patsubst %.c,%.h,$@) ynl.h \
 		--source --spec $< > $@
 
-%-uapi.h: ../../../../Documentation/netlink/bindings/%.yaml $(TOOL)
+%-uapi.h: ../../../../Documentation/netlink/specs/%.yaml $(TOOL)
 	@echo -e "\tGEN $@"
 	@$(TOOL) --mode uapi --header --spec $< > $@
 
-%-kernel.h: ../../../../Documentation/netlink/bindings/%.yaml $(TOOL)
+%-kernel.h: ../../../../Documentation/netlink/specs/%.yaml $(TOOL)
 	@echo -e "\tGEN $@"
 	@$(TOOL) --mode kernel --header --spec $< > $@
 
-%-kernel.c: ../../../../Documentation/netlink/bindings/%.yaml $(TOOL)
+%-kernel.c: ../../../../Documentation/netlink/specs/%.yaml $(TOOL)
 	@echo -e "\tGEN $@"
 	@$(TOOL) --mode kernel --source --spec $< > $@
 

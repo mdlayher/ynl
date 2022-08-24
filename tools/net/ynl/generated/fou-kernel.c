@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Do not edit directly, auto-generated from:
-//	Documentation/netlink/bindings/fou.yaml
+//	Documentation/netlink/specs/fou.yaml
 // YNL-GEN kernel source
 
 #include <net/netlink.h>
