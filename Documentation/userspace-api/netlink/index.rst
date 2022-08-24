@@ -10,5 +10,5 @@ Netlink documentation for users.
    :maxdepth: 2
 
    intro
-   c-code-gen
    yaml
+   c-code-gen

@@ -120,8 +120,8 @@ properties:
               name:
                 type: string
               type: &attr-type
-                enum: [ unused, flag, binary, u8, u16, u32, u64, s32, s64,
-                        nul-string, multi-attr, nest, array-nest, nest-type-value ]
+                enum: [ unused, pad, flag, binary, variable-binary, u8, u16, u32, u64, s32, s64,
+                        nul-string, legacy-string, multi-attr, nest, array-nest, nest-type-value ]
               description:
                 description: Documentation of the attribute.
                 type: string

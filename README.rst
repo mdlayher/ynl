@@ -121,6 +121,16 @@ We don't currently check that struct genlmsghdr.reserved is zero on input.
 We should start doing that to allow reuse of some of those bits for new
 fields.
 
+Spec reshuffling
+----------------
+
+ - add support for variable binary and fixed string
+ - mutli attr should be a bool
+ - verification as a subsection
+ - add regex for len
+ - rename mcast-grp name <> value
+ - endian support
+
 Notes on existing families
 ==========================
 
