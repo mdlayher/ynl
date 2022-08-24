@@ -156,7 +156,7 @@ ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 		if (mnl_attr_get_type(attr) == NLMSGERR_ATTR_MISS_NEST)
 			miss_nest = attr;
 	}
-	if (!offs && !msg && !(miss_type && miss_nest))
+	if (!offs && !msg && !miss_type)
 		return MNL_CB_OK;
 
 	bad_attr[0] = '\0';
@@ -195,14 +195,15 @@ ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 		if (str[mnl_attr_get_payload_len(msg) - 1])
 			return MNL_CB_ERROR;
 	}
-	if (miss_type && miss_nest) {
+	if (miss_type) {
 		struct ynl_policy_nest *nest_pol = NULL;
 		unsigned int n, off;
 		void *start, *end;
 		int n2;
 
 		if (mnl_attr_get_payload_len(miss_type) != sizeof(__u32) ||
-		    mnl_attr_get_payload_len(miss_nest) != sizeof(__u32))
+		    (miss_nest &&
+		     mnl_attr_get_payload_len(miss_nest) != sizeof(__u32)))
 			return MNL_CB_ERROR;
 
 		n = snprintf(miss_attr, sizeof(miss_attr), "%smissing attribute: ",
@@ -212,13 +213,12 @@ ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 						     sizeof(struct genlmsghdr));
 		end = mnl_nlmsg_get_payload_tail(ys->nlh);
 
-		off = mnl_attr_get_u32(miss_nest);
-		off -= sizeof(struct nlmsghdr);
-
-		if (!off) {
-			nest_pol = ys->req_policy;
-		} else {
+		nest_pol = ys->req_policy;
+		if (miss_nest) {
+			off = mnl_attr_get_u32(miss_nest);
+			off -= sizeof(struct nlmsghdr);
 			off -= sizeof(struct genlmsghdr);
+
 			n += ynl_err_walk(ys, start, end, off, ys->req_policy,
 					  &miss_attr[n], sizeof(miss_attr) - n,
 					  &nest_pol);
