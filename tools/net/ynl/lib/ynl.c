@@ -156,7 +156,7 @@ ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 		if (mnl_attr_get_type(attr) == NLMSGERR_ATTR_MISS_NEST)
 			miss_nest = attr;
 	}
-	if (!offs && !msg)
+	if (!offs && !msg && !(miss_type && miss_nest))
 		return MNL_CB_OK;
 
 	bad_attr[0] = '\0';
