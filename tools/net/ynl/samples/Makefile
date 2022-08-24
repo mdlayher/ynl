@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-std=gnu99 -O2 -W -Wall -Wextra -Wno-unused-parameter -Wshadow -g \
-	-I../lib/ -I../generated/ -static
-LDLIBS=/usr/lib64/libmnl.a ../lib/ynl.a ../generated/protos.a /usr/lib64/libmnl.a
+	-I../lib/ -I../generated/ -fsanitize=address -static-libasan
+LDLIBS=-lmnl ../lib/ynl.a ../generated/protos.a
 
 SRCS=$(wildcard *.c)
 BINS=$(patsubst %.c,%,${SRCS})
