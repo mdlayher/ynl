@@ -108,15 +108,6 @@ codegen clenaup
 
 The ynl-gen-c.py is currently a dumpster fire of badly written Python.
 
-ext ack support for missing attr
---------------------------------
-
-We should define an ext ack type in the kernel which points out a missing
-attr. The offset should point to the payload of the containing nest
-(right after the fixed header if it's the main nest).
-
-This is mostly done, ynl parsing and testing needed.
-
 struct support
 --------------
 
