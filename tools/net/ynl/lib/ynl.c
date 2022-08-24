@@ -171,7 +171,8 @@ ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 
 		ys->err.attr_offs = mnl_attr_get_u32(offs);
 
-		n = snprintf(bad_attr, sizeof(bad_attr), " (bad attr: ");
+		n = snprintf(bad_attr, sizeof(bad_attr), "%sbad attribute: ",
+			     msg ? " (" : "");
 
 		start = mnl_nlmsg_get_payload_offset(ys->nlh,
 						     sizeof(struct genlmsghdr));
@@ -184,8 +185,6 @@ ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 		n += ynl_err_walk(ys, start, end, off, ys->req_policy,
 				  &bad_attr[n], sizeof(bad_attr) - n, NULL);
 
-		if (n < sizeof(bad_attr))
-			n += snprintf(&bad_attr[n], sizeof(bad_attr) - n, ")");
 		if (n >= sizeof(bad_attr))
 			n = sizeof(bad_attr) - 1;
 		bad_attr[n] = '\0';
@@ -206,7 +205,8 @@ ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 		    mnl_attr_get_payload_len(miss_nest) != sizeof(__u32))
 			return MNL_CB_ERROR;
 
-		n = snprintf(miss_attr, sizeof(miss_attr), " (missing attr: ");
+		n = snprintf(miss_attr, sizeof(miss_attr), "%smissing attribute: ",
+			     bad_attr[0] ? ", " : (msg ? " (" : ""));
 
 		start = mnl_nlmsg_get_payload_offset(ys->nlh,
 						     sizeof(struct genlmsghdr));
@@ -230,16 +230,21 @@ ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 					sizeof(miss_attr) - n, &n2);
 		n += n2;
 
-		if (n < sizeof(miss_attr))
-			n += snprintf(&miss_attr[n], sizeof(miss_attr) - n, ")");
 		if (n >= sizeof(miss_attr))
 			n = sizeof(miss_attr) - 1;
 		miss_attr[n] = '\0';
 	}
 
 	/* Implicitly depend on ys->err.code already set */
-	yerr_msg(ys, "Kernel %s: '%s'%s%s",
-		 ys->err.code ? "error" : "warning", str, bad_attr, miss_attr);
+	if (msg)
+		yerr_msg(ys, "Kernel %s: '%s'%s%s%s",
+			 ys->err.code ? "error" : "warning",
+			 str, bad_attr, miss_attr,
+			 bad_attr[0] || miss_attr[0] ? ")" : "");
+	else
+		yerr_msg(ys, "Kernel %s: %s%s",
+			 ys->err.code ? "error" : "warning",
+			 bad_attr, miss_attr);
 
 	return MNL_CB_OK;
 }
