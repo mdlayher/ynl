@@ -132,47 +132,60 @@ ynl_err_walk(struct ynl_sock *ys, void *start, void *end, unsigned int off,
 
 #define NLMSGERR_ATTR_MISS_TYPE (NLMSGERR_ATTR_POLICY + 1)
 #define NLMSGERR_ATTR_MISS_NEST (NLMSGERR_ATTR_POLICY + 2)
+#define NLMSGERR_ATTR_MAX (NLMSGERR_ATTR_MAX + 2)
 
 static int
 ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 		  unsigned int hlen)
 {
-	const struct nlattr *miss_nest = NULL, *miss_type = NULL;
-	const struct nlattr *attr, *msg = NULL, *offs = NULL;
+	const struct nlattr *tb[NLMSGERR_ATTR_MAX + 1] = {};
 	char miss_attr[sizeof(ys->err.msg)];
 	char bad_attr[sizeof(ys->err.msg)];
-	const char *str = "";
+	const struct nlattr *attr;
+	const char *str = NULL;
 
 	if (!(nlh->nlmsg_flags & NLM_F_ACK_TLVS))
 		return MNL_CB_OK;
 
 	mnl_attr_for_each(attr, nlh, hlen) {
-		if (mnl_attr_get_type(attr) == NLMSGERR_ATTR_MSG)
-			msg = attr;
-		if (mnl_attr_get_type(attr) == NLMSGERR_ATTR_OFFS)
-			offs = attr;
-		if (mnl_attr_get_type(attr) == NLMSGERR_ATTR_MISS_TYPE)
-			miss_type = attr;
-		if (mnl_attr_get_type(attr) == NLMSGERR_ATTR_MISS_NEST)
-			miss_nest = attr;
+		unsigned int len, type;
+
+		len = mnl_attr_get_payload_len(attr);
+		type = mnl_attr_get_type(attr);
+
+		if (type > NLMSGERR_ATTR_MAX)
+			continue;
+
+		tb[type] = attr;
+
+		switch (type) {
+		case NLMSGERR_ATTR_OFFS:
+		case NLMSGERR_ATTR_MISS_TYPE:
+		case NLMSGERR_ATTR_MISS_NEST:
+			if (len != sizeof(__u32))
+				return MNL_CB_ERROR;
+			break;
+		case NLMSGERR_ATTR_MSG:
+			str = mnl_attr_get_payload(attr);
+			if (str[len - 1])
+				return MNL_CB_ERROR;
+			break;
+		default:
+			break;
+		}
 	}
-	if (!offs && !msg && !miss_type)
-		return MNL_CB_OK;
 
 	bad_attr[0] = '\0';
 	miss_attr[0] = '\0';
 
-	if (offs) {
+	if (tb[NLMSGERR_ATTR_OFFS]) {
 		unsigned int n, off;
 		void *start, *end;
 
-		if (mnl_attr_get_payload_len(offs) != sizeof(__u32))
-			return MNL_CB_ERROR;
-
-		ys->err.attr_offs = mnl_attr_get_u32(offs);
+		ys->err.attr_offs = mnl_attr_get_u32(tb[NLMSGERR_ATTR_OFFS]);
 
 		n = snprintf(bad_attr, sizeof(bad_attr), "%sbad attribute: ",
-			     msg ? " (" : "");
+			     str ? " (" : "");
 
 		start = mnl_nlmsg_get_payload_offset(ys->nlh,
 						     sizeof(struct genlmsghdr));
@@ -189,33 +202,24 @@ ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 			n = sizeof(bad_attr) - 1;
 		bad_attr[n] = '\0';
 	}
-	if (msg) {
-		str = mnl_attr_get_payload(msg);
-
-		if (str[mnl_attr_get_payload_len(msg) - 1])
-			return MNL_CB_ERROR;
-	}
-	if (miss_type) {
+	if (tb[NLMSGERR_ATTR_MISS_TYPE]) {
 		struct ynl_policy_nest *nest_pol = NULL;
-		unsigned int n, off;
+		unsigned int n, off, type;
 		void *start, *end;
 		int n2;
 
-		if (mnl_attr_get_payload_len(miss_type) != sizeof(__u32) ||
-		    (miss_nest &&
-		     mnl_attr_get_payload_len(miss_nest) != sizeof(__u32)))
-			return MNL_CB_ERROR;
+		type = mnl_attr_get_u32(tb[NLMSGERR_ATTR_MISS_TYPE]);
 
 		n = snprintf(miss_attr, sizeof(miss_attr), "%smissing attribute: ",
-			     bad_attr[0] ? ", " : (msg ? " (" : ""));
+			     bad_attr[0] ? ", " : (str ? " (" : ""));
 
 		start = mnl_nlmsg_get_payload_offset(ys->nlh,
 						     sizeof(struct genlmsghdr));
 		end = mnl_nlmsg_get_payload_tail(ys->nlh);
 
 		nest_pol = ys->req_policy;
-		if (miss_nest) {
-			off = mnl_attr_get_u32(miss_nest);
+		if (tb[NLMSGERR_ATTR_MISS_NEST]) {
+			off = mnl_attr_get_u32(tb[NLMSGERR_ATTR_MISS_NEST]);
 			off -= sizeof(struct nlmsghdr);
 			off -= sizeof(struct genlmsghdr);
 
@@ -225,8 +229,7 @@ ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 		}
 
 		n2 = 0;
-		ynl_err_walk_report_one(nest_pol, mnl_attr_get_u32(miss_type),
-					&miss_attr[n],
+		ynl_err_walk_report_one(nest_pol, type, &miss_attr[n],
 					sizeof(miss_attr) - n, &n2);
 		n += n2;
 
@@ -236,12 +239,12 @@ ynl_ext_ack_check(struct ynl_sock *ys, const struct nlmsghdr *nlh,
 	}
 
 	/* Implicitly depend on ys->err.code already set */
-	if (msg)
+	if (str)
 		yerr_msg(ys, "Kernel %s: '%s'%s%s%s",
 			 ys->err.code ? "error" : "warning",
 			 str, bad_attr, miss_attr,
 			 bad_attr[0] || miss_attr[0] ? ")" : "");
-	else
+	else if (bad_attr[0] || miss_attr[0])
 		yerr_msg(ys, "Kernel %s: %s%s",
 			 ys->err.code ? "error" : "warning",
 			 bad_attr, miss_attr);
