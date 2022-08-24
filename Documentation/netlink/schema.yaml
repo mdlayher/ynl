@@ -77,7 +77,12 @@ properties:
               type:
                 enum: [ u8, u16, u32, u64, s8, s16, s32, s64, nul-string ]
               len:
-                oneOf: [ { type: string }, { type: integer }]
+                oneOf:
+                  -
+                    type: string
+                    pattern: ^[0-9A-Za-z_-]*( - 1)?$
+                  -
+                    type: integer
         # End genetlink-legacy
 
   attribute-sets:
@@ -134,7 +139,12 @@ properties:
                 items:
                   type: string
               len:
-                oneOf: [ { type: string }, { type: integer }]
+                oneOf:
+                  -
+                    type: string
+                    pattern: ^[0-9A-Za-z_-]*( - 1)?$
+                  -
+                    type: integer
               sub-type: *attr-type
               nested-attributes:
                 description: Name of the space (sub-space) used inside the attribute.

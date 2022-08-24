@@ -127,7 +127,6 @@ Spec reshuffling
  - add support for variable binary and fixed string
  - mutli attr should be a bool
  - verification as a subsection
- - add regex for len
  - rename mcast-grp name <> value
  - endian support
 
