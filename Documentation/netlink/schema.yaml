@@ -126,7 +126,7 @@ properties:
                 type: string
               type: &attr-type
                 enum: [ unused, pad, flag, binary, variable-binary, u8, u16, u32, u64, s32, s64,
-                        nul-string, legacy-string, multi-attr, nest, array-nest, nest-type-value ]
+                        nul-string, legacy-string, nest, array-nest, nest-type-value ]
               description:
                 description: Documentation of the attribute.
                 type: string
@@ -145,13 +145,15 @@ properties:
                     pattern: ^[0-9A-Za-z_-]*( - 1)?$
                   -
                     type: integer
-              sub-type: *attr-type
+              multi-attr:
+                type: boolean
               nested-attributes:
                 description: Name of the space (sub-space) used inside the attribute.
                 type: string
               enum:
                 description: Name of the enum type used for the atttribute.
                 type: string
+              sub-type: *attr-type
               flags-mask:
                 description: Name of the flags constant on which to base mask (unsigned scalar types only).
                 type: string

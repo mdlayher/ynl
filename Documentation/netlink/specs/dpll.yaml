@@ -43,8 +43,8 @@ attribute-sets:
         len: DPLL_NAME_LENGTH - 1
       -
         name: source
-        type: multi-attr
-        sub-type: nest
+        type: nest
+        multi-attr: true
         nested-attributes: source
       -
         name: source-id
@@ -58,8 +58,8 @@ attribute-sets:
         type: u32
       -
         name: output
-        type: multi-attr
-        sub-type: nest
+        type: nest
+        multi-attr: true
         nested-attributes: output
       -
         name: output-id
@@ -99,8 +99,8 @@ attribute-sets:
         enum: genl-signal-type
       -
         name: output-supported
-        type: multi-attr
-        sub-type: u32
+        type: u32
+        multi-attr: true
   -
     name: output
     subset-of: main
@@ -114,8 +114,8 @@ attribute-sets:
         enum: genl-signal-type
       -
         name: source-supported
-        type: multi-attr
-        sub-type: u32
+        type: u32
+        multi-attr: true
 
 operations:
   enum-model: notify-split

@@ -312,21 +312,21 @@ class TypeMultiAttr(Type):
         return
 
     def _complex_member_type(self, ri):
-        if 'sub-type' not in self.attr or self.attr['sub-type'] == 'nest':
+        if 'type' not in self.attr or self.attr['type'] == 'nest':
             return f"struct {self.nested_render_name}"
-        elif self.attr['sub-type'] in scalars:
+        elif self.attr['type'] in scalars:
             scalar_pfx = '__' if ri.ku_space == 'user' else ''
-            return scalar_pfx + self.attr['sub-type']
+            return scalar_pfx + self.attr['type']
         else:
-            raise Exception(f"Sub-type {self.attr['sub-type']} not supported yet")
+            raise Exception(f"Sub-type {self.attr['type']} not supported yet")
 
     def _attr_typol(self):
-        if 'sub-type' not in self.attr or self.attr['sub-type'] == 'nest':
+        if 'type' not in self.attr or self.attr['type'] == 'nest':
             return f'.type = YNL_PT_NEST, .nest = &{self.nested_render_name}_nest, '
-        elif self.attr['sub-type'] in scalars:
-            return f".type = YNL_PT_U{self.attr['sub-type'][1:]}, "
+        elif self.attr['type'] in scalars:
+            return f".type = YNL_PT_U{self.attr['type'][1:]}, "
         else:
-            raise Exception(f"Sub-type {self.attr['sub-type']} not supported yet")
+            raise Exception(f"Sub-type {self.attr['type']} not supported yet")
 
     def _attr_get(self, ri, var):
         return f'{var}->n_{self.c_name}++;', None, None
@@ -472,7 +472,9 @@ class AttrSet:
                 elem['value'] = val
             val += 1
 
-            if elem['type'] in scalars:
+            if 'multi-attr' in elem and elem['multi-attr']:
+                attr = TypeMultiAttr(family, self, elem)
+            elif elem['type'] in scalars:
                 attr = TypeScalar(family, self, elem)
             elif elem['type'] == 'unused':
                 attr = TypeUnused(family, self, elem)
@@ -484,8 +486,6 @@ class AttrSet:
                 attr = TypeBinary(family, self, elem)
             elif elem['type'] == 'nest':
                 attr = TypeNest(family, self, elem)
-            elif elem['type'] == 'multi-attr':
-                attr = TypeMultiAttr(family, self, elem)
             elif elem['type'] == 'array-nest':
                 attr = TypeArrayNest(family, self, elem)
             elif elem['type'] == 'nest-type-value':
@@ -963,7 +963,7 @@ def _multi_parse(ri, struct, init_lines, local_vars):
         if aspec['type'] == 'array-nest':
             local_vars.append(f'const struct nlattr *attr_{aspec.c_name};')
             array_nests.add(arg)
-        if aspec['type'] == 'multi-attr':
+        if 'multi-attr' in aspec:
             multi_attrs.add(arg)
         needs_parg |= 'nested-attributes' in aspec
     if array_nests or multi_attrs:
@@ -1022,8 +1022,8 @@ def _multi_parse(ri, struct, init_lines, local_vars):
             ri.cw.p(f"parg.data = &dst->{aspec.c_name}[i];")
             ri.cw.p(f"if ({aspec.nested_render_name}_parse(&parg, attr))")
             ri.cw.p('return MNL_CB_ERROR;')
-        elif aspec['sub-type'] in scalars:
-            t = aspec['sub-type']
+        elif aspec['type'] in scalars:
+            t = aspec['type']
             if t[0] == 's':
                 t = 'u' + t[1:]
             ri.cw.p(f"dst->{aspec.c_name}[i] = mnl_attr_get_{t}(attr);")
