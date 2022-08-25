@@ -138,6 +138,8 @@ properties:
                 type: array
                 items:
                   type: string
+              byte-order:
+                enum: [little-endian, big-endian]
               len:
                 oneOf:
                   -
