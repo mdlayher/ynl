@@ -1482,6 +1482,25 @@ def print_kernel_op_table_fwd(family, cw, terminate=True):
     else:
         cw.block_start(line=line + ' =')
 
+    if not terminate:
+        return
+
+    cw.nl()
+    for op_name, op in family.ops.items():
+        if op.is_async:
+            continue
+
+        if 'do' in op:
+            name = c_lower(f"{family.name}-{op_name}-doit")
+            cw.write_func_prot('int', name,
+                               ['struct sk_buff *skb', 'struct genl_info *info'], suffix=';')
+
+        if 'dump' in op:
+            name = c_lower(f"{family.name}-{op_name}-dumpit")
+            cw.write_func_prot('int', name,
+                               ['struct sk_buff *skb', 'struct netlink_callback *cb'], suffix=';')
+    cw.nl()
+
 
 def print_kernel_op_table(family, cw):
     print_kernel_op_table_fwd(family, cw, terminate=False)

@@ -19,4 +19,10 @@ extern const struct nla_policy ethtool_channels_set_policy[ETHTOOL_A_CHANNELS_CO
 
 // Ops table for ethtool
 extern const struct genl_ops ethtool_ops[2];
+
+int ethtool_channels_get_doit(struct sk_buff *skb, struct genl_info *info);
+int ethtool_channels_get_dumpit(struct sk_buff *skb,
+				struct netlink_callback *cb);
+int ethtool_channels_set_doit(struct sk_buff *skb, struct genl_info *info);
+
 #endif /* _LINUX_ETHTOOL_GEN_H */
