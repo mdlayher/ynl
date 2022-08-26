@@ -56,6 +56,9 @@ properties:
           items:
             type: string
         # Start genetlink-c
+        enum-name:
+          description: Name for enum, if empty no name will be used.
+          oneOf: [ { type: string }, { type: "null" }]
         name-prefix:
           description: For enum the prefix of the values, optional.
           type: string

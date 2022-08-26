@@ -9,7 +9,7 @@
 #define FOU_FAMILY_NAME	"fou"
 #define FOU_VERSION	1
 
-enum fou_encap_type {
+enum {
 	FOU_ENCAP_UNSPEC,
 	FOU_ENCAP_DIRECT,
 	FOU_ENCAP_GUE,

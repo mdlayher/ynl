@@ -29,7 +29,7 @@ attribute-sets:
   -
     name: main
     name-prefix: dplla-
-    enum-name: genl-attr
+    enum-name: dpll-genl-attr
     attributes:
       -
         name: unspec
@@ -119,9 +119,9 @@ attribute-sets:
 
 operations:
   enum-model: notify-split
-  enum-name: genl-cmd
+  enum-name: dpll-genl-cmd
   async-prefix: dpll-event-
-  async-enum: genl-event
+  async-enum: dpll-genl-event
   list:
     -
       name: unspec

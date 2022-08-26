@@ -1418,9 +1418,12 @@ def print_req_policy(ri):
     ri.cw.p("};")
 
 
-def uapi_enum_start(family, cw, obj, key):
+def uapi_enum_start(family, cw, obj, key, enum_name='enum-name'):
     start_line = 'enum'
-    if key in obj:
+    if enum_name in obj:
+        if obj[enum_name]:
+            start_line = 'enum ' + obj[enum_name].replace('-', '_')
+    elif key in obj:
         start_line = 'enum ' + family.name + '_' + obj[key].replace('-', '_')
     cw.block_start(line=start_line)
 
@@ -1486,7 +1489,7 @@ def render_uapi(family, cw):
     cw.nl()
 
     if separate_ntf:
-        uapi_enum_start(family, cw, family['operations'], 'async-enum')
+        uapi_enum_start(family, cw, family['operations'], 'xxx', 'async-enum')
         for _, op in family.ops_list:
             if separate_ntf and not ('notify' in op or 'event' in op):
                 continue

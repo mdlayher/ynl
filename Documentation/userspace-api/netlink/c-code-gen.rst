@@ -37,7 +37,8 @@ is rendered as a string or integer according to its type in YAML.
 Enums and flags
 ---------------
 
-Enums are named ``$family-$enum``.
+Enums are named ``$family-$enum``. The full name can be set directly
+or suppressed by specifying the ``enum-name`` property.
 Default entry name is ``$family-$enum-$entry``.
 If ``name-prefix`` is specified it replaces the ``$family-$enum``
 portion of the entry name.

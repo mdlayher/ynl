@@ -10,6 +10,7 @@ definitions:
     type: enum
     name: encap_type
     name-prefix: fou-encap-
+    enum-name:
     entries: [ unspec, direct, gue ]
 
 attribute-sets:
