@@ -1444,18 +1444,19 @@ def print_ntf_type_parse(family, cw, ku_mode):
     cw.nl()
 
 
-def print_req_policy_fwd(ri, terminate=True):
+def print_req_policy_fwd(cw, struct, op=None, terminate=True):
     prefix = 'extern ' if terminate else ''
     suffix = ';' if terminate else ' = {'
-    max_attr = ri.struct['request'].attr_max_val
-    ri.cw.p(f"{prefix}const struct nla_policy {ri.op.render_name}_policy[{max_attr.enum_name} + 1]{suffix}")
+    max_attr = struct.attr_max_val
+    name = op.render_name if op else struct.render_name
+    cw.p(f"{prefix}const struct nla_policy {name}_policy[{max_attr.enum_name} + 1]{suffix}")
 
 
-def print_req_policy(ri):
-    print_req_policy_fwd(ri, terminate=False)
-    for _, arg in ri.struct['request'].member_list():
-        arg.attr_policy(ri.cw)
-    ri.cw.p("};")
+def print_req_policy(cw, struct, op=None):
+    print_req_policy_fwd(cw, struct, op=op, terminate=False)
+    for _, arg in struct.member_list():
+        arg.attr_policy(cw)
+    cw.p("};")
 
 
 def uapi_enum_start(family, cw, obj, ckey='', enum_name='enum-name'):
@@ -1665,56 +1666,64 @@ def main():
             for attr_set, struct in sorted(parsed.pure_nested_structs.items()):
                 ri = RenderInfo(cw, parsed, args.mode, "", "", "", attr_set)
                 print_type_full(ri, struct)
+        elif args.mode == 'kernel':
+            if parsed.kernel_policy == 'global':
+                cw.p(f"// Global operation policy for {parsed.name}")
+
+                struct = Struct(parsed, parsed.global_policy_set, type_list=parsed.global_policy)
+                print_req_policy_fwd(cw, struct)
 
         for op_name, op in parsed.ops.items():
-            if args.mode == "user":
-                cw.p(f"/* ============== {op.enum_name} ============== */")
+            if args.mode == 'kernel':
+                if 'do' in op and 'event' not in op and parsed.kernel_policy == 'per-op':
+                    cw.p(f"// {op.enum_name} - do")
+                    ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
+                    print_req_policy_fwd(cw, ri.struct['request'], op=op)
+                    cw.nl()
+
+            if args.mode != 'user':
+                continue
+
+            cw.p(f"/* ============== {op.enum_name} ============== */")
 
             if 'do' in op and 'event' not in op:
                 cw.p(f"// {op.enum_name} - do")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
-
-                if args.mode == "user":
-                    print_req_type(ri)
-                    print_req_type_helpers(ri)
-                    cw.nl()
-                    print_rsp_type(ri)
-                    print_rsp_type_helpers(ri)
-                    cw.nl()
-                    print_req_prototype(ri)
-                elif args.mode == "kernel":
-                    print_req_policy_fwd(ri)
+                print_req_type(ri)
+                print_req_type_helpers(ri)
+                cw.nl()
+                print_rsp_type(ri)
+                print_rsp_type_helpers(ri)
+                cw.nl()
+                print_req_prototype(ri)
                 cw.nl()
 
             if 'dump' in op:
                 cw.p(f"// {op.enum_name} - dump")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'dump')
-                if args.mode == "user":
-                    if 'request' in op['dump']:
-                        print_req_type(ri)
-                        print_req_type_helpers(ri)
-                    if not ri.type_consistent:
-                        print_rsp_type(ri)
-                    print_wrapped_type(ri)
-                    print_dump_prototype(ri)
-                    cw.nl()
+                if 'request' in op['dump']:
+                    print_req_type(ri)
+                    print_req_type_helpers(ri)
+                if not ri.type_consistent:
+                    print_rsp_type(ri)
+                print_wrapped_type(ri)
+                print_dump_prototype(ri)
+                cw.nl()
 
             if 'notify' in op:
                 cw.p(f"// {op.enum_name} - notify")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'notify')
-                if args.mode == "user":
-                    has_ntf = True
-                    if not ri.type_consistent:
-                        raise Exception('Only notifications with consistent types supported')
-                    print_wrapped_type(ri)
+                has_ntf = True
+                if not ri.type_consistent:
+                    raise Exception('Only notifications with consistent types supported')
+                print_wrapped_type(ri)
 
             if 'event' in op:
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'event')
-                if args.mode == "user":
-                    cw.p(f"// {op.enum_name} - event")
-                    print_rsp_type(ri)
-                    cw.nl()
-                    print_wrapped_type(ri)
+                cw.p(f"// {op.enum_name} - event")
+                print_rsp_type(ri)
+                cw.nl()
+                print_wrapped_type(ri)
 
         if has_ntf:
             cw.p('// --------------- Common notification parsing --------------- //')
@@ -1743,15 +1752,22 @@ def main():
                     put_req_nested(ri, struct)
                 if struct.reply:
                     parse_rsp_nested(ri, struct)
+        elif args.mode == 'kernel':
+            if parsed.kernel_policy == 'global':
+                cw.p(f"// Global operation policy for {parsed.name}")
+
+                struct = Struct(parsed, parsed.global_policy_set, type_list=parsed.global_policy)
+                print_req_policy(cw, struct)
 
         for op_name, op in parsed.ops.items():
-            if args.mode == 'kernel':
+            if args.mode == 'kernel' and parsed.kernel_policy == 'per-op':
                 for op_mode in {'do', 'dump'}:
                     if op_mode in op and 'request' in op[op_mode]:
                         cw.p(f"// {op.enum_name} - {op_mode}")
                         ri = RenderInfo(cw, parsed, args.mode, op, op_name, op_mode)
-                        print_req_policy(ri)
+                        print_req_policy(cw, ri.struct['request'], op=op)
                         cw.nl()
+                        break
 
             if args.mode != 'user':
                 continue

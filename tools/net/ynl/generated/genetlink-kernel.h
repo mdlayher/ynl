@@ -13,8 +13,4 @@
 // CTRL_CMD_GETFAMILY - do
 extern const struct nla_policy nlctrl_getfamily_policy[CTRL_ATTR_FAMILY_NAME + 1];
 
-// CTRL_CMD_GETFAMILY - dump
-// CTRL_CMD_GETFAMILY - notify
-// CTRL_CMD_GETPOLICY - dump
-
 #endif /* _LINUX_NLCTRL_GEN_H */
