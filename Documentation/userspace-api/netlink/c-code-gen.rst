@@ -63,12 +63,20 @@ which are used for sizing attribute tables.
 These two names can be specified directly with the ``attr-cnt-name``
 and ``attr-max-name`` properties respectively.
 
+If ``max-by-define`` is set to ``true`` at the global level ``attr-max-name``
+will be specified as a ``#define`` rather than an enum value.
+
 Operations
 ==========
 
 Operations are named ``$family-CMD-$operation``.
 If ``name-prefix`` is specified it replaces the ``$family-CMD``
 portion of the name.
+
+Similarly to attribute enums operation enums end with special count and max
+attributes. For operations those attributes can be renamed with
+``cmd-cnt-name`` and ``cmd-max-name``. Max will be a define if ``max-by-define``
+is ``true``.
 
 Code generation
 ===============

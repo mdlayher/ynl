@@ -5,6 +5,8 @@ protocol: genetlink-c
 description: |
   Foo-over-UDP.
 
+max-by-define: true
+
 definitions:
   -
     type: enum

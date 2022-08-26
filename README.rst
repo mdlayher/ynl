@@ -129,6 +129,7 @@ Spec reshuffling
  - rename mcast-grp name <> value
  - endian support
  - dumpy dos
+ - finish implementing the attr cnt / max naming and by-define-or-enum
 
 Notes on existing families
 ==========================

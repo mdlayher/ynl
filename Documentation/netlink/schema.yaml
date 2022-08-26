@@ -25,6 +25,9 @@ properties:
   uapi-header:
     description: Path to the uAPI header, default is linux/${family-name}.h
     type: string
+  max-by-define:
+    description: Makes the number of attributes and commands be specified by a define, not an enum value.
+    type: boolean
   # End genetlink-c
 
   definitions:
