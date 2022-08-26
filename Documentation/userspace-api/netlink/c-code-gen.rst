@@ -98,6 +98,13 @@ attributes. For operations those attributes can be renamed with
 ``cmd-cnt-name`` and ``cmd-max-name``. Max will be a define if ``max-by-define``
 is ``true``.
 
+Multicast groups
+================
+
+Each multicast group gets a define rendered into the kernel uAPI header.
+The name of the define is ``$family-MCGRP-$group``, and can be overwritten
+with the ``c-define-name`` property.
+
 Code generation
 ===============
 

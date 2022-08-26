@@ -222,7 +222,7 @@ operations:
       name: source-change
       description: Device source has changed.
       attribute-set: main
-      mcgrp: config-source
+      mcgrp: source
       event:
         attributes:
           - device-id
@@ -233,7 +233,7 @@ operations:
       name: output-change
       description: Device output has changed.
       attribute-set: main
-      mcgrp: config-output
+      mcgrp: output
       event:
         attributes:
           - device-id
@@ -241,17 +241,12 @@ operations:
           - output-type
 
 mcast-groups:
-  name-prefix: dpll-
-  name-suffix: -group-name
   list:
     -
-      name: config-device
-      value: config
+      name: config
     -
-      name: config-source
-      value: source
+      name: source
     -
-      name: config-output
-      value: output
+      name: output
     -
       name: monitor

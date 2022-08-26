@@ -1536,19 +1536,15 @@ def render_uapi(family, cw):
 
     # Multicast
     grps = family.get('mcast-groups', {'list': []})
+    defines = []
     for grp in grps['list']:
         name = grp['name']
-        value = name
-        if 'value' in grp:
-            value = grp['value']
-        if 'name-prefix' in grps:
-            name = grps['name-prefix'].upper() + name
-        if 'name-suffix' in grps:
-            name = name + grps['name-suffix'].upper()
-        name = name.upper().replace('-', '_')
-
-        cw.p(f"#define {name}\t\"{value}\"")
+        defines.append([c_upper(grp.get('c-define-name', f"{family.name}-mcgrp-{name}")),
+                        f'{name}'])
     cw.nl()
+    if defines:
+        cw.writes_defines(defines)
+        cw.nl()
 
     cw.p(f'#endif /* {hdr_prot} */')
 

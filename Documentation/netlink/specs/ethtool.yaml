@@ -114,8 +114,7 @@ operations:
             - combined-count
 
 mcast-groups:
-  name-prefix: ethtool-mcgrp-
-  name-suffix: -name
   list:
     -
       name: monitor
+      c-define-name: ethtool-mcgrp-monitor-name

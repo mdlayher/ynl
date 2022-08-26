@@ -275,17 +275,9 @@ properties:
   mcast-groups:
     description: List of multicast groups.
     type: object
-    required: [ name-prefix, list ]
+    required: [ list ]
     additionalProperties: False
     properties:
-      name-prefix:
-        description: Name prefix for the define associated with the group.
-        type: string
-      name-suffix:
-        description: |
-          Name suffix for the define associated with the group. Multicast group defines seem to be unique
-          in having a name-prefix as well as suffix.
-        type: string
       list:
         description: List of groups.
         type: array
@@ -296,10 +288,11 @@ properties:
           properties:
             name:
               description: |
-                The name for the group, used to form the define and the value of the define, unless value
-                is specified separately.
+                The name for the group, used to form the define and the value of the define.
               type: string
-            value:
-              description: String value for the define and group name.
+            # Start genetlink-c
+            c-define-name:
+              description: Override for the name of the define in C uAPI.
               type: string
+            # End genetlink-c
             flags: *cmd_flags

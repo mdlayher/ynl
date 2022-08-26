@@ -126,7 +126,6 @@ Spec reshuffling
 
  - add support for variable binary and fixed string
  - verification as a subsection
- - rename mcast-grp name <> value
  - endian support
 
 Notes on existing families
