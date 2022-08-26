@@ -37,7 +37,7 @@ notification models
 I'm thinking we need to notification types - notifications and events.
 The former are direct mapping of a GET, for brevity they don't have to
 repeat all the arguments. Events have their own list of arguments.
-This needs to be documented.
+This needs to be documented and tested.
 
 document the kernel side
 ------------------------
@@ -75,6 +75,14 @@ Spec reshuffling
 ----------------
 
  - add support for variable binary and fixed string
+
+Target families
+---------------
+
+ - FOU
+ - devlink info / health
+ - ethtool channels / rings
+ - iflink / XDP
 
 Notes on existing families
 ==========================
