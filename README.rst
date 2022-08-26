@@ -128,7 +128,6 @@ Spec reshuffling
  - verification as a subsection
  - rename mcast-grp name <> value
  - endian support
- - dumpy dos
 
 Notes on existing families
 ==========================

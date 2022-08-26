@@ -12,3 +12,4 @@ Netlink documentation for users.
    intro
    yaml
    c-code-gen
+   genetlink-legacy
