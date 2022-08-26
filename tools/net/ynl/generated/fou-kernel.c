@@ -27,11 +27,20 @@ const struct nla_policy fou_policy[FOU_ATTR_IFINDEX + 1] = {
 const struct genl_small_ops fou_ops[3] = {
 	{
 		.cmd = FOU_CMD_ADD,
+		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
+		.doit = fou_add_doit,
+		.flags = GENL_ADMIN_PERM,
 	},
 	{
 		.cmd = FOU_CMD_DEL,
+		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
+		.doit = fou_del_doit,
+		.flags = GENL_ADMIN_PERM,
 	},
 	{
 		.cmd = FOU_CMD_GET,
+		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
+		.dumpit = fou_get_dumpit,
+		.doit = fou_get_doit,
 	},
 };

@@ -24,8 +24,14 @@ const struct nla_policy nlctrl_getpolicy_policy[CTRL_ATTR_OP + 1] = {
 const struct genl_ops nlctrl_ops[2] = {
 	{
 		.cmd = CTRL_CMD_GETFAMILY,
+		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
+		.doit = nlctrl_getfamily_doit,
+		.dumpit = nlctrl_getfamily_dumpit,
+		.policy = nlctrl_getfamily_policy,
 	},
 	{
 		.cmd = CTRL_CMD_GETPOLICY,
+		.dumpit = nlctrl_getpolicy_dumpit,
+		.policy = nlctrl_getpolicy_policy,
 	},
 };

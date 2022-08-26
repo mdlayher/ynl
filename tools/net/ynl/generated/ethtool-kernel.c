@@ -26,8 +26,13 @@ const struct nla_policy ethtool_channels_set_policy[ETHTOOL_A_CHANNELS_COMBINED_
 const struct genl_ops ethtool_ops[2] = {
 	{
 		.cmd = ETHTOOL_MSG_CHANNELS_GET,
+		.doit = ethtool_channels_get_doit,
+		.dumpit = ethtool_channels_get_dumpit,
+		.policy = ethtool_channels_get_policy,
 	},
 	{
 		.cmd = ETHTOOL_MSG_CHANNELS_SET,
+		.doit = ethtool_channels_set_doit,
+		.policy = ethtool_channels_set_policy,
 	},
 };

@@ -10,6 +10,10 @@ def c_upper(name):
     return name.upper().replace('-', '_')
 
 
+def c_lower(name):
+    return name.lower().replace('-', '_')
+
+
 class BaseNlLib:
     def __init__(self):
         pass
@@ -1484,6 +1488,17 @@ def print_kernel_op_table(family, cw):
     for op_name, op in family.ops.items():
         cw.block_start()
         cw.p(f".cmd = {op.enum_name},")
+        if 'dont-validate' in op:
+            cw.p(f".validate = {' | '.join([c_upper('genl-dont-validate-' + x) for x in op['dont-validate']])},")
+        for op_mode in {'do', 'dump'}:
+            if op_mode in op:
+                name = c_lower(f"{family.name}-{op_name}-{op_mode}it")
+                cw.p(f".{op_mode}it = {name},")
+        if family.kernel_policy == 'per-op':
+            name = c_lower(f"{family.name}-{op_name}-policy")
+            cw.p(f".policy = {name},")
+        if 'flags' in op:
+            cw.p(f".flags = {' | '.join([c_upper('genl-' + x) for x in op['flags']])},")
         cw.block_end(line=',')
     cw.block_end(line=';')
     cw.nl()

@@ -34,29 +34,49 @@ const struct nla_policy dpll_set_output_type_policy[DPLLA_OUTPUT_TYPE + 1] = {
 const struct genl_ops dpll_ops[9] = {
 	{
 		.cmd = DPLL_CMD_DEVICE_GET,
+		.doit = dpll_device_get_doit,
+		.policy = dpll_device_get_policy,
 	},
 	{
 		.cmd = DPLL_CMD_SET_SOURCE_TYPE,
+		.doit = dpll_set_source_type_doit,
+		.policy = dpll_set_source_type_policy,
+		.flags = GENL_ADMIN_PERM,
 	},
 	{
 		.cmd = DPLL_CMD_SET_OUTPUT_TYPE,
+		.doit = dpll_set_output_type_doit,
+		.policy = dpll_set_output_type_policy,
+		.flags = GENL_ADMIN_PERM,
 	},
 	{
 		.cmd = DPLL_EVENT_DEVICE_CREATE,
+		.doit = dpll_device_create_doit,
+		.policy = dpll_device_create_policy,
 	},
 	{
 		.cmd = DPLL_EVENT_DEVICE_DELETE,
+		.doit = dpll_device_delete_doit,
+		.policy = dpll_device_delete_policy,
 	},
 	{
 		.cmd = DPLL_EVENT_STATUS_LOCKED,
+		.doit = dpll_status_locked_doit,
+		.policy = dpll_status_locked_policy,
 	},
 	{
 		.cmd = DPLL_EVENT_STATUS_UNLOCKED,
+		.doit = dpll_status_unlocked_doit,
+		.policy = dpll_status_unlocked_policy,
 	},
 	{
 		.cmd = DPLL_EVENT_SOURCE_CHANGE,
+		.doit = dpll_source_change_doit,
+		.policy = dpll_source_change_policy,
 	},
 	{
 		.cmd = DPLL_EVENT_OUTPUT_CHANGE,
+		.doit = dpll_output_change_doit,
+		.policy = dpll_output_change_policy,
 	},
 };
