@@ -185,6 +185,10 @@ class TypeScalar(Type):
         else:
             self.type_name = '__' + self.type
 
+        self.byte_order_comment = ''
+        if 'byte-order' in attr:
+            self.byte_order_comment = f" /* {attr['byte-order']} */"
+
     def _mnl_type(self):
         t = self.type
         # mnl does not have a helper for signed types
@@ -207,7 +211,7 @@ class TypeScalar(Type):
         return f'.type = YNL_PT_U{self.type[1:]}, '
 
     def arg_member(self, ri):
-        return [f'{self.type_name} {self.c_name}']
+        return [f'{self.type_name} {self.c_name}{self.byte_order_comment}']
 
     def attr_put(self, ri, var):
         self._attr_put_simple(ri, var, self._mnl_type())

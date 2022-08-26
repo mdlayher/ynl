@@ -25,19 +25,20 @@ struct fou_add_req {
 	__u32 peer_port_present:1;
 	__u32 ifindex_present:1;
 
-	__u16 port;
+	__u16 port /* big-endian */;
 	__u8 ipproto;
 	__u8 type;
 	__u32 local_v4;
 	__u32 peer_v4;
 	unsigned char local_v6[16];
 	unsigned char peer_v6[16];
-	__u16 peer_port;
+	__u16 peer_port /* big-endian */;
 	__s32 ifindex;
 };
 
 void fou_add_req_free(struct fou_add_req *req);
-static inline void fou_add_req_set_port(struct fou_add_req *req, __u16 port)
+static inline void
+fou_add_req_set_port(struct fou_add_req *req, __u16 port /* big-endian */)
 {
 	req->port_present = 1;
 	req->port = port;
@@ -82,7 +83,8 @@ fou_add_req_set_peer_v6(struct fou_add_req *req, const void *peer_v6)
 	memcpy(req->peer_v6, peer_v6, 16);
 }
 static inline void
-fou_add_req_set_peer_port(struct fou_add_req *req, __u16 peer_port)
+fou_add_req_set_peer_port(struct fou_add_req *req,
+			  __u16 peer_port /* big-endian */)
 {
 	req->peer_port_present = 1;
 	req->peer_port = peer_port;
@@ -113,8 +115,8 @@ struct fou_del_req {
 
 	__u8 af;
 	__s32 ifindex;
-	__u16 port;
-	__u16 peer_port;
+	__u16 port /* big-endian */;
+	__u16 peer_port /* big-endian */;
 	__u32 local_v4;
 	__u32 peer_v4;
 	unsigned char local_v6[16];
@@ -133,13 +135,15 @@ fou_del_req_set_ifindex(struct fou_del_req *req, __s32 ifindex)
 	req->ifindex_present = 1;
 	req->ifindex = ifindex;
 }
-static inline void fou_del_req_set_port(struct fou_del_req *req, __u16 port)
+static inline void
+fou_del_req_set_port(struct fou_del_req *req, __u16 port /* big-endian */)
 {
 	req->port_present = 1;
 	req->port = port;
 }
 static inline void
-fou_del_req_set_peer_port(struct fou_del_req *req, __u16 peer_port)
+fou_del_req_set_peer_port(struct fou_del_req *req,
+			  __u16 peer_port /* big-endian */)
 {
 	req->peer_port_present = 1;
 	req->peer_port = peer_port;
@@ -188,8 +192,8 @@ struct fou_get_req {
 
 	__u8 af;
 	__s32 ifindex;
-	__u16 port;
-	__u16 peer_port;
+	__u16 port /* big-endian */;
+	__u16 peer_port /* big-endian */;
 	__u32 local_v4;
 	__u32 peer_v4;
 	unsigned char local_v6[16];
@@ -208,13 +212,15 @@ fou_get_req_set_ifindex(struct fou_get_req *req, __s32 ifindex)
 	req->ifindex_present = 1;
 	req->ifindex = ifindex;
 }
-static inline void fou_get_req_set_port(struct fou_get_req *req, __u16 port)
+static inline void
+fou_get_req_set_port(struct fou_get_req *req, __u16 port /* big-endian */)
 {
 	req->port_present = 1;
 	req->port = port;
 }
 static inline void
-fou_get_req_set_peer_port(struct fou_get_req *req, __u16 peer_port)
+fou_get_req_set_peer_port(struct fou_get_req *req,
+			  __u16 peer_port /* big-endian */)
 {
 	req->peer_port_present = 1;
 	req->peer_port = peer_port;
@@ -256,14 +262,14 @@ struct fou_get_rsp {
 	__u32 peer_port_present:1;
 	__u32 ifindex_present:1;
 
-	__u16 port;
+	__u16 port /* big-endian */;
 	__u8 ipproto;
 	__u8 type;
 	__u32 local_v4;
 	__u32 peer_v4;
 	unsigned char local_v6[16];
 	unsigned char peer_v6[16];
-	__u16 peer_port;
+	__u16 peer_port /* big-endian */;
 	__s32 ifindex;
 };
 

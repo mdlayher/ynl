@@ -28,6 +28,7 @@ attribute-sets:
       -
         name: port
         type: u16
+        byte-order: big-endian
       -
         name: af
         type: u8
@@ -57,6 +58,7 @@ attribute-sets:
       -
         name: peer_port
         type: u16
+        byte-order: big-endian
       -
         name: ifindex
         type: s32
