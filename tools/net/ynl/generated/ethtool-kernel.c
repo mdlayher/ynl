@@ -23,7 +23,7 @@ const struct nla_policy ethtool_channels_set_policy[ETHTOOL_A_CHANNELS_COMBINED_
 };
 
 // Ops table for ethtool
-const struct genl_ops ethtool_ops[] = {
+const struct genl_ops ethtool_ops[2] = {
 	{
 		.cmd = ETHTOOL_MSG_CHANNELS_GET,
 	},

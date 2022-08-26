@@ -18,5 +18,5 @@ extern const struct nla_policy ethtool_channels_get_policy[ETHTOOL_A_CHANNELS_HE
 extern const struct nla_policy ethtool_channels_set_policy[ETHTOOL_A_CHANNELS_COMBINED_COUNT + 1];
 
 // Ops table for ethtool
-extern const struct genl_ops ethtool_ops[];
+extern const struct genl_ops ethtool_ops[2];
 #endif /* _LINUX_ETHTOOL_GEN_H */

@@ -21,7 +21,7 @@ const struct nla_policy nlctrl_getpolicy_policy[CTRL_ATTR_OP + 1] = {
 };
 
 // Ops table for nlctrl
-const struct genl_ops nlctrl_ops[] = {
+const struct genl_ops nlctrl_ops[2] = {
 	{
 		.cmd = CTRL_CMD_GETFAMILY,
 	},

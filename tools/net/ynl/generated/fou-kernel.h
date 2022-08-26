@@ -14,5 +14,5 @@
 extern const struct nla_policy fou_policy[FOU_ATTR_IFINDEX + 1];
 
 // Ops table for fou
-extern const struct genl_small_ops fou_ops[];
+extern const struct genl_small_ops fou_ops[3];
 #endif /* _LINUX_FOU_GEN_H */

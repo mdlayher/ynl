@@ -522,8 +522,9 @@ class AttrSet:
 
 
 class Operation:
-    def __init__(self, family, yaml):
+    def __init__(self, family, yaml, value):
         self.yaml = yaml
+        self.value = value
 
         self.name = self.yaml['name']
         self.render_name = family.name + '_' + self.name.replace('-', '_')
@@ -627,8 +628,14 @@ class Family:
             self.attr_sets_list.append((elem['name'], attr_set), )
 
         ntf = []
+        val = 0
         for elem in self.yaml['operations']['list']:
-            op = Operation(self, elem)
+            if 'value' in elem:
+                val = elem['value']
+
+            op = Operation(self, elem, val)
+            val += 1
+
             self.ops_list.append((elem['name'], op),)
             if 'notify' in elem:
                 ntf.append(op)
@@ -1463,7 +1470,9 @@ def print_kernel_op_table_fwd(family, cw, terminate=True):
     cw.p(f"// Ops table for {family.name}")
 
     struct_type = 'genl_small_ops' if family.kernel_policy == 'global' else 'genl_ops'
-    line = f"const struct {struct_type} {family.name}_ops[]"
+    cnt = len(family.ops)
+
+    line = f"const struct {struct_type} {family.name}_ops[{cnt}]"
     if terminate:
         cw.p(f"extern {line};")
     else:

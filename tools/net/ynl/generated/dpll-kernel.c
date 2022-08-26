@@ -31,7 +31,7 @@ const struct nla_policy dpll_set_output_type_policy[DPLLA_OUTPUT_TYPE + 1] = {
 };
 
 // Ops table for dpll
-const struct genl_ops dpll_ops[] = {
+const struct genl_ops dpll_ops[9] = {
 	{
 		.cmd = DPLL_CMD_DEVICE_GET,
 	},

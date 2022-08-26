@@ -24,7 +24,7 @@ const struct nla_policy fou_policy[FOU_ATTR_IFINDEX + 1] = {
 };
 
 // Ops table for fou
-const struct genl_small_ops fou_ops[] = {
+const struct genl_small_ops fou_ops[3] = {
 	{
 		.cmd = FOU_CMD_ADD,
 	},
