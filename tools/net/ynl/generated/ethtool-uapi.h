@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BSD-3-Clause
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 // Do not edit directly, auto-generated from:
 //	Documentation/netlink/specs/ethtool.yaml
 // YNL-GEN uapi header

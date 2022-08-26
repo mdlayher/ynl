@@ -1573,7 +1573,10 @@ def main():
     cw = CodeWriter(BaseNlLib())
 
     _, spec_kernel = find_kernel_root(args.spec)
-    cw.p(f"// SPDX-License-Identifier: BSD-3-Clause")
+    if args.mode == 'uapi':
+        cw.p('/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */')
+    else:
+        cw.p('// SPDX-License-Identifier: BSD-3-Clause')
     cw.p("// Do not edit directly, auto-generated from:")
     cw.p(f"//\t{spec_kernel}")
     cw.p(f"// YNL-GEN {args.mode} {'header' if args.header else 'source'}")
