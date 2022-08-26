@@ -6,6 +6,10 @@ import os
 import yaml
 
 
+def c_upper(name):
+    return name.upper().replace('-', '_')
+
+
 class BaseNlLib:
     def __init__(self):
         pass
@@ -1434,8 +1438,10 @@ def render_uapi(family, cw):
     cw.p('#define ' + hdr_prot)
     cw.nl()
 
-    defines = [(family["name"].upper() + '_FAMILY_NAME', family["name"]),
-               (family["name"].upper() + '_VERSION', family.get('version', 1))]
+    fam_key = c_upper(family.get('c-family-name', family["name"] + '_FAMILY_NAME'))
+    ver_key = c_upper(family.get('c-version-name', family["name"] + '_FAMILY_VERSION'))
+    defines = [(fam_key, family["name"]),
+               (ver_key, family.get('version', 1))]
     cw.writes_defines(defines)
     cw.nl()
 

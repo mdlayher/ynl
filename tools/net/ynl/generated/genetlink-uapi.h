@@ -7,7 +7,7 @@
 #define _UAPI_LINUX_NLCTRL_H
 
 #define NLCTRL_FAMILY_NAME	"nlctrl"
-#define NLCTRL_VERSION		1
+#define NLCTRL_FAMILY_VERSION	1
 
 enum {
 	CTRL_ATTR_FAMILY_ID,

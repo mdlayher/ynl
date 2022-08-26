@@ -5,6 +5,8 @@ protocol: genetlink-c
 description: |
   Foo-over-UDP.
 
+c-family-name: fou-genl-name
+c-version-name: fou-genl-version
 max-by-define: true
 
 definitions:

@@ -24,6 +24,18 @@ and with dashes (``-``) replaced by underscores (``_``).
 If the constructured name is a C keyword, an extra underscore is
 appended (``do`` -> ``do_``).
 
+Globals
+=======
+
+``c-family-name`` controls the name of the ``#define`` for the family
+name, default is ``$family-FAMILY-NAME``.
+
+``c-version-name`` controls the name of the ``#define`` for the version
+of the family, default is ``$family-FAMILY-VERSION``.
+
+``max-by-define`` selects if max values for enums are defined as a
+``#define`` rathar than inside the enum.
+
 Definitions
 ===========
 

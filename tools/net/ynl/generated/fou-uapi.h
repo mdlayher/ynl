@@ -6,8 +6,8 @@
 #ifndef _UAPI_LINUX_FOU_H
 #define _UAPI_LINUX_FOU_H
 
-#define FOU_FAMILY_NAME	"fou"
-#define FOU_VERSION	1
+#define FOU_GENL_NAME		"fou"
+#define FOU_GENL_VERSION	1
 
 enum {
 	FOU_ENCAP_UNSPEC,

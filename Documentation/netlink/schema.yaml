@@ -25,6 +25,12 @@ properties:
   uapi-header:
     description: Path to the uAPI header, default is linux/${family-name}.h
     type: string
+  c-family-name:
+    description: Name of the define for the family name.
+    type: string
+  c-version-name:
+    description: Name of the define for the verion of the family.
+    type: string
   max-by-define:
     description: Makes the number of attributes and commands be specified by a define, not an enum value.
     type: boolean

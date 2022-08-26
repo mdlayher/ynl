@@ -7,7 +7,7 @@
 #define _UAPI_LINUX_DPLL_H
 
 #define DPLL_FAMILY_NAME	"dpll"
-#define DPLL_VERSION		1
+#define DPLL_FAMILY_VERSION	1
 
 enum dpll_genl_get_flags {
 	DPLL_FLAG_SOURCES = 1,
