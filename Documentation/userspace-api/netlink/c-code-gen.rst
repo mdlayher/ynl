@@ -12,17 +12,25 @@ to control the naming.
 For brevity this document refers to ``name`` properties of various
 objects by the object type. For example ``$attr`` is the value
 of ``name`` in an attribute, and ``$family`` is the name of the
-family (the global ``name`` attribute).
+family (the global ``name`` property).
 
 The upper case is used to denote literal values, e.g. ``$family-CMD``
-means the concatenation of ``$family``, dash character and the literal
+means the concatenation of ``$family``, a dash character and the literal
 ``CMD``.
 
-The names of ``#defines`` and enum values are always in upper case,
+The names of ``#defines`` and enum values are always converted to upper case,
 and with dashes (``-``) replaced by underscores (``_``).
 
 If the constructured name is a C keyword, an extra underscore is
 appended (``do`` -> ``do_``).
+
+General guidance
+================
+
+Older families often define "null" attributes and commands with value
+of ``0`` and named ``unspec``. This is supported but should be
+avoided in new families. The ``unspec`` enum values are not used in practice,
+so just set the value of the first attribute to ``1``.
 
 Globals
 =======
