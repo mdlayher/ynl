@@ -35,6 +35,9 @@ enum {
 
 enum {
 	ETHTOOL_MSG_CHANNELS_SET,
+
+	__ETHTOOL_MSG_MAX,
+	ETHTOOL_MSG_MAX = (__ETHTOOL_MSG_MAX - 1)
 };
 
 enum {

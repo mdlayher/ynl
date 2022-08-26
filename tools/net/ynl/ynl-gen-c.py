@@ -1453,14 +1453,14 @@ def render_uapi(family, cw):
             uapi_enum_start(family, cw, const, 'name')
             first = True
             for item in const['entries']:
-                sfx = ','
+                suffix = ','
                 if first and 'value-start' in const:
-                    sfx = f" = {const['value-start']}" + sfx
+                    suffix = f" = {const['value-start']}" + suffix
                 first = False
                 item_name = item
                 if 'name-prefix' in const:
                     item_name = c_upper(const['name-prefix'] + item)
-                cw.p(item_name + sfx)
+                cw.p(item_name + suffix)
             cw.block_end(line=';')
             cw.nl()
         elif const['type'] == 'flags':
@@ -1496,7 +1496,12 @@ def render_uapi(family, cw):
             cw.p(f"#define {attr_set.max_name} {max_value}")
         cw.nl()
 
+    # Commands
     separate_ntf = 'async-prefix' in family['operations']
+
+    max_name = c_upper(family.get('cmd-max-name', f"{family.op_prefix}MAX"))
+    cnt_name = c_upper(family.get('cmd-cnt-name', f"__{family.op_prefix}MAX"))
+    max_value = f"({cnt_name} - 1)"
 
     uapi_enum_start(family, cw, family['operations'], 'enum-name')
     for _, op in family.ops_list:
@@ -1507,11 +1512,17 @@ def render_uapi(family, cw):
         if 'value' in op:
             suffix = f" = {op['value']},"
         cw.p(op.enum_name + suffix)
+    cw.nl()
+    cw.p(cnt_name + ('' if max_by_define else ','))
+    if not max_by_define:
+        cw.p(f"{max_name} = {max_value}")
     cw.block_end(line=';')
+    if max_by_define:
+        cw.p(f"#define {max_name} {max_value}")
     cw.nl()
 
     if separate_ntf:
-        uapi_enum_start(family, cw, family['operations'], 'xxx', 'async-enum')
+        uapi_enum_start(family, cw, family['operations'], enum_name='async-enum')
         for _, op in family.ops_list:
             if separate_ntf and not ('notify' in op or 'event' in op):
                 continue
@@ -1523,6 +1534,7 @@ def render_uapi(family, cw):
         cw.block_end(line=';')
         cw.nl()
 
+    # Multicast
     grps = family.get('mcast-groups', {'list': []})
     for grp in grps['list']:
         name = grp['name']

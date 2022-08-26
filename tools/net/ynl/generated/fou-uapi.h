@@ -38,6 +38,9 @@ enum {
 	FOU_CMD_ADD,
 	FOU_CMD_DEL,
 	FOU_CMD_GET,
+
+	__FOU_CMD_MAX
 };
+#define FOU_CMD_MAX (__FOU_CMD_MAX - 1)
 
 #endif /* _UAPI_LINUX_FOU_H */

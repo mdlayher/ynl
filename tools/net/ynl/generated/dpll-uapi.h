@@ -66,6 +66,9 @@ enum dpll_genl_cmd {
 	DPLL_CMD_DEVICE_GET,
 	DPLL_CMD_SET_SOURCE_TYPE,
 	DPLL_CMD_SET_OUTPUT_TYPE,
+
+	__DPLL_CMD_MAX,
+	DPLL_CMD_MAX = (__DPLL_CMD_MAX - 1)
 };
 
 enum dpll_genl_event {
