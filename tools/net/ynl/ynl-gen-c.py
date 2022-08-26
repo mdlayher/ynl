@@ -1486,11 +1486,14 @@ def print_kernel_op_table_fwd(family, cw, terminate=True):
 def print_kernel_op_table(family, cw):
     print_kernel_op_table_fwd(family, cw, terminate=False)
     for op_name, op in family.ops.items():
+        if op.is_async:
+            continue
+
         cw.block_start()
         cw.p(f".cmd = {op.enum_name},")
         if 'dont-validate' in op:
             cw.p(f".validate = {' | '.join([c_upper('genl-dont-validate-' + x) for x in op['dont-validate']])},")
-        for op_mode in {'do', 'dump'}:
+        for op_mode in ['do', 'dump']:
             if op_mode in op:
                 name = c_lower(f"{family.name}-{op_name}-{op_mode}it")
                 cw.p(f".{op_mode}it = {name},")

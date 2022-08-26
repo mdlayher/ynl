@@ -40,7 +40,7 @@ const struct genl_small_ops fou_ops[3] = {
 	{
 		.cmd = FOU_CMD_GET,
 		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
-		.dumpit = fou_get_dumpit,
 		.doit = fou_get_doit,
+		.dumpit = fou_get_dumpit,
 	},
 };
