@@ -31,21 +31,6 @@ Some other info in the RFC posting: https://lore.kernel.org/all/20220811022304.5
 TODO
 ====
 
-finish the model
-----------------
-
-Current thinking is that we should have 4 models / protocols:
-
- - genetlink   - for new families, prescrpitive, forcing some consistency
- - genetlink-c - for old families, allowing extra attributes to control
-   the c codegen like prefixes of names; for non-C languages it should
-   be equivalent to "genetlink"
- - genetlink-legacy - allowing more weirdness and quirks and odd attribute types
- - netlink-raw - classic netlink, in case we want to use YAML to describe it
-
-We need to beef up the "constants" section to also cover binary structs.
-Probably rename it to "definitions" or something.
-
 notification models
 -------------------
 
