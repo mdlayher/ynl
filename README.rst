@@ -86,12 +86,6 @@ struct support
 structs are defined in the schema but not supported in attrs,
 ops or any of the codegen.
 
-generate the ops table
-----------------------
-
-There seems to be no family where we could generate the full
-ops table right now :( No simple family uses per-op policies.
-
 Spec reshuffling
 ----------------
 
