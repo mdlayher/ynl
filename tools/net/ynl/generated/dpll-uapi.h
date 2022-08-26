@@ -57,9 +57,9 @@ enum dpll_genl_attr {
 	DPLLA_LOCK_STATUS,
 	DPLLA_FLAGS,
 
-	__DPLLA_MAX
+	__DPLLA_MAX,
+	DPLLA_MAX = (__DPLLA_MAX - 1)
 };
-#define DPLLA_MAX (__DPLLA_MAX - 1)
 
 enum dpll_genl_cmd {
 	DPLL_CMD_UNSPEC,

@@ -63,8 +63,8 @@ Each attribute set (excluding fractional sets) is rendered as an enum.
 Attribute enums are traditionally unnamed in netlink headers.
 If naming is desired ``enum-name`` can be used to specify the name.
 
-The default attribute name prefix is ``$familyA`` if the name of the set
-is the same as the name of the family and ``$familyA-$set`` if the names
+The default attribute name prefix is ``$family-A`` if the name of the set
+is the same as the name of the family and ``$family-A-$set`` if the names
 differ. The prefix can be overriden by the ``name-prefix`` property of a set.
 The rest of the section will refer to the prefix as ``$pfx``.
 

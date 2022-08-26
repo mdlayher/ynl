@@ -453,14 +453,18 @@ class AttrSet:
         self.name = self.yaml['name']
         if 'subset-of' not in yaml:
             self.subset_of = None
-            if 'name-prefix' in self.yaml:
-                self.name_prefix = self.yaml['name-prefix']
+            if 'name-prefix' in yaml:
+                pfx = yaml['name-prefix']
+            elif self.name == family.name:
+                pfx = family.name + '-a-'
             else:
-                self.name_prefix = f"{family.name}-a-{self.name}-"
-            self.name_prefix = self.name_prefix.upper().replace('-', '_')
+                pfx = f"{family.name}-a-{self.name}-"
+            self.name_prefix = c_upper(pfx)
+            self.max_name = c_upper(self.yaml.get('attr-max-name', f"{self.name_prefix}max"))
         else:
             self.subset_of = self.yaml['subset-of']
             self.name_prefix = family.attr_sets[self.subset_of].name_prefix
+            self.max_name = family.attr_sets[self.subset_of].max_name
 
         self.c_name = self.name.replace('-', '_')
         if self.c_name in c_kw:
@@ -568,7 +572,6 @@ class Family:
             self.async_op_prefix = self.yaml['operations']['async-prefix'].upper().replace('-', '_')
         else:
             self.async_op_prefix = self.op_prefix
-        self.attr_cnt_suffix = self.yaml.get('attr-cnt-suffix', 'max').upper().replace('-', '_')
 
         self.consts = dict()
         self.ops = dict()
@@ -916,7 +919,7 @@ def put_typol_fwd(cw, struct):
 
 
 def put_typol(cw, struct):
-    type_max = f"{struct.attr_set.name_prefix}MAX"
+    type_max = struct.attr_set.max_name
     cw.block_start(line=f'struct ynl_policy_attr {struct.render_name}_policy[{type_max} + 1] =')
 
     for _, arg in struct.member_list():
@@ -1422,13 +1425,13 @@ def print_req_policy(ri):
     ri.cw.p("};")
 
 
-def uapi_enum_start(family, cw, obj, key, enum_name='enum-name'):
+def uapi_enum_start(family, cw, obj, ckey='', enum_name='enum-name'):
     start_line = 'enum'
     if enum_name in obj:
         if obj[enum_name]:
             start_line = 'enum ' + obj[enum_name].replace('-', '_')
-    elif key in obj:
-        start_line = 'enum ' + family.name + '_' + obj[key].replace('-', '_')
+    elif ckey and ckey in obj:
+        start_line = 'enum ' + family.name + '_' + obj[ckey].replace('-', '_')
     cw.block_start(line=start_line)
 
 
@@ -1448,36 +1451,49 @@ def render_uapi(family, cw):
     for const in family['definitions']:
         if const['type'] == 'enum':
             uapi_enum_start(family, cw, const, 'name')
+            first = True
             for item in const['entries']:
+                sfx = ','
+                if first and 'value-start' in const:
+                    sfx = f" = {const['value-start']}" + sfx
+                first = False
                 item_name = item
                 if 'name-prefix' in const:
-                    item_name = (const['name-prefix'] + item).upper().replace('-', '_')
-                cw.p(item_name + ',')
+                    item_name = c_upper(const['name-prefix'] + item)
+                cw.p(item_name + sfx)
             cw.block_end(line=';')
             cw.nl()
         elif const['type'] == 'flags':
             uapi_enum_start(family, cw, const, 'name')
-            i = 0
+            i = const.get('value-start', 0)
             for item in const['entries']:
                 item_name = item
                 if 'name-prefix' in const:
-                    item_name = (const['name-prefix'] + item).upper().replace('-', '_')
+                    item_name = c_upper(const['name-prefix'] + item)
                 cw.p(f'{item_name} = {1 << i},')
                 i += 1
             cw.block_end(line=';')
             cw.nl()
 
+    max_by_define = family.get('max-by-define', False)
+
     for _, attr_set in family.attr_sets_list:
         if attr_set.subset_of:
             continue
+
+        cnt_name = c_upper(family.get('attr-cnt-name', f"__{attr_set.name_prefix}MAX"))
+        max_value = f"({cnt_name} - 1)"
 
         uapi_enum_start(family, cw, attr_set.yaml, 'enum-name')
         for _, attr in attr_set.items():
             cw.p(attr.enum_name + ',')
         cw.nl()
-        cw.p(f"__{attr_set.name_prefix}{family.attr_cnt_suffix}")
+        cw.p(cnt_name + ('' if max_by_define else ','))
+        if not max_by_define:
+            cw.p(f"{attr_set.max_name} = {max_value}")
         cw.block_end(line=';')
-        cw.p(f"#define {attr_set.name_prefix}MAX (__{attr_set.name_prefix}{family.attr_cnt_suffix} - 1)")
+        if max_by_define:
+            cw.p(f"#define {attr_set.max_name} {max_value}")
         cw.nl()
 
     separate_ntf = 'async-prefix' in family['operations']
