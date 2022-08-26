@@ -35,6 +35,11 @@ properties:
     description: Makes the number of attributes and commands be specified by a define, not an enum value.
     type: boolean
   # End genetlink-c
+  # Start genetlink-legacy
+  kernel-policy:
+    description: Defines if the input policy in the kernel is global or per-operation, default is per-op.
+    enum: [per-op, global]
+  # End genetlink-legacy
 
   definitions:
     description: Array of type and constant definitions.

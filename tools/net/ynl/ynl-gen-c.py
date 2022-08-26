@@ -557,7 +557,7 @@ class Family:
 
         jsonschema.validate(self.yaml, schema)
 
-        if 'proto' in self.yaml and self.yaml['proto'] != 'genetlink':
+        if self.yaml.get('protocol', 'genetlink') not in {'genetlink', 'genetlink-c', 'genetlink-legacy'}:
             raise Exception("Codegen only supported for genetlink")
 
         if 'definitions' not in self.yaml:
@@ -596,6 +596,10 @@ class Family:
         self._load_root_sets()
         self._load_nested_sets()
         self._load_all_notify()
+
+        self.kernel_policy = self.yaml.get('kernel-policy', 'per-op')
+        if self.kernel_policy == 'global':
+            self._load_global_policy()
 
     def __getitem__(self, key):
         return self.yaml[key]
@@ -682,6 +686,30 @@ class Family:
 
             if 'notify' in op:
                 self.all_notify[op_name] = op['notify']['cmds']
+
+    def _load_global_policy(self):
+        global_set = set()
+        attr_set_name = None
+        for op_name, op in self.ops.items():
+            if not op:
+                continue
+            if 'attribute-set' not in op:
+                continue
+
+            if attr_set_name is None:
+                attr_set_name = op['attribute-set']
+            if attr_set_name != op['attribute-set']:
+                raise Exception('For a global policy all ops must use the same set')
+
+            for op_mode in {'do', 'dump'}:
+                if op_mode in op:
+                    global_set.update(op[op_mode].get('request', []))
+
+        self.global_policy = []
+        self.global_policy_set = attr_set_name
+        for attr in self.attr_sets[attr_set_name]:
+            if attr in global_set:
+                self.global_policy.append(attr)
 
 
 class RenderInfo:

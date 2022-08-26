@@ -54,34 +54,6 @@ The former are direct mapping of a GET, for brevity they don't have to
 repeat all the arguments. Events have their own list of arguments.
 This needs to be documented.
 
-upper / c-ify
--------------
-
-In C code we need to transform the names, e.g. from do-something into
-DO_SOMETHING. Some of the schemas are still using literal DO_SOMETHING,
-especially silent constants.
-
-silent constants
-----------------
-
-We need a version of constants which are known but don't get rendered
-to the C uAPI header. These are things like IFNAMSIZ which C headers
-pull in thru an include but non-C won't have any knowledge of.
-
-These constants have the 'headers' attribute in their definitions,
-but are currently not skipped during rendering.
-
-check that the lenght is constant or constant - 1
--------------------------------------------------
-
-Regex the fields which can take string constant names.
-
-document the attributes
------------------------
-
-We don't have much documentation on attribute types. Maybe it should be part
-of the YAML intro docs, maybe not?
-
 document the kernel side
 ------------------------
 
@@ -103,7 +75,7 @@ The descriptions from the YAML schema should get rendered as part
 of the user space API, Sphinx integration would be better than
 codegen.
 
-codegen clenaup
+codegen cleanup
 ---------------
 
 The ynl-gen-c.py is currently a dumpster fire of badly written Python.
@@ -114,12 +86,11 @@ struct support
 structs are defined in the schema but not supported in attrs,
 ops or any of the codegen.
 
-zero-check the reserved space in genl header
---------------------------------------------
+generate the ops table
+----------------------
 
-We don't currently check that struct genlmsghdr.reserved is zero on input.
-We should start doing that to allow reuse of some of those bits for new
-fields.
+There seems to be no family where we could generate the full
+ops table right now :( No simple family uses per-op policies.
 
 Spec reshuffling
 ----------------
