@@ -25,9 +25,6 @@ properties:
   uapi-header:
     description: Path to the uAPI header, default is linux/${family-name}.h
     type: string
-  attr-cnt-suffix:
-    description: Suffix for last member of attribute enum, default is "MAX".
-    type: string
   # End genetlink-c
 
   definitions:
@@ -59,7 +56,7 @@ properties:
           items:
             type: string
         # Start genetlink-c
-        value-prefix:
+        name-prefix:
           description: For enum the prefix of the values, optional.
           type: string
         # End genetlink-c
@@ -103,7 +100,7 @@ properties:
           description: |
             Prefix for the C enum name of the attributes. Default family[name]-set[name]-a-
           type: string
-        name-enum:
+        enum-name:
           description: Name for the enum type of the attribute.
           type: string
         description:
@@ -114,6 +111,14 @@ properties:
             Name of another space which this is a logical part of. Sub-spaces can be used to define
             a limited group of attributes which are used in a nest.
           type: string
+        # Start genetlink-c
+        attr-cnt-name:
+          description: The explicit name for constant holding the count of attributes (last attr + 1).
+          type: string
+        attr-max-name:
+          description: The explicit name for last member of attribute enum.
+          type: string
+        # End genetlink-c
         attributes:
           description: List of attributes in the space.
           type: array
@@ -180,7 +185,7 @@ properties:
           Prefix for the C enum name of the command. The name is formed by concatenating
           the prefix with the upper case name of the command, with dashes replaced by underscores.
         type: string
-      name-enum:
+      enum-name:
         description: Name for the enum type with commands.
         type: string
       async-prefix:

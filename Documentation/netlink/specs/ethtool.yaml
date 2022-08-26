@@ -9,8 +9,6 @@ description: |
 
 uapi-header: linux/ethtool_netlink.h
 
-attr-cnt-suffix: cnt
-
 definitions:
   -
     type: const
@@ -21,6 +19,7 @@ definitions:
 attribute-sets:
   -
     name: header
+    attr-cnt-name: __ETHTOOL_A_HEADER_CNT
     attributes:
       -
         name: dev-index
@@ -35,6 +34,7 @@ attribute-sets:
         type: u32
   -
     name: channels
+    attr-cnt-name: __ETHTOOL_A_CHANNELS_CNT
     attributes:
       -
         name: header

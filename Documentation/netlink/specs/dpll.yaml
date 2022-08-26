@@ -7,29 +7,29 @@ definitions:
   -
     type: flags
     name: genl-get-flags
-    value-prefix: dpll-flag-
+    name-prefix: dpll-flag-
     entries: [ sources, outputs, status ]
   -
     type: enum
     name: genl-status
-    value-prefix: dpll-status-
+    name-prefix: dpll-status-
     entries: [ none, calibrating, locked ]
   -
     type: enum
     name: genl-signal-type
-    value-prefix: dpll-type-
+    name-prefix: dpll-type-
     entries: [ none, ext-1pps, ext-10mhz, synce-eth-port, int-oscillator, gnss, custom ]
   -
     type: enum
     name: genl-lock-status
-    value-prefix: dpll-lock-status-
+    name-prefix: dpll-lock-status-
     entries: [ unlocked, ext-1pps, ext-10mhz, synce, int-oscillator, gnss ]
 
 attribute-sets:
   -
     name: main
     name-prefix: dplla-
-    name-enum: genl-attr
+    enum-name: genl-attr
     attributes:
       -
         name: unspec
@@ -119,7 +119,7 @@ attribute-sets:
 
 operations:
   enum-model: notify-split
-  name-enum: genl-cmd
+  enum-name: genl-cmd
   async-prefix: dpll-event-
   async-enum: genl-event
   list:

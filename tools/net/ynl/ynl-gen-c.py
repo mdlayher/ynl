@@ -1441,8 +1441,8 @@ def render_uapi(family, cw):
             uapi_enum_start(family, cw, const, 'name')
             for item in const['entries']:
                 item_name = item
-                if 'value-prefix' in const:
-                    item_name = (const['value-prefix'] + item).upper().replace('-', '_')
+                if 'name-prefix' in const:
+                    item_name = (const['name-prefix'] + item).upper().replace('-', '_')
                 cw.p(item_name + ',')
             cw.block_end(line=';')
             cw.nl()
@@ -1451,8 +1451,8 @@ def render_uapi(family, cw):
             i = 0
             for item in const['entries']:
                 item_name = item
-                if 'value-prefix' in const:
-                    item_name = (const['value-prefix'] + item).upper().replace('-', '_')
+                if 'name-prefix' in const:
+                    item_name = (const['name-prefix'] + item).upper().replace('-', '_')
                 cw.p(f'{item_name} = {1 << i},')
                 i += 1
             cw.block_end(line=';')
@@ -1462,7 +1462,7 @@ def render_uapi(family, cw):
         if attr_set.subset_of:
             continue
 
-        uapi_enum_start(family, cw, attr_set.yaml, 'name-enum')
+        uapi_enum_start(family, cw, attr_set.yaml, 'enum-name')
         for _, attr in attr_set.items():
             cw.p(attr.enum_name + ',')
         cw.nl()
@@ -1473,7 +1473,7 @@ def render_uapi(family, cw):
 
     separate_ntf = 'async-prefix' in family['operations']
 
-    uapi_enum_start(family, cw, family['operations'], 'name-enum')
+    uapi_enum_start(family, cw, family['operations'], 'enum-name')
     for _, op in family.ops_list:
         if separate_ntf and ('notify' in op or 'event' in op):
             continue
