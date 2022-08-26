@@ -13,4 +13,6 @@
 // CTRL_CMD_GETFAMILY - do
 extern const struct nla_policy nlctrl_getfamily_policy[CTRL_ATTR_FAMILY_NAME + 1];
 
+// Ops table for nlctrl
+extern const struct genl_ops nlctrl_ops[];
 #endif /* _LINUX_NLCTRL_GEN_H */

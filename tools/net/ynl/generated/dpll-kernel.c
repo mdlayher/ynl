@@ -29,3 +29,34 @@ const struct nla_policy dpll_set_output_type_policy[DPLLA_OUTPUT_TYPE + 1] = {
 	[DPLLA_OUTPUT_ID] = { .type = NLA_U32 },
 	[DPLLA_OUTPUT_TYPE] = NLA_POLICY_MAX(NLA_U32, 7),
 };
+
+// Ops table for dpll
+const struct genl_ops dpll_ops[] = {
+	{
+		.cmd = DPLL_CMD_DEVICE_GET,
+	},
+	{
+		.cmd = DPLL_CMD_SET_SOURCE_TYPE,
+	},
+	{
+		.cmd = DPLL_CMD_SET_OUTPUT_TYPE,
+	},
+	{
+		.cmd = DPLL_EVENT_DEVICE_CREATE,
+	},
+	{
+		.cmd = DPLL_EVENT_DEVICE_DELETE,
+	},
+	{
+		.cmd = DPLL_EVENT_STATUS_LOCKED,
+	},
+	{
+		.cmd = DPLL_EVENT_STATUS_UNLOCKED,
+	},
+	{
+		.cmd = DPLL_EVENT_SOURCE_CHANGE,
+	},
+	{
+		.cmd = DPLL_EVENT_OUTPUT_CHANGE,
+	},
+};

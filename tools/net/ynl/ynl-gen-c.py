@@ -784,7 +784,7 @@ class CodeWriter:
         self._ind += 1
 
     def block_end(self, line=''):
-        if line and line != ';':
+        if line and line[0] not in {';', ','}:
             line = ' ' + line
         self._ind -= 1
         self.p('}' + line)
@@ -1459,6 +1459,27 @@ def print_req_policy(cw, struct, op=None):
     cw.p("};")
 
 
+def print_kernel_op_table_fwd(family, cw, terminate=True):
+    cw.p(f"// Ops table for {family.name}")
+
+    struct_type = 'genl_small_ops' if family.kernel_policy == 'global' else 'genl_ops'
+    line = f"const struct {struct_type} {family.name}_ops[]"
+    if terminate:
+        cw.p(f"extern {line};")
+    else:
+        cw.block_start(line=line + ' =')
+
+
+def print_kernel_op_table(family, cw):
+    print_kernel_op_table_fwd(family, cw, terminate=False)
+    for op_name, op in family.ops.items():
+        cw.block_start()
+        cw.p(f".cmd = {op.enum_name},")
+        cw.block_end(line=',')
+    cw.block_end(line=';')
+    cw.nl()
+
+
 def uapi_enum_start(family, cw, obj, ckey='', enum_name='enum-name'):
     start_line = 'enum'
     if enum_name in obj:
@@ -1674,12 +1695,15 @@ def main():
                     ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
                     print_req_policy_fwd(cw, ri.struct['request'], op=op)
                     cw.nl()
+
+            print_kernel_op_table_fwd(parsed, cw)
         else:
             if parsed.kernel_policy == 'global':
                 cw.p(f"// Global operation policy for {parsed.name}")
 
                 struct = Struct(parsed, parsed.global_policy_set, type_list=parsed.global_policy)
                 print_req_policy(cw, struct)
+                cw.nl()
 
             for op_name, op in parsed.ops.items():
                 if parsed.kernel_policy == 'per-op':
@@ -1689,6 +1713,8 @@ def main():
                             ri = RenderInfo(cw, parsed, args.mode, op, op_name, op_mode)
                             print_req_policy(cw, ri.struct['request'], op=op)
                             cw.nl()
+
+            print_kernel_op_table(parsed, cw)
 
     if args.mode == "user":
         has_ntf = False

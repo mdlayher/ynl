@@ -21,3 +21,13 @@ const struct nla_policy ethtool_channels_set_policy[ETHTOOL_A_CHANNELS_COMBINED_
 	[ETHTOOL_A_CHANNELS_OTHER_COUNT] = { .type = NLA_U32 },
 	[ETHTOOL_A_CHANNELS_COMBINED_COUNT] = { .type = NLA_U32 },
 };
+
+// Ops table for ethtool
+const struct genl_ops ethtool_ops[] = {
+	{
+		.cmd = ETHTOOL_MSG_CHANNELS_GET,
+	},
+	{
+		.cmd = ETHTOOL_MSG_CHANNELS_SET,
+	},
+};

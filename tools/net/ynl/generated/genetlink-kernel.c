@@ -19,3 +19,13 @@ const struct nla_policy nlctrl_getpolicy_policy[CTRL_ATTR_OP + 1] = {
 	[CTRL_ATTR_FAMILY_NAME] = { .type = NLA_NUL_STRING, .len = GENL_NAMSIZ - 1 },
 	[CTRL_ATTR_OP] = { .type = NLA_U32 },
 };
+
+// Ops table for nlctrl
+const struct genl_ops nlctrl_ops[] = {
+	{
+		.cmd = CTRL_CMD_GETFAMILY,
+	},
+	{
+		.cmd = CTRL_CMD_GETPOLICY,
+	},
+};

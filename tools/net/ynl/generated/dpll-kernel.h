@@ -19,4 +19,6 @@ extern const struct nla_policy dpll_set_source_type_policy[DPLLA_SOURCE_TYPE + 1
 // DPLL_CMD_SET_OUTPUT_TYPE - do
 extern const struct nla_policy dpll_set_output_type_policy[DPLLA_OUTPUT_TYPE + 1];
 
+// Ops table for dpll
+extern const struct genl_ops dpll_ops[];
 #endif /* _LINUX_DPLL_GEN_H */

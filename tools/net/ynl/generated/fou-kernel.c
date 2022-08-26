@@ -22,3 +22,16 @@ const struct nla_policy fou_policy[FOU_ATTR_IFINDEX + 1] = {
 	[FOU_ATTR_PEER_PORT] = { .type = NLA_U16 },
 	[FOU_ATTR_IFINDEX] = { .type = NLA_S32 },
 };
+
+// Ops table for fou
+const struct genl_small_ops fou_ops[] = {
+	{
+		.cmd = FOU_CMD_ADD,
+	},
+	{
+		.cmd = FOU_CMD_DEL,
+	},
+	{
+		.cmd = FOU_CMD_GET,
+	},
+};
