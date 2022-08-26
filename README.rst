@@ -125,7 +125,6 @@ Spec reshuffling
 ----------------
 
  - add support for variable binary and fixed string
- - verification as a subsection
  - endian support
 
 Notes on existing families

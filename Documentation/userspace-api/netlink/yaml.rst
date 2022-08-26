@@ -237,12 +237,15 @@ byte-order
 For integer types specifies attribute byte order - ``little-endian``
 or ``big-endian``.
 
-validation
-~~~~~~~~~~
+checks
+~~~~~~
 
 Input validation constraints used by the kernel. User space should query
 the policy of the running kernel using Generic Netlink introspection,
-rather than depend on the validation specified in the YAML.
+rather than depend on what is specified in the YAML file.
+
+The validation policy in the kernel is formed by combining the type
+definition (``type``, ``len`` and ``nested-attributes``) and the ``checks``.
 
 operations
 ----------

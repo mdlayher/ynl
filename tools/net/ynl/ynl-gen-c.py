@@ -33,6 +33,7 @@ class Type:
         self.value = attr['value']
         self.name = attr['name'].replace('-', '_')
         self.type = attr['type']
+        self.checks = attr.get('checks', {})
 
         if 'len' in attr:
             self.len = attr['len']
@@ -192,8 +193,8 @@ class TypeScalar(Type):
         return t
 
     def _attr_policy(self, policy):
-        if 'flags-mask' in self.attr:
-            flags = self.family.consts[self.attr['flags-mask']]
+        if 'flags-mask' in self.checks:
+            flags = self.family.consts[self.checks['flags-mask']]
             flag_cnt = len(flags['entries'])
             return f"NLA_POLICY_MASK({policy}, 0x{(1 << flag_cnt) - 1:x})"
         elif 'enum' in self.attr:

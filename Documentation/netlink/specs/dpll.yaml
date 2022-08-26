@@ -85,7 +85,8 @@ attribute-sets:
       -
         name: flags
         type: u32
-        flags-mask: genl-get-flags
+        checks:
+          flags-mask: genl-get-flags
   -
     name: source
     subset-of: main
