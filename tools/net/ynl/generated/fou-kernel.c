@@ -44,5 +44,3 @@ const struct nla_policy fou_get_policy[FOU_ATTR_IFINDEX + 1] = {
 	[FOU_ATTR_LOCAL_V6] = { .type = NLA_BINARY, .len = 16 },
 	[FOU_ATTR_PEER_V6] = { .type = NLA_BINARY, .len = 16 },
 };
-
-// FOU_CMD_GET - dump

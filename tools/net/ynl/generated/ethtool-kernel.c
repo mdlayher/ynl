@@ -13,8 +13,6 @@ const struct nla_policy ethtool_channels_get_policy[ETHTOOL_A_CHANNELS_HEADER + 
 	[ETHTOOL_A_CHANNELS_HEADER] = { .type = NLA_NEST },
 };
 
-// ETHTOOL_MSG_CHANNELS_GET - dump
-// ETHTOOL_MSG_CHANNELS_GET - notify
 // ETHTOOL_MSG_CHANNELS_SET - do
 const struct nla_policy ethtool_channels_set_policy[ETHTOOL_A_CHANNELS_COMBINED_COUNT + 1] = {
 	[ETHTOOL_A_CHANNELS_HEADER] = { .type = NLA_NEST },

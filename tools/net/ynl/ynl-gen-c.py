@@ -1745,49 +1745,52 @@ def main():
                     parse_rsp_nested(ri, struct)
 
         for op_name, op in parsed.ops.items():
-            if args.mode == "user":
-                cw.p(f"/* ============== {op.enum_name} ============== */")
+            if args.mode == 'kernel':
+                for op_mode in {'do', 'dump'}:
+                    if op_mode in op and 'request' in op[op_mode]:
+                        cw.p(f"// {op.enum_name} - {op_mode}")
+                        ri = RenderInfo(cw, parsed, args.mode, op, op_name, op_mode)
+                        print_req_policy(ri)
+                        cw.nl()
 
+            if args.mode != 'user':
+                continue
+
+            cw.p(f"/* ============== {op.enum_name} ============== */")
             if 'do' in op and 'event' not in op:
                 cw.p(f"// {op.enum_name} - do")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
-                if args.mode == "user":
-                    print_rsp_free(ri)
-                    parse_rsp_msg(ri)
-                    print_req(ri)
-                elif args.mode == "kernel":
-                    print_req_policy(ri)
+                print_rsp_free(ri)
+                parse_rsp_msg(ri)
+                print_req(ri)
                 cw.nl()
 
             if 'dump' in op:
                 cw.p(f"// {op.enum_name} - dump")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, "dump")
-                if args.mode == "user":
-                    if not ri.type_consistent:
-                        parse_rsp_msg(ri, deref=True)
-                    print_dump_type_free(ri)
-                    print_dump(ri)
-                    cw.nl()
+                if not ri.type_consistent:
+                    parse_rsp_msg(ri, deref=True)
+                print_dump_type_free(ri)
+                print_dump(ri)
+                cw.nl()
 
             if 'notify' in op:
                 cw.p(f"// {op.enum_name} - notify")
                 ri = RenderInfo(cw, parsed, args.mode, op, op_name, 'notify')
-                if args.mode == "user":
-                    has_ntf = True
-                    if not ri.type_consistent:
-                        raise Exception('Only notifications with consistent types supported')
-                    print_ntf_type_free(ri)
+                has_ntf = True
+                if not ri.type_consistent:
+                    raise Exception('Only notifications with consistent types supported')
+                print_ntf_type_free(ri)
 
             if 'event' in op:
-                if args.mode == "user":
-                    cw.p(f"// {op.enum_name} - event")
-                    has_ntf = True
+                cw.p(f"// {op.enum_name} - event")
+                has_ntf = True
 
-                    ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
-                    parse_rsp_msg(ri)
+                ri = RenderInfo(cw, parsed, args.mode, op, op_name, "do")
+                parse_rsp_msg(ri)
 
-                    ri = RenderInfo(cw, parsed, args.mode, op, op_name, "event")
-                    print_ntf_type_free(ri)
+                ri = RenderInfo(cw, parsed, args.mode, op, op_name, "event")
+                print_ntf_type_free(ri)
 
         if has_ntf:
             cw.p('// --------------- Common notification parsing --------------- //')
